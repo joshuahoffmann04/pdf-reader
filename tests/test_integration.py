@@ -12,7 +12,7 @@ from src.images.image_extractor import ImageExtractor
 
 
 # Skip if PDF not available
-PDF_PATH = "Pruefungsordnung_BSc_Inf_2024.pdf"
+PDF_PATH = "pdfs/Pruefungsordnung_BSc_Inf_2024.pdf"
 SKIP_REASON = f"PDF file not found: {PDF_PATH}"
 
 

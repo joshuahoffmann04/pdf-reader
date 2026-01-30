@@ -122,7 +122,12 @@ class TableExtractor:
         line_tables = self._extract_with_strategy(page, page_number, "lines", "lines")
 
         # Strategy 2: Text-based extraction (for borderless tables)
-        text_tables = self._extract_with_strategy(page, page_number, "text", "text")
+        # Only use if no line-based tables found
+        text_tables = []
+        if not line_tables:
+            text_tables = self._extract_with_strategy(page, page_number, "text", "text")
+            # Filter text-based tables more strictly to avoid false positives
+            text_tables = [t for t in text_tables if self._is_likely_real_table(t)]
 
         # Use line-based if found, otherwise text-based
         if line_tables:
@@ -138,6 +143,52 @@ class TableExtractor:
                 cleaned_tables.append(cleaned)
 
         return cleaned_tables
+
+    def _is_likely_real_table(self, table: ExtractedTable) -> bool:
+        """Heuristic to detect if extraction result is a real table or just text blocks."""
+        if not table.rows:
+            return False
+
+        # Need at least 2 rows
+        if len(table.rows) < 2:
+            return False
+
+        # Count columns with actual content
+        col_counts = []
+        for row in table.rows:
+            non_empty = sum(1 for cell in row if cell and cell.strip())
+            col_counts.append(non_empty)
+
+        # Average columns with content
+        avg_cols = sum(col_counts) / len(col_counts) if col_counts else 0
+
+        # Real tables typically have multiple columns with content
+        if avg_cols < 2:
+            return False
+
+        # Check consistency: real tables have similar column usage across rows
+        if col_counts:
+            min_cols = min(col_counts)
+            max_cols = max(col_counts)
+            # If column usage varies wildly, it's probably text, not a table
+            if max_cols > 0 and min_cols / max_cols < 0.3:
+                return False
+
+        # Check for long text cells (tables rarely have very long cells)
+        long_cells = 0
+        total_cells = 0
+        for row in table.rows:
+            for cell in row:
+                if cell:
+                    total_cells += 1
+                    if len(cell) > 100:  # Long text
+                        long_cells += 1
+
+        # If more than 30% of cells are long text, it's probably not a table
+        if total_cells > 0 and long_cells / total_cells > 0.3:
+            return False
+
+        return True
 
     def _extract_with_strategy(
         self,
