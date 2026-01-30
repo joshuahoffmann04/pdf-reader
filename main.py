@@ -4,20 +4,23 @@ PDF Reader - Extract and structure PDF content by § sections
 
 Main entry point for the PDF extraction tool.
 Extracts text, tables, and images from PDFs and organizes content
-by § (paragraph) sections for AI model consumption.
+into a hierarchical structure:
+- Chapters (I., II., III., IV.)
+- Sections (§1, §2, ...)
+- AB-Excerpts (Allgemeine Bestimmungen)
+- Appendices (Anlage 1-5) with optional sub-sections
 """
 
 import argparse
 import json
 import sys
 from pathlib import Path
-from dataclasses import asdict
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from src.extractor import PDFExtractor
-from src.parser import SectionParser
+from src.parser import DocumentParser
 from src.tables import TableExtractor
 from src.images import ImageExtractor
 from src.evaluation import Evaluator
@@ -58,9 +61,9 @@ def extract_pdf(
     extractor = PDFExtractor(preserve_layout=True)
     pdf_doc = extractor.extract(pdf_path)
 
-    # Step 2: Parse sections
-    print("  [2/4] Parsing sections...")
-    parser = SectionParser(language="de")
+    # Step 2: Parse document structure
+    print("  [2/4] Parsing document structure...")
+    parser = DocumentParser()
     parsed_doc = parser.parse(
         pdf_doc.get_full_text(),
         title=pdf_doc.title,
@@ -85,7 +88,9 @@ def extract_pdf(
         image_extractor = ImageExtractor(min_width=100, min_height=100)
         images = image_extractor.extract_from_pdf(pdf_path, output_dir=image_dir)
 
-    # Build output structure
+    # Build hierarchical output structure
+    stats = parsed_doc.get_statistics()
+
     result = {
         "metadata": {
             "source": str(pdf_path),
@@ -94,33 +99,64 @@ def extract_pdf(
             "pdf_metadata": pdf_doc.metadata
         },
         "preamble": parsed_doc.preamble,
-        "sections": [],
+        "chapters": [],
         "appendices": [],
         "tables": [t.to_dict() for t in tables],
         "images": [img.to_dict() for img in images],
         "statistics": {
-            "section_count": len(parsed_doc.sections),
-            "appendix_count": len(parsed_doc.appendices),
+            "chapters": stats["chapters"],
+            "main_sections": stats["main_sections"],
+            "ab_excerpts": stats["ab_excerpts"],
+            "appendices": stats["appendices"],
+            "appendix_sections": stats["appendix_sections"],
             "table_count": len(tables),
             "image_count": len(images)
         }
     }
 
-    # Add sections
-    for section in parsed_doc.sections:
-        section_data = {
-            "id": section.id,
-            "title": section.title,
-            "content": section.content
+    # Add chapters with their sections
+    for chapter in parsed_doc.chapters:
+        chapter_data = {
+            "id": chapter.id,
+            "numeral": chapter.numeral,
+            "title": chapter.title,
+            "sections": [
+                {
+                    "id": s.id,
+                    "number": s.number,
+                    "title": s.title,
+                    "content": s.content
+                }
+                for s in chapter.sections
+            ],
+            "ab_excerpts": [
+                {
+                    "id": s.id,
+                    "number": s.number,
+                    "title": s.title,
+                    "content": s.content
+                }
+                for s in chapter.ab_excerpts
+            ]
         }
-        result["sections"].append(section_data)
+        result["chapters"].append(chapter_data)
 
-    # Add appendices
+    # Add appendices with their sub-sections
     for appendix in parsed_doc.appendices:
         appendix_data = {
             "id": appendix.id,
+            "number": appendix.number,
             "title": appendix.title,
-            "content": appendix.content
+            "content": appendix.content,
+            "sections": [
+                {
+                    "id": s.id,
+                    "number": s.number,
+                    "title": s.title,
+                    "content": s.content
+                }
+                for s in appendix.sections
+            ]
         }
         result["appendices"].append(appendix_data)
 
@@ -154,8 +190,10 @@ def generate_markdown(result: dict, tables: list) -> str:
     lines.append("## Metadata")
     lines.append(f"- **Source**: {result['metadata']['source']}")
     lines.append(f"- **Pages**: {result['metadata']['total_pages']}")
-    lines.append(f"- **Sections**: {result['statistics']['section_count']}")
-    lines.append(f"- **Appendices**: {result['statistics']['appendix_count']}")
+    lines.append(f"- **Chapters**: {result['statistics']['chapters']}")
+    lines.append(f"- **Main Sections**: {result['statistics']['main_sections']}")
+    lines.append(f"- **AB Excerpts**: {result['statistics']['ab_excerpts']}")
+    lines.append(f"- **Appendices**: {result['statistics']['appendices']}")
     lines.append(f"- **Tables**: {result['statistics']['table_count']}")
     lines.append(f"- **Images**: {result['statistics']['image_count']}")
     lines.append("")
@@ -163,49 +201,74 @@ def generate_markdown(result: dict, tables: list) -> str:
     # Table of Contents
     lines.append("## Inhaltsverzeichnis")
     lines.append("")
-    for section in result["sections"]:
-        lines.append(f"- [{section['id']} {section['title']}](#{section['id'].replace('§', 'section-')})")
+    for chapter in result["chapters"]:
+        lines.append(f"### {chapter['numeral']}. {chapter['title']}")
+        for section in chapter["sections"]:
+            lines.append(f"- [{section['id']} {section['title']}](#section-{section['number']})")
+    lines.append("")
+    lines.append("### Anlagen")
     for appendix in result["appendices"]:
-        lines.append(f"- [{appendix['id']}](#{appendix['id'].replace(' ', '-').lower()})")
+        lines.append(f"- [{appendix['id']}: {appendix['title']}](#anlage-{appendix['number']})")
     lines.append("")
 
     # Preamble
     if result.get("preamble"):
+        lines.append("---")
+        lines.append("")
         lines.append("## Präambel")
         lines.append("")
         lines.append(result["preamble"])
         lines.append("")
 
-    # Main sections
-    lines.append("---")
-    lines.append("")
-
-    for section in result["sections"]:
-        anchor = section["id"].replace("§", "section-")
-        lines.append(f"## {section['id']} {section['title']} {{#{anchor}}}")
-        lines.append("")
-        lines.append(section["content"])
-        lines.append("")
+    # Main chapters and sections
+    for chapter in result["chapters"]:
         lines.append("---")
         lines.append("")
+        lines.append(f"# {chapter['numeral']}. {chapter['title']}")
+        lines.append("")
+
+        for section in chapter["sections"]:
+            lines.append(f"## {section['id']} {section['title']} {{#section-{section['number']}}}")
+            lines.append("")
+            lines.append(section["content"])
+            lines.append("")
+
+        # AB excerpts (if any)
+        if chapter["ab_excerpts"]:
+            lines.append("### Textauszüge aus den Allgemeinen Bestimmungen")
+            lines.append("")
+            for ab in chapter["ab_excerpts"]:
+                lines.append(f"#### {ab['id']} {ab['title']} (AB)")
+                lines.append("")
+                lines.append(ab["content"])
+                lines.append("")
 
     # Appendices
     if result["appendices"]:
+        lines.append("---")
+        lines.append("")
         lines.append("# Anlagen")
         lines.append("")
 
         for appendix in result["appendices"]:
-            anchor = appendix["id"].replace(" ", "-").lower()
-            title = appendix["title"] if appendix["title"] else ""
-            lines.append(f"## {appendix['id']} {title} {{#{anchor}}}")
+            lines.append(f"## {appendix['id']}: {appendix['title']} {{#anlage-{appendix['number']}}}")
             lines.append("")
-            lines.append(appendix["content"])
-            lines.append("")
-            lines.append("---")
-            lines.append("")
+
+            if appendix["content"]:
+                lines.append(appendix["content"])
+                lines.append("")
+
+            # Appendix sub-sections
+            for section in appendix.get("sections", []):
+                lines.append(f"### {section['id']} {section['title']}")
+                lines.append("")
+                lines.append(section["content"])
+                lines.append("")
 
     # Tables section
     if tables:
+        lines.append("---")
+        lines.append("")
         lines.append("# Tabellen")
         lines.append("")
 
@@ -222,69 +285,74 @@ def print_summary(result: dict):
     """Print a summary of the extraction results."""
     stats = result["statistics"]
 
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print("EXTRACTION SUMMARY")
-    print("=" * 50)
+    print("=" * 60)
     print(f"Title: {result['metadata']['title']}")
     print(f"Pages: {result['metadata']['total_pages']}")
-    print(f"Sections found: {stats['section_count']}")
-    print(f"Appendices found: {stats['appendix_count']}")
-    print(f"Tables extracted: {stats['table_count']}")
-    print(f"Images extracted: {stats['image_count']}")
+    print(f"Chapters: {stats['chapters']}")
+    print(f"Main Sections: {stats['main_sections']}")
+    print(f"AB Excerpts: {stats['ab_excerpts']}")
+    print(f"Appendices: {stats['appendices']} (with {stats['appendix_sections']} sub-sections)")
+    print(f"Tables: {stats['table_count']}")
+    print(f"Images: {stats['image_count']}")
 
-    print("\nSections:")
-    for section in result["sections"]:
-        content_preview = section["content"][:50].replace("\n", " ") + "..."
-        print(f"  {section['id']} {section['title']}")
+    print("\nStructure:")
+    for chapter in result["chapters"]:
+        section_ids = [s["id"] for s in chapter["sections"]]
+        section_range = f"{section_ids[0]}-{section_ids[-1]}" if section_ids else "none"
+        print(f"  {chapter['numeral']}. {chapter['title']}: {section_range}")
 
     if result["appendices"]:
         print("\nAppendices:")
         for appendix in result["appendices"]:
-            print(f"  {appendix['id']} {appendix['title']}")
+            section_count = len(appendix.get("sections", []))
+            sections_info = f" ({section_count} §)" if section_count > 0 else ""
+            print(f"  {appendix['id']}: {appendix['title'][:40]}...{sections_info}")
 
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
+    arg_parser = argparse.ArgumentParser(
         description="Extract and structure PDF content by § sections"
     )
-    parser.add_argument(
+    arg_parser.add_argument(
         "pdf_path",
         help="Path to the PDF file to process"
     )
-    parser.add_argument(
+    arg_parser.add_argument(
         "-o", "--output",
         default="output",
         help="Output directory (default: output)"
     )
-    parser.add_argument(
+    arg_parser.add_argument(
         "-f", "--format",
         choices=["json", "markdown", "both"],
         default="both",
         help="Output format (default: both)"
     )
-    parser.add_argument(
+    arg_parser.add_argument(
         "--no-images",
         action="store_true",
         help="Skip image extraction"
     )
-    parser.add_argument(
+    arg_parser.add_argument(
         "--no-tables",
         action="store_true",
         help="Skip table extraction"
     )
-    parser.add_argument(
+    arg_parser.add_argument(
         "--no-merge-tables",
         action="store_true",
         help="Don't merge multi-page tables"
     )
-    parser.add_argument(
+    arg_parser.add_argument(
         "-v", "--verbose",
         action="store_true",
         help="Show detailed output"
     )
 
-    args = parser.parse_args()
+    args = arg_parser.parse_args()
 
     # Check if PDF exists
     pdf_path = Path(args.pdf_path)
