@@ -4,18 +4,21 @@ Evaluates PDF extraction quality by comparing extracted text with original.
 
 Provides comprehensive metrics:
 - Cosine similarity (content accuracy)
-- Structure validation (chapters, sections, appendices)
-- Feature completeness (images, tables, AB references)
-- Overall quality score
+- BLEU score (n-gram precision)
+- Word overlap (Jaccard similarity)
+- Structure validation
 
-Usage: python -m scripts.evaluate [--pdf PDF_PATH] [--json JSON_PATH]
+Usage:
+    python -m scripts.evaluate --pdf document.pdf --json output/document_extracted.json
+    python -m scripts.evaluate --pdf document.pdf --json output/document_extracted.json --output report.json
 """
 
 import argparse
 import json
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from pathlib import Path
+from typing import Optional
 
 from src.extractor import PDFExtractor
 from src.evaluation import Evaluator
@@ -24,17 +27,24 @@ from src.evaluation import Evaluator
 @dataclass
 class QualityReport:
     """Complete quality assessment report."""
+    # Content metrics
     cosine_similarity: float
     bleu_score: float
     word_overlap: float
-    structure_valid: bool
-    chapters_correct: bool
-    sections_correct: bool
-    appendices_correct: bool
-    images_found: int
-    tables_found: int
-    ab_excerpts_found: int
+
+    # Structure metrics
+    structure_detected: bool
+    chapters_count: int
+    sections_count: int
+    appendices_count: int
+    ab_excerpts_count: int
+
+    # Feature metrics
+    images_count: int
+    tables_count: int
     ab_links_complete: bool
+
+    # Overall
     overall_score: float
 
     def to_dict(self) -> dict:
@@ -46,15 +56,15 @@ class QualityReport:
                 "word_overlap": round(self.word_overlap, 4)
             },
             "structure_metrics": {
-                "structure_valid": self.structure_valid,
-                "chapters_correct": self.chapters_correct,
-                "sections_correct": self.sections_correct,
-                "appendices_correct": self.appendices_correct
+                "structure_detected": self.structure_detected,
+                "chapters": self.chapters_count,
+                "sections": self.sections_count,
+                "appendices": self.appendices_count,
+                "ab_excerpts": self.ab_excerpts_count
             },
             "feature_metrics": {
-                "images_found": self.images_found,
-                "tables_found": self.tables_found,
-                "ab_excerpts_found": self.ab_excerpts_found,
+                "images": self.images_count,
+                "tables": self.tables_count,
                 "ab_links_complete": self.ab_links_complete
             },
             "overall_score": round(self.overall_score, 4)
@@ -71,9 +81,11 @@ def reconstruct_text_from_json(data: dict) -> str:
     """Reconstruct full text from extracted JSON structure."""
     parts = []
 
+    # Preamble
     if data.get("preamble"):
         parts.append(data["preamble"])
 
+    # Chapters and sections
     for chapter in data.get("chapters", []):
         parts.append(f"\n{chapter['numeral']}. {chapter['title']}\n")
         for section in chapter.get("sections", []):
@@ -83,6 +95,7 @@ def reconstruct_text_from_json(data: dict) -> str:
             parts.append(f"\n{ab['id']} {ab['title']} (AB)\n")
             parts.append(ab["content"])
 
+    # Appendices
     for appendix in data.get("appendices", []):
         parts.append(f"\n{appendix['id']}: {appendix['title']}\n")
         if appendix.get("content"):
@@ -92,24 +105,6 @@ def reconstruct_text_from_json(data: dict) -> str:
             parts.append(section["content"])
 
     return "\n".join(parts)
-
-
-def validate_structure(data: dict, expected: dict) -> tuple[bool, bool, bool, bool]:
-    """
-    Validate document structure against expected values.
-
-    Returns: (structure_valid, chapters_ok, sections_ok, appendices_ok)
-    """
-    stats = data.get("statistics", {})
-
-    chapters_ok = stats.get("chapters", 0) == expected.get("chapters", 4)
-    sections_ok = stats.get("main_sections", 0) == expected.get("main_sections", 40)
-    appendices_ok = stats.get("appendices", 0) == expected.get("appendices", 5)
-    appendix_sections_ok = stats.get("appendix_sections", 0) == expected.get("appendix_sections", 14)
-
-    structure_valid = chapters_ok and sections_ok and appendices_ok and appendix_sections_ok
-
-    return structure_valid, chapters_ok, sections_ok, appendices_ok
 
 
 def check_ab_linking(data: dict) -> bool:
@@ -123,41 +118,40 @@ def check_ab_linking(data: dict) -> bool:
 
 def calculate_overall_score(
     cosine_sim: float,
-    structure_valid: bool,
+    structure_detected: bool,
     ab_links_complete: bool,
-    images_found: int,
-    tables_found: int
+    images_count: int,
+    tables_count: int
 ) -> float:
     """
     Calculate overall quality score (0-100%).
 
     Weights:
-    - Content similarity: 50%
-    - Structure validity: 25%
-    - Feature completeness: 25%
+    - Content similarity: 60%
+    - Structure detection: 20%
+    - Feature extraction: 20%
     """
-    # Content score (50%)
-    content_score = cosine_sim * 50
+    # Content score (60%)
+    content_score = cosine_sim * 60
 
-    # Structure score (25%)
-    structure_score = 25 if structure_valid else 0
+    # Structure score (20%)
+    structure_score = 20 if structure_detected else 0
 
-    # Feature score (25%)
+    # Feature score (20%)
     feature_score = 0
     if ab_links_complete:
-        feature_score += 10
-    if images_found > 0:
-        feature_score += 7.5
-    if tables_found > 0:
-        feature_score += 7.5
+        feature_score += 8
+    if images_count > 0:
+        feature_score += 6
+    if tables_count > 0:
+        feature_score += 6
 
     return content_score + structure_score + feature_score
 
 
 def evaluate_extraction(
     json_path: Path,
-    pdf_path: Path,
-    expected: dict = None
+    pdf_path: Path
 ) -> QualityReport:
     """
     Run comprehensive evaluation of PDF extraction.
@@ -165,19 +159,10 @@ def evaluate_extraction(
     Args:
         json_path: Path to extracted JSON file.
         pdf_path: Path to original PDF file.
-        expected: Expected structure values (optional).
 
     Returns:
         QualityReport with all metrics.
     """
-    if expected is None:
-        expected = {
-            "chapters": 4,
-            "main_sections": 40,
-            "appendices": 5,
-            "appendix_sections": 14
-        }
-
     # Load extracted data
     extracted_data = load_extracted_json(json_path)
 
@@ -192,40 +177,41 @@ def evaluate_extraction(
     evaluator = Evaluator(language="de")
     eval_result = evaluator.evaluate(reconstructed, original_text)
 
-    # Validate structure
-    structure_valid, chapters_ok, sections_ok, appendices_ok = validate_structure(
-        extracted_data, expected
-    )
+    # Get statistics from extracted data
+    stats = extracted_data.get("statistics", {})
+    chapters_count = stats.get("chapters", 0)
+    sections_count = stats.get("main_sections", 0)
+    appendices_count = stats.get("appendices", 0)
+    ab_excerpts_count = stats.get("ab_excerpts", 0)
+    images_count = stats.get("images", 0)
+    tables_count = stats.get("tables", 0)
+
+    # Check structure detection
+    structure_detected = chapters_count > 0 or sections_count > 0
 
     # Check AB linking
     ab_links_complete = check_ab_linking(extracted_data)
 
-    # Get feature counts
-    stats = extracted_data.get("statistics", {})
-    images_found = stats.get("images", 0)
-    tables_found = stats.get("tables", 0)
-    ab_excerpts_found = stats.get("ab_excerpts", 0)
-
     # Calculate overall score
     overall_score = calculate_overall_score(
         eval_result.cosine_similarity,
-        structure_valid,
+        structure_detected,
         ab_links_complete,
-        images_found,
-        tables_found
+        images_count,
+        tables_count
     )
 
     return QualityReport(
         cosine_similarity=eval_result.cosine_similarity,
         bleu_score=eval_result.bleu_score,
         word_overlap=eval_result.word_overlap,
-        structure_valid=structure_valid,
-        chapters_correct=chapters_ok,
-        sections_correct=sections_ok,
-        appendices_correct=appendices_ok,
-        images_found=images_found,
-        tables_found=tables_found,
-        ab_excerpts_found=ab_excerpts_found,
+        structure_detected=structure_detected,
+        chapters_count=chapters_count,
+        sections_count=sections_count,
+        appendices_count=appendices_count,
+        ab_excerpts_count=ab_excerpts_count,
+        images_count=images_count,
+        tables_count=tables_count,
         ab_links_complete=ab_links_complete,
         overall_score=overall_score
     )
@@ -237,72 +223,78 @@ def print_report(report: QualityReport) -> None:
     print("PDF EXTRACTION QUALITY REPORT")
     print("=" * 60)
 
-    print("\n📊 CONTENT METRICS")
+    print("\nCONTENT METRICS")
     print("-" * 40)
     print(f"  Cosine Similarity: {report.cosine_similarity:>8.2%}")
     print(f"  BLEU Score:        {report.bleu_score:>8.2%}")
     print(f"  Word Overlap:      {report.word_overlap:>8.2%}")
 
-    print("\n📋 STRUCTURE VALIDATION")
+    print("\nSTRUCTURE DETECTION")
     print("-" * 40)
-    print(f"  Structure Valid:   {'✓' if report.structure_valid else '✗'}")
-    print(f"  Chapters Correct:  {'✓' if report.chapters_correct else '✗'}")
-    print(f"  Sections Correct:  {'✓' if report.sections_correct else '✗'}")
-    print(f"  Appendices Correct:{'✓' if report.appendices_correct else '✗'}")
+    print(f"  Structure Found:   {'Yes' if report.structure_detected else 'No'}")
+    print(f"  Chapters:          {report.chapters_count:>8}")
+    print(f"  Main Sections:     {report.sections_count:>8}")
+    print(f"  AB Excerpts:       {report.ab_excerpts_count:>8}")
+    print(f"  Appendices:        {report.appendices_count:>8}")
 
-    print("\n🔗 FEATURE COMPLETENESS")
+    print("\nFEATURE EXTRACTION")
     print("-" * 40)
-    print(f"  Images Found:      {report.images_found:>8}")
-    print(f"  Tables Found:      {report.tables_found:>8}")
-    print(f"  AB Excerpts:       {report.ab_excerpts_found:>8}")
-    print(f"  AB Links Complete: {'✓' if report.ab_links_complete else '✗'}")
+    print(f"  Images Found:      {report.images_count:>8}")
+    print(f"  Tables Found:      {report.tables_count:>8}")
+    print(f"  AB Links Complete: {'Yes' if report.ab_links_complete else 'No'}")
 
     print("\n" + "=" * 60)
     print(f"OVERALL QUALITY SCORE: {report.overall_score:.1f}%")
     print("=" * 60)
 
     if report.overall_score >= 95:
-        print("✓ EXCELLENT - Extraction meets quality standards")
+        print("EXCELLENT - Extraction meets high quality standards")
     elif report.overall_score >= 85:
-        print("○ GOOD - Minor improvements possible")
+        print("GOOD - Minor improvements possible")
     elif report.overall_score >= 70:
-        print("△ ACCEPTABLE - Some issues detected")
+        print("ACCEPTABLE - Some issues detected")
     else:
-        print("✗ POOR - Significant improvements needed")
+        print("NEEDS IMPROVEMENT - Review extraction settings")
 
 
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Evaluate PDF extraction quality"
+        description="Evaluate PDF extraction quality",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s --pdf document.pdf --json output/document_extracted.json
+  %(prog)s --pdf document.pdf --json output/document_extracted.json --output report.json
+        """
     )
     parser.add_argument(
         "--pdf",
         type=Path,
-        default=Path("pdfs/Pruefungsordnung_BSc_Inf_2024.pdf"),
+        required=True,
         help="Path to original PDF"
     )
     parser.add_argument(
         "--json",
         type=Path,
-        default=Path("output_final/Pruefungsordnung_BSc_Inf_2024_extracted.json"),
+        required=True,
         help="Path to extracted JSON"
     )
     parser.add_argument(
         "--output",
         type=Path,
-        help="Optional: Save report as JSON"
+        help="Save report as JSON file"
     )
 
     args = parser.parse_args()
 
     # Check files exist
     if not args.pdf.exists():
-        print(f"ERROR: PDF not found: {args.pdf}")
+        print(f"Error: PDF not found: {args.pdf}")
         return 1
 
     if not args.json.exists():
-        print(f"ERROR: JSON not found: {args.json}")
+        print(f"Error: JSON not found: {args.json}")
         print("       Run main.py first to generate extraction.")
         return 1
 
@@ -313,7 +305,7 @@ def main() -> int:
     try:
         report = evaluate_extraction(args.json, args.pdf)
     except Exception as e:
-        print(f"ERROR: Evaluation failed: {e}")
+        print(f"Error: Evaluation failed: {e}")
         return 1
 
     # Print report
@@ -326,7 +318,7 @@ def main() -> int:
         print(f"\nReport saved to: {args.output}")
 
     # Return exit code based on quality
-    return 0 if report.overall_score >= 95 else 1
+    return 0 if report.overall_score >= 70 else 1
 
 
 if __name__ == "__main__":

@@ -1,58 +1,95 @@
 # PDF Reader
 
-Extrahiert und strukturiert Inhalte aus PDF-Dokumenten mit hoher Genauigkeit (99.8% Similarity Score).
-Optimiert für deutsche Rechts- und Hochschuldokumente.
+A high-accuracy PDF extraction tool for German legal and academic documents. Extracts and structures content with **99%+ similarity** to the original text.
 
 ## Features
 
-- **Text-Extraktion**: Layout-erhaltende Extraktion mit PyMuPDF
-- **Strukturerkennung**: Automatische Erkennung von Kapiteln, Paragraphen, Anlagen
-- **Tabellen-Extraktion**: Multi-Page-Tabellen mit pdfplumber
-- **Bild-Extraktion**: Mit Deduplizierung und Größenfilter
-- **AB-Verlinkung**: Automatische Verknüpfung von Textauszügen aus Allgemeinen Bestimmungen
-- **Seiten-Tracking**: Jede Sektion enthält Seitenangaben
-- **Export**: JSON und Markdown Ausgabe
+- **Text Extraction**: Layout-preserving extraction using PyMuPDF
+- **Structure Recognition**: Automatic detection of chapters (I., II., ...), sections (§1, §2, ...), and appendices (Anlage 1, 2, ...)
+- **Table Extraction**: Multi-page table support with intelligent merging
+- **Image Extraction**: With deduplication and size filtering
+- **AB Linking**: Automatic linking of "Allgemeine Bestimmungen" excerpts to main sections
+- **Page Tracking**: Every section includes page number references
+- **Quality Evaluation**: Built-in similarity metrics for extraction validation
+- **Dual Export**: JSON and Markdown output formats
+
+## Supported Document Types
+
+This tool is optimized for German legal and academic documents that follow common structural patterns:
+
+| Pattern | Example | Description |
+|---------|---------|-------------|
+| Chapters | `I. Allgemeines` | Roman numeral headings |
+| Sections | `§ 1 Geltungsbereich` | Paragraph sections |
+| Appendices | `Anlage 1` / `Anhang 1` | Numbered attachments |
+| AB Excerpts | `Textauszug aus den Allgemeinen Bestimmungen` | Referenced general provisions |
+
+**Example documents**: Prüfungsordnungen (examination regulations), Satzungen (statutes), Ordnungen (regulations)
 
 ## Installation
+
+### Using pip
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Verwendung
-
-### CLI
+### Using pip with development dependencies
 
 ```bash
-python main.py Dokument.pdf -o output/
+pip install -e ".[dev]"
 ```
 
-Optionen:
-- `-o, --output`: Ausgabeverzeichnis (default: `output/`)
-- `-f, --format`: `json`, `markdown` oder `both` (default: `both`)
-- `--no-images`: Keine Bilder extrahieren
-- `--no-tables`: Keine Tabellen extrahieren
-- `-v, --verbose`: Detaillierte Ausgabe
-- `-q, --quiet`: Keine Fortschrittsanzeige
+### Requirements
+
+- Python 3.10+
+- PyMuPDF (fitz)
+- pdfplumber
+- Pillow
+- numpy
+- scikit-learn
+- nltk
+
+## Quick Start
+
+### Command Line
+
+```bash
+# Basic extraction
+python main.py document.pdf
+
+# Custom output directory and format
+python main.py document.pdf -o results/ -f json
+
+# Verbose output
+python main.py document.pdf -v
+
+# Skip image/table extraction
+python main.py document.pdf --no-images --no-tables
+```
 
 ### Python API
 
 ```python
+from pathlib import Path
 from main import PDFReaderPipeline, ExtractionConfig
 
-# Konfiguration
+# Configure extraction
 config = ExtractionConfig(
     extract_images=True,
     extract_tables=True,
     merge_cross_page_tables=True,
-    output_format="both"
+    output_format="both"  # "json", "markdown", or "both"
 )
 
-# Extraktion
+# Run extraction
 pipeline = PDFReaderPipeline(config)
-result = pipeline.extract(Path("Dokument.pdf"), Path("output/"))
+result = pipeline.extract(Path("document.pdf"), Path("output/"))
 
-# Zugriff auf Struktur
+# Access results
+print(f"Found {result.statistics['chapters']} chapters")
+print(f"Found {result.statistics['main_sections']} sections")
+
 for chapter in result.chapters:
     print(f"{chapter['numeral']}. {chapter['title']}")
     for section in chapter['sections']:
@@ -64,116 +101,250 @@ for chapter in result.chapters:
 ```python
 from src import PDFExtractor, DocumentParser, TableExtractor, ImageExtractor
 
-# Text extrahieren
+# Extract raw text
 extractor = PDFExtractor()
-pdf_doc = extractor.extract("Dokument.pdf")
+pdf_doc = extractor.extract("document.pdf")
 
-# Struktur parsen (mit Page Markers)
+# Parse structure (with page markers for tracking)
 parser = DocumentParser()
 doc = parser.parse(pdf_doc.get_full_text(include_page_markers=True))
 
-# Tabellen und Bilder
+# Access parsed structure
+for chapter in doc.chapters:
+    print(f"{chapter.numeral}. {chapter.title}")
+    for section in chapter.sections:
+        print(f"  {section.id} {section.title} (Pages: {section.pages})")
+
+# Extract tables
 table_extractor = TableExtractor()
-tables = table_extractor.extract_from_pdf("Dokument.pdf")
+tables = table_extractor.extract_from_pdf("document.pdf")
 
+# Extract images
 image_extractor = ImageExtractor(min_width=100, min_height=100)
-images = image_extractor.extract_from_pdf("Dokument.pdf", output_dir="images/")
+images = image_extractor.extract_from_pdf("document.pdf", output_dir="images/")
 ```
 
-## Architektur
+## Output Structure
 
+### JSON Schema
+
+```json
+{
+  "version": "1.0",
+  "extracted_at": "2024-01-15T10:30:00",
+  "metadata": {
+    "source": "document.pdf",
+    "title": "Document Title",
+    "total_pages": 50
+  },
+  "preamble": "Introductory text...",
+  "chapters": [
+    {
+      "id": "I",
+      "numeral": "I",
+      "title": "Allgemeines",
+      "sections": [
+        {
+          "id": "§1",
+          "number": 1,
+          "title": "Geltungsbereich",
+          "content": "Section content...",
+          "pages": [3, 4],
+          "ab_references": ["§6"]
+        }
+      ],
+      "ab_excerpts": [
+        {
+          "id": "§6",
+          "title": "Prüfungsausschuss",
+          "content": "AB excerpt content...",
+          "follows_section": "§5"
+        }
+      ]
+    }
+  ],
+  "appendices": [
+    {
+      "id": "Anlage 1",
+      "number": "1",
+      "title": "Modulhandbuch",
+      "content": "...",
+      "sections": []
+    }
+  ],
+  "tables": [...],
+  "images": [...],
+  "statistics": {
+    "chapters": 4,
+    "main_sections": 40,
+    "ab_excerpts": 8,
+    "appendices": 5,
+    "tables": 12,
+    "images": 3
+  }
+}
 ```
-PDF --> PDFExtractor --> DocumentParser --> Hierarchische Struktur
-              |                   |
-      TableExtractor     ImageExtractor
-```
 
-### Komponenten
+## Scripts
 
-| Modul | Funktion |
-|-------|----------|
-| `PDFExtractor` | Rohtext-Extraktion mit PyMuPDF, Page-Marker |
-| `DocumentParser` | Strukturerkennung (Kapitel, Paragraphen, Anlagen, AB-Auszüge) |
-| `TableExtractor` | Tabellen-Extraktion mit pdfplumber, Multi-Page-Merge |
-| `ImageExtractor` | Bild-Extraktion mit MD5-Deduplizierung |
-| `Evaluator` | Qualitätsbewertung (Cosine Similarity, BLEU, Jaccard) |
+### Analyze PDF Structure
 
-### Output-Struktur
-
-```
-ExtractionResult
-├── metadata           # Quelldatei, Titel, Seitenanzahl
-├── preamble           # Präambel (vor Inhaltsverzeichnis)
-├── chapters[]         # Hauptkapitel (I., II., ...)
-│   ├── sections[]     # Paragraphen (§1, §2, ...)
-│   │   ├── pages      # Seitennummern
-│   │   ├── ab_references  # Verknüpfte AB-Auszüge
-│   │   └── content    # Mit Bild-Platzhaltern und AB-Verweisen
-│   └── ab_excerpts[]  # Auszüge aus Allg. Bestimmungen
-│       └── follows_section  # Verknüpfung zur Hauptsektion
-├── appendices[]       # Anlagen (Anlage 1, 2, ...)
-│   └── sections[]     # Optional: Unter-§ in Anlagen
-├── tables[]           # Extrahierte Tabellen
-├── images[]           # Extrahierte Bilder
-└── statistics         # Zusammenfassung
-```
-
-## Qualitätssicherung
-
-### Tests ausführen
+Analyze a PDF to understand its structure before extraction:
 
 ```bash
-# Alle Tests (131 Tests)
-pytest tests/ -v
-
-# Nur Unit-Tests
-pytest tests/test_document_parser.py tests/test_evaluator.py -v
-
-# Integration-Tests
-pytest tests/test_integration.py -v
+python -m scripts.analyze document.pdf
+python -m scripts.analyze document.pdf --verbose
 ```
 
-### Qualitäts-Evaluation
+### Validate Extraction
+
+Validate the parsed structure:
 
 ```bash
-# Nach Extraktion
-python -m scripts.evaluate
-
-# Ausgabe:
-# Cosine Similarity: 99.61%
-# BLEU Score: 98.43%
-# Word Overlap: 99.66%
-# Overall Quality Score: 99.8%
+python -m scripts.validate document.pdf
+python -m scripts.validate document.pdf --expected-chapters 4
 ```
 
-## Patterns
+### Evaluate Quality
 
-Der Parser erkennt automatisch:
+Compare extracted content against the original PDF:
 
-- **Kapitel**: Römische Nummerierung (`I.`, `II.`, `III.`, `IV.`)
-- **Paragraphen**: `§ 1 Titel`, `§ 2 Titel`, ...
-- **Anlagen**: `Anlage 1`, `Anlage 2`, ... (mit optionalen Unter-§)
-- **AB-Auszüge**: Markiert durch "Textauszug aus den Allgemeinen Bestimmungen"
+```bash
+python -m scripts.evaluate --pdf document.pdf --json output/document_extracted.json
+python -m scripts.evaluate --pdf document.pdf --json output/document_extracted.json --output report.json
+```
 
-Die Erkennung ist **allgemeingültig** für deutsche Rechts- und Hochschuldokumente.
+## Quality Metrics
 
-## Projektstruktur
+The evaluation system provides comprehensive quality metrics:
+
+| Metric | Description |
+|--------|-------------|
+| Cosine Similarity | Content accuracy based on TF-IDF vectors |
+| BLEU Score | N-gram precision (1-4 grams) |
+| Word Overlap | Jaccard similarity of word sets |
+| Overall Score | Weighted combination (0-100%) |
+
+**Typical results for German legal documents:**
+- Cosine Similarity: 99%+
+- BLEU Score: 98%+
+- Overall Score: 95%+
+
+## Project Structure
 
 ```
 pdf-reader/
-├── main.py                 # CLI und Pipeline
+├── main.py                 # CLI and main pipeline
+├── pyproject.toml          # Project configuration
+├── requirements.txt        # Dependencies
 ├── src/
-│   ├── extractor/          # PDF-Text-Extraktion
-│   ├── parser/             # Dokumentstruktur-Parser
-│   ├── tables/             # Tabellen-Extraktion
-│   ├── images/             # Bild-Extraktion
-│   ├── evaluation/         # Qualitätsmetriken
-│   └── logging_config.py   # Logging-Konfiguration
-├── tests/                  # Unit- und Integrationstests
-├── scripts/                # Hilfs-Skripte (evaluate, validate)
-└── pdfs/                   # Test-PDFs
+│   ├── __init__.py         # Public API exports
+│   ├── logging_config.py   # Logging configuration
+│   ├── extractor/          # PDF text extraction
+│   │   ├── __init__.py
+│   │   └── pdf_extractor.py
+│   ├── parser/             # Document structure parsing
+│   │   ├── __init__.py
+│   │   └── document_parser.py
+│   ├── tables/             # Table extraction
+│   │   ├── __init__.py
+│   │   └── table_extractor.py
+│   ├── images/             # Image extraction
+│   │   ├── __init__.py
+│   │   └── image_extractor.py
+│   └── evaluation/         # Quality metrics
+│       ├── __init__.py
+│       └── evaluator.py
+├── scripts/                # Utility scripts
+│   ├── analyze.py          # PDF structure analysis
+│   ├── validate.py         # Structure validation
+│   └── evaluate.py         # Quality evaluation
+└── tests/                  # Test suite
+    ├── test_document_parser.py
+    ├── test_table_extractor.py
+    ├── test_image_extractor.py
+    ├── test_evaluator.py
+    └── test_integration.py
 ```
 
-## Lizenz
+## Architecture
+
+```
+PDF File
+    │
+    ▼
+┌─────────────────┐
+│  PDFExtractor   │  ──▶  Raw text with page markers
+└─────────────────┘
+    │
+    ▼
+┌─────────────────┐
+│ DocumentParser  │  ──▶  Hierarchical structure
+└─────────────────┘       (Chapters, Sections, Appendices)
+    │
+    ├──────────────────┐
+    ▼                  ▼
+┌─────────────────┐  ┌─────────────────┐
+│ TableExtractor  │  │ ImageExtractor  │
+└─────────────────┘  └─────────────────┘
+    │                  │
+    ▼                  ▼
+┌─────────────────────────────────────┐
+│         ExtractionResult            │
+│  (JSON / Markdown Export)           │
+└─────────────────────────────────────┘
+```
+
+## Testing
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_document_parser.py -v
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
+```
+
+## Configuration
+
+### ExtractionConfig Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `extract_images` | bool | True | Extract images from PDF |
+| `extract_tables` | bool | True | Extract tables from PDF |
+| `merge_cross_page_tables` | bool | True | Merge tables spanning multiple pages |
+| `min_image_width` | int | 100 | Minimum image width in pixels |
+| `min_image_height` | int | 100 | Minimum image height in pixels |
+| `output_format` | str | "both" | Output format: "json", "markdown", or "both" |
+
+## Extending for New Document Types
+
+To adapt the parser for different document structures:
+
+1. **Analyze the structure** using `scripts/analyze.py`
+2. **Modify patterns** in `src/parser/document_parser.py`:
+   - `CHAPTER_PATTERN` for chapter headers
+   - `SECTION_PATTERN` for section headers
+   - `APPENDIX_PATTERN` for appendices
+   - `AB_MARKER_PATTERN` for special excerpts
+
+3. **Validate** using `scripts/validate.py`
+4. **Evaluate quality** using `scripts/evaluate.py`
+
+## License
 
 MIT
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
