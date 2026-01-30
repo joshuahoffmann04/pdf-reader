@@ -3,8 +3,6 @@ Unit tests for the DocumentParser module.
 """
 
 import pytest
-import sys
-sys.path.insert(0, '.')
 
 from src.parser.document_parser import DocumentParser, Section, Chapter, Appendix
 

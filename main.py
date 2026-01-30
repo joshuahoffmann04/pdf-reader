@@ -16,14 +16,10 @@ import json
 import sys
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent))
-
 from src.extractor import PDFExtractor
 from src.parser import DocumentParser
 from src.tables import TableExtractor
 from src.images import ImageExtractor
-from src.evaluation import Evaluator
 
 
 def extract_pdf(

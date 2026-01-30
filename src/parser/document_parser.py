@@ -378,44 +378,6 @@ class DocumentParser:
 
         return sections, ab_excerpts
 
-    def _find_ab_ranges(self, text: str) -> list[tuple[int, int]]:
-        """Find text ranges that are AB excerpts."""
-        ranges = []
-
-        for match in self.AB_MARKER_PATTERN.finditer(text):
-            start = match.end()
-
-            # Find the end of the AB excerpt (next main section or next AB marker)
-            # AB excerpts typically end before the next non-AB section
-            # We'll mark the range as starting after the marker
-
-            # Look for next section that's NOT immediately after this marker
-            next_section = None
-            for sec_match in self.SECTION_PATTERN.finditer(text[start:]):
-                # Skip ToC entries
-                if self.TOC_PATTERN.search(sec_match.group(0)):
-                    continue
-                next_section = start + sec_match.start()
-                break
-
-            # The AB range goes from the marker to... we need a heuristic
-            # Usually AB excerpts are followed by the next main section of the document
-            # For now, mark a generous range
-
-            end = next_section + 5000 if next_section else start + 5000
-            end = min(end, len(text))
-
-            ranges.append((start, end))
-
-        return ranges
-
-    def _is_in_ab_range(self, position: int, ranges: list[tuple[int, int]]) -> bool:
-        """Check if a position is within an AB excerpt range."""
-        for start, end in ranges:
-            if start <= position <= end:
-                return True
-        return False
-
     def _parse_appendices(self, text: str) -> list[Appendix]:
         """Parse appendices with their sub-sections if any."""
         appendices = []

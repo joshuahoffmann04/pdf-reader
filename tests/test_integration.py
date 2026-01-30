@@ -3,10 +3,7 @@ Integration tests with the real PDF document.
 """
 
 import pytest
-import sys
 import os
-
-sys.path.insert(0, '.')
 
 from src.extractor.pdf_extractor import PDFExtractor
 from src.parser.document_parser import DocumentParser
