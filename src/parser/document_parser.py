@@ -157,7 +157,8 @@ class DocumentParser:
 
         # Step 2: Extract preamble (before ToC or start of content)
         preamble_end = self._find_preamble_end(text)
-        preamble = text[:preamble_end].strip() if preamble_end > 0 else ""
+        raw_preamble = text[:preamble_end].strip() if preamble_end > 0 else ""
+        preamble = self._clean_page_markers(raw_preamble)
 
         # Step 3: Get main content (after ToC)
         main_content = text[toc_end_pos:]

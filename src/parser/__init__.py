@@ -1,2 +1,3 @@
 from .document_parser import DocumentParser, ParsedDocument, Chapter, Section, Appendix
-from .section_parser import SectionParser
+
+__all__ = ["DocumentParser", "ParsedDocument", "Chapter", "Section", "Appendix"]
