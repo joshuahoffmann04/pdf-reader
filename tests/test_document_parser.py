@@ -267,6 +267,89 @@ Content.
         assert stats["appendices"] == 1
 
 
+class TestPageTracking:
+    """Tests for page tracking functionality."""
+
+    @pytest.fixture
+    def parser(self):
+        return DocumentParser()
+
+    def test_page_markers_extracted(self, parser):
+        """Test that page markers are correctly processed."""
+        text = """<<<PAGE:1>>>
+4
+I.
+Allgemeines
+<<<PAGE:2>>>
+§ 1
+Geltungsbereich
+Content on page 2.
+<<<PAGE:3>>>
+More content on page 3.
+
+§ 2
+Another Section
+Content.
+"""
+        doc = parser.parse(text)
+        sections = doc.get_all_main_sections()
+
+        # §1 should be on pages 2 and 3
+        s1 = next(s for s in sections if s.id == "§1")
+        assert 2 in s1.pages
+        assert 3 in s1.pages
+
+    def test_ab_references_linked(self, parser):
+        """Test that AB excerpts are linked to preceding main sections."""
+        text = """<<<PAGE:1>>>
+4
+I.
+Test Chapter
+§ 6
+Main Section
+Content.
+
+Textauszug aus den Allgemeinen Bestimmungen:
+§ 6
+AB Section
+AB content.
+
+§ 7
+Next Main Section
+More content.
+"""
+        doc = parser.parse(text)
+        chapter = doc.chapters[0]
+
+        # Main §6 should have ab_references
+        main_6 = next(s for s in chapter.sections if s.id == "§6")
+        assert "§6" in main_6.ab_references
+
+        # AB §6 should have follows_section
+        ab_6 = next(s for s in chapter.ab_excerpts if s.id == "§6")
+        assert ab_6.follows_section == "§6"
+
+    def test_page_markers_cleaned_from_content(self, parser):
+        """Test that page markers are removed from section content."""
+        text = """<<<PAGE:1>>>
+4
+I.
+Test
+§ 1
+Section
+<<<PAGE:2>>>
+Content here.
+<<<PAGE:3>>>
+More content.
+"""
+        doc = parser.parse(text)
+        sections = doc.get_all_main_sections()
+
+        s1 = sections[0]
+        assert "<<<PAGE" not in s1.content
+        assert "Content here" in s1.content
+
+
 class TestSection:
     """Tests for Section dataclass."""
 
@@ -284,6 +367,34 @@ class TestSection:
         assert section.number == 1
         assert section.title == "Geltungsbereich"
         assert not section.is_ab_excerpt
+
+    def test_section_with_pages_and_ab_refs(self):
+        """Test Section with pages and AB references."""
+        section = Section(
+            id="§6",
+            number=6,
+            title="Strukturvariante",
+            content="Content",
+            pages=[5, 6],
+            ab_references=["§6"]
+        )
+
+        assert section.pages == [5, 6]
+        assert section.ab_references == ["§6"]
+
+    def test_ab_section_with_follows(self):
+        """Test AB excerpt section with follows_section."""
+        section = Section(
+            id="§6",
+            number=6,
+            title="AB Section",
+            content="AB content",
+            is_ab_excerpt=True,
+            follows_section="§6"
+        )
+
+        assert section.is_ab_excerpt
+        assert section.follows_section == "§6"
 
 
 class TestChapter:

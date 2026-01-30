@@ -22,6 +22,47 @@ from src.tables import TableExtractor
 from src.images import ImageExtractor
 
 
+def _get_images_for_pages(images: list, pages: list[int]) -> list:
+    """Get images that appear on the given pages."""
+    return [img for img in images if img.page_number in pages]
+
+
+def _build_image_placeholder(img, output_dir: Path = None) -> str:
+    """Build a placeholder string for an image."""
+    if img.image_path:
+        # Use relative path from output directory
+        return f"[Bild: {img.image_path}]"
+    return f"[Bild: Seite {img.page_number}, Index {img.index}]"
+
+
+def _build_ab_reference(ab_section) -> str:
+    """Build a reference string for an AB excerpt."""
+    return f"[AB-Verweis: {ab_section.id} {ab_section.title}]"
+
+
+def _enrich_section_content(section, images: list, ab_excerpts: list, output_dir: Path = None) -> str:
+    """Enrich section content with image placeholders and AB references."""
+    content_parts = [section.content]
+
+    # Add image placeholders for images on this section's pages
+    section_images = _get_images_for_pages(images, section.pages)
+    if section_images:
+        content_parts.append("")
+        for img in section_images:
+            content_parts.append(_build_image_placeholder(img, output_dir))
+
+    # Add AB references for main sections
+    if section.ab_references and not section.is_ab_excerpt:
+        # Find the actual AB excerpt objects
+        for ab_id in section.ab_references:
+            matching_ab = [ab for ab in ab_excerpts if ab.id == ab_id]
+            if matching_ab:
+                content_parts.append("")
+                content_parts.append(_build_ab_reference(matching_ab[0]))
+
+    return "\n".join(content_parts)
+
+
 def extract_pdf(
     pdf_path: str,
     output_dir: str = None,
@@ -57,11 +98,11 @@ def extract_pdf(
     extractor = PDFExtractor(preserve_layout=True)
     pdf_doc = extractor.extract(pdf_path)
 
-    # Step 2: Parse document structure
+    # Step 2: Parse document structure (with page markers for tracking)
     print("  [2/4] Parsing document structure...")
     parser = DocumentParser()
     parsed_doc = parser.parse(
-        pdf_doc.get_full_text(),
+        pdf_doc.get_full_text(include_page_markers=True),
         title=pdf_doc.title,
         metadata=pdf_doc.metadata
     )
@@ -110,7 +151,10 @@ def extract_pdf(
         }
     }
 
-    # Add chapters with their sections
+    # Collect all AB excerpts for reference lookup
+    all_ab_excerpts = parsed_doc.get_all_ab_excerpts()
+
+    # Add chapters with their sections (enriched with images and AB references)
     for chapter in parsed_doc.chapters:
         chapter_data = {
             "id": chapter.id,
@@ -121,7 +165,9 @@ def extract_pdf(
                     "id": s.id,
                     "number": s.number,
                     "title": s.title,
-                    "content": s.content
+                    "content": _enrich_section_content(s, images, all_ab_excerpts, output_dir),
+                    "pages": s.pages,
+                    "ab_references": s.ab_references
                 }
                 for s in chapter.sections
             ],
@@ -130,26 +176,38 @@ def extract_pdf(
                     "id": s.id,
                     "number": s.number,
                     "title": s.title,
-                    "content": s.content
+                    "content": s.content,
+                    "pages": s.pages,
+                    "follows_section": s.follows_section
                 }
                 for s in chapter.ab_excerpts
             ]
         }
         result["chapters"].append(chapter_data)
 
-    # Add appendices with their sub-sections
+    # Add appendices with their sub-sections (enriched with images)
     for appendix in parsed_doc.appendices:
+        # Enrich appendix content with images
+        appendix_images = _get_images_for_pages(images, appendix.pages)
+        appendix_content = appendix.content
+        if appendix_images:
+            appendix_content += "\n\n" + "\n".join(
+                _build_image_placeholder(img, output_dir) for img in appendix_images
+            )
+
         appendix_data = {
             "id": appendix.id,
             "number": appendix.number,
             "title": appendix.title,
-            "content": appendix.content,
+            "content": appendix_content,
+            "pages": appendix.pages,
             "sections": [
                 {
                     "id": s.id,
                     "number": s.number,
                     "title": s.title,
-                    "content": s.content
+                    "content": _enrich_section_content(s, images, [], output_dir),
+                    "pages": s.pages
                 }
                 for s in appendix.sections
             ]

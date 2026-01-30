@@ -27,8 +27,22 @@ class PDFDocument:
     pages: list[PageContent] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
 
-    def get_full_text(self) -> str:
-        """Get concatenated text from all pages."""
+    # Page marker format used for tracking page positions in text
+    PAGE_MARKER = "<<<PAGE:{}>>>"
+
+    def get_full_text(self, include_page_markers: bool = False) -> str:
+        """Get concatenated text from all pages.
+
+        Args:
+            include_page_markers: If True, insert page markers (<<<PAGE:N>>>)
+                                  for tracking page positions in parsed content.
+        """
+        if include_page_markers:
+            parts = []
+            for page in self.pages:
+                parts.append(self.PAGE_MARKER.format(page.page_number))
+                parts.append(page.text)
+            return "\n".join(parts)
         return "\n\n".join(page.text for page in self.pages)
 
 

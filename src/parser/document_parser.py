@@ -23,6 +23,9 @@ class Section:
     title: str
     content: str
     is_ab_excerpt: bool = False  # True if this is from "Allgemeine Bestimmungen"
+    pages: list[int] = field(default_factory=list)  # Page numbers where section appears
+    ab_references: list[str] = field(default_factory=list)  # AB excerpt IDs that follow this section
+    follows_section: Optional[str] = None  # For AB excerpts: which main § this follows
 
 
 @dataclass
@@ -43,6 +46,7 @@ class Appendix:
     title: str
     content: str  # Content without sub-sections
     sections: list[Section] = field(default_factory=list)  # Sub-§ if any
+    pages: list[int] = field(default_factory=list)  # Page numbers where appendix appears
 
 
 @dataclass
@@ -126,6 +130,9 @@ class DocumentParser:
 
     # Pattern to detect end of ToC (usually starts with page number + chapter)
     TOC_END_PATTERN = re.compile(r'^\d+\s*\n\s*(I\.)', re.MULTILINE)
+
+    # Pattern for page markers inserted by PDFExtractor
+    PAGE_MARKER_PATTERN = re.compile(r'<<<PAGE:(\d+)>>>')
 
     def __init__(self):
         """Initialize the document parser."""
@@ -264,6 +271,9 @@ class DocumentParser:
                 "title": match.group(2).strip()
             })
 
+        # Build page index for efficient page lookups
+        page_index = self._build_page_index(text)
+
         # Parse each chapter
         for i, marker in enumerate(chapter_markers):
             # Determine chapter content boundaries
@@ -272,8 +282,14 @@ class DocumentParser:
 
             chapter_content = text[start:end]
 
+            # Build relative page index for chapter content
+            chapter_page_index = [
+                (pos - start, page) for pos, page in page_index
+                if start <= pos < end
+            ]
+
             # Parse sections within this chapter
-            sections, ab_excerpts = self._parse_sections_in_chapter(chapter_content)
+            sections, ab_excerpts = self._parse_sections_in_chapter(chapter_content, chapter_page_index)
 
             chapter = Chapter(
                 id=marker["numeral"],
@@ -286,15 +302,59 @@ class DocumentParser:
 
         return chapters
 
-    def _parse_sections_in_chapter(self, text: str) -> tuple[list[Section], list[Section]]:
+    def _build_page_index(self, text: str) -> list[tuple[int, int]]:
+        """Build index of (position, page_number) from page markers.
+
+        Returns sorted list of (position, page) tuples for efficient lookup.
+        """
+        return [(m.start(), int(m.group(1))) for m in self.PAGE_MARKER_PATTERN.finditer(text)]
+
+    def _get_pages_for_range(self, start: int, end: int, page_index: list[tuple[int, int]]) -> list[int]:
+        """Get page numbers that overlap with text range [start, end].
+
+        Uses page_index from _build_page_index for efficient lookup.
+        """
+        if not page_index:
+            return []
+
+        pages = set()
+
+        # Find starting page (last marker before or at start position)
+        start_page = page_index[0][1]  # Default to first page
+        for pos, page in page_index:
+            if pos <= start:
+                start_page = page
+            else:
+                break
+        pages.add(start_page)
+
+        # Add all pages with markers within the range
+        for pos, page in page_index:
+            if start <= pos < end:
+                pages.add(page)
+
+        return sorted(pages)
+
+    def _clean_page_markers(self, text: str) -> str:
+        """Remove page markers from text for clean content."""
+        return self.PAGE_MARKER_PATTERN.sub('', text).strip()
+
+    def _parse_sections_in_chapter(self, text: str, page_index: list[tuple[int, int]] = None) -> tuple[list[Section], list[Section]]:
         """Parse sections within a chapter, separating main sections from AB excerpts.
 
         Strategy: Main sections follow a monotonically increasing sequence.
         When a § number "goes backward" (e.g., after §17 comes §6), it's an AB excerpt.
         Also check for "Textauszug" markers preceding a section.
+
+        AB excerpts are linked to the preceding main section via follows_section
+        and ab_references fields.
         """
         sections = []
         ab_excerpts = []
+
+        # Build page index if not provided
+        if page_index is None:
+            page_index = self._build_page_index(text)
 
         # Find all section markers
         section_markers = []
@@ -328,27 +388,30 @@ class DocumentParser:
         ab_marker_positions = [m.end() for m in self.AB_MARKER_PATTERN.finditer(text)]
 
         # Identify main sections vs AB excerpts
-        # Strategy:
-        # 1. A § is an AB excerpt if there's an AB marker DIRECTLY before it (no other § in between)
-        # 2. Otherwise, use monotonic sequence: if number goes backward, it's an AB excerpt
-        max_main_number = 0  # Track the highest main section number seen
+        max_main_number = 0
+        last_main_section = None  # Track last main section for AB linking
 
         for i, marker in enumerate(section_markers):
             # Determine section content boundaries
-            start = marker["end"]
-            end = section_markers[i + 1]["position"] if i + 1 < len(section_markers) else len(text)
-            content = text[start:end].strip()
+            section_start = marker["position"]
+            content_start = marker["end"]
+            section_end = section_markers[i + 1]["position"] if i + 1 < len(section_markers) else len(text)
+
+            # Get pages using efficient index lookup
+            pages = self._get_pages_for_range(section_start, section_end, page_index)
+
+            # Extract clean content (after header)
+            raw_content = text[content_start:section_end]
+            content = self._clean_page_markers(raw_content)
 
             # Determine if this is a main section or AB excerpt
             is_ab = False
 
             # Check if there's an AB marker directly before this section
-            # "Directly" means: AB marker exists between previous § and this §
             prev_section_end = section_markers[i - 1]["end"] if i > 0 else 0
             between_text_start = prev_section_end
             between_text_end = marker["position"]
 
-            # Check if any AB marker falls in this range
             has_direct_ab_marker = any(
                 between_text_start <= ab_pos <= between_text_end
                 for ab_pos in ab_marker_positions
@@ -356,7 +419,6 @@ class DocumentParser:
 
             if has_direct_ab_marker:
                 is_ab = True
-            # If number goes backward, it's likely an AB excerpt
             elif marker["number"] < max_main_number:
                 is_ab = True
 
@@ -368,12 +430,18 @@ class DocumentParser:
                 number=marker["number"],
                 title=marker["title"],
                 content=content,
-                is_ab_excerpt=is_ab
+                is_ab_excerpt=is_ab,
+                pages=pages,
+                follows_section=last_main_section.id if is_ab and last_main_section else None
             )
 
             if is_ab:
+                # Link AB excerpt to the preceding main section
+                if last_main_section:
+                    last_main_section.ab_references.append(section.id)
                 ab_excerpts.append(section)
             else:
+                last_main_section = section
                 sections.append(section)
 
         return sections, ab_excerpts
@@ -381,6 +449,9 @@ class DocumentParser:
     def _parse_appendices(self, text: str) -> list[Appendix]:
         """Parse appendices with their sub-sections if any."""
         appendices = []
+
+        # Build page index for this text
+        page_index = self._build_page_index(text)
 
         # Find all appendix markers
         appendix_markers = []
@@ -412,36 +483,53 @@ class DocumentParser:
 
         # Parse each appendix
         for i, marker in enumerate(unique_markers):
-            start = marker["end"]
-            end = unique_markers[i + 1]["position"] if i + 1 < len(unique_markers) else len(text)
+            appendix_start = marker["position"]
+            content_start = marker["end"]
+            appendix_end = unique_markers[i + 1]["position"] if i + 1 < len(unique_markers) else len(text)
 
-            appendix_content = text[start:end]
+            appendix_content = text[content_start:appendix_end]
+
+            # Get pages using index lookup
+            pages = self._get_pages_for_range(appendix_start, appendix_end, page_index)
+
+            # Build relative page index for appendix content
+            appendix_page_index = [
+                (pos - content_start, page) for pos, page in page_index
+                if content_start <= pos < appendix_end
+            ]
 
             # Parse sub-sections within this appendix
-            sub_sections = self._parse_appendix_sections(appendix_content)
+            sub_sections = self._parse_appendix_sections(appendix_content, appendix_page_index)
 
             # Content without sections (or full content if no sections)
             if sub_sections:
                 # Content before first section
                 first_section_pos = self._find_first_section_pos(appendix_content)
-                content = appendix_content[:first_section_pos].strip() if first_section_pos else ""
+                raw_content = appendix_content[:first_section_pos] if first_section_pos else ""
             else:
-                content = appendix_content.strip()
+                raw_content = appendix_content
+
+            content = self._clean_page_markers(raw_content)
 
             appendix = Appendix(
                 id=f"Anlage {marker['number']}",
                 number=marker["number"],
                 title=marker["title"],
                 content=content,
-                sections=sub_sections
+                sections=sub_sections,
+                pages=pages
             )
             appendices.append(appendix)
 
         return appendices
 
-    def _parse_appendix_sections(self, text: str) -> list[Section]:
+    def _parse_appendix_sections(self, text: str, page_index: list[tuple[int, int]] = None) -> list[Section]:
         """Parse sections within an appendix."""
         sections = []
+
+        # Build page index if not provided
+        if page_index is None:
+            page_index = self._build_page_index(text)
 
         section_markers = []
         for match in self.SECTION_PATTERN.finditer(text):
@@ -471,17 +559,23 @@ class DocumentParser:
             })
 
         for i, marker in enumerate(section_markers):
-            start = marker["end"]
-            end = section_markers[i + 1]["position"] if i + 1 < len(section_markers) else len(text)
+            section_start = marker["position"]
+            content_start = marker["end"]
+            section_end = section_markers[i + 1]["position"] if i + 1 < len(section_markers) else len(text)
 
-            content = text[start:end].strip()
+            # Get pages using efficient index lookup
+            pages = self._get_pages_for_range(section_start, section_end, page_index)
+
+            raw_content = text[content_start:section_end]
+            content = self._clean_page_markers(raw_content)
 
             section = Section(
                 id=f"§{marker['number_str']}",
                 number=marker["number"],
                 title=marker["title"],
                 content=content,
-                is_ab_excerpt=False
+                is_ab_excerpt=False,
+                pages=pages
             )
             sections.append(section)
 
