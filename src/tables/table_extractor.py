@@ -126,15 +126,20 @@ class TableExtractor:
         tables = []
 
         # Strategy 1: Line-based extraction (for tables with borders)
-        line_tables = self._extract_with_strategy(page, page_number, "lines", "lines")
+        line_tables_raw = self._extract_with_strategy(page, page_number, "lines", "lines")
 
         # Strategy 2: Text-based extraction (for borderless tables)
-        # Only use if no line-based tables found
+        # ONLY use if pdfplumber found NO line-based structures at all.
+        # If line-based structures exist (even if they're false positives),
+        # don't fall back to text-based (which produces more false positives).
         text_tables = []
-        if not line_tables:
+        if not line_tables_raw:
             text_tables = self._extract_with_strategy(page, page_number, "text", "text")
-            # Filter text-based tables more strictly to avoid false positives
+            # Filter text-based tables strictly
             text_tables = [t for t in text_tables if self._is_likely_real_table(t)]
+
+        # Filter line-based tables after checking for text fallback
+        line_tables = [t for t in line_tables_raw if self._is_likely_real_table(t)]
 
         # Use line-based if found, otherwise text-based
         if line_tables:
@@ -152,7 +157,20 @@ class TableExtractor:
         return cleaned_tables
 
     def _is_likely_real_table(self, table: ExtractedTable) -> bool:
-        """Heuristic to detect if extraction result is a real table or just text blocks."""
+        """Heuristic to detect if extraction result is a real table or just text blocks.
+
+        A table is considered a "false positive" (not a real table) if:
+        - Almost all rows have only 1 non-empty cell (text formatted as table)
+        - Cells contain very long paragraph text
+        - Column structure is inconsistent (typical of text with line breaks)
+        - Cells look like sentence fragments (text split across columns)
+
+        Real tables have:
+        - Consistent column structure across rows
+        - Multiple columns with data in each row
+        - Relatively short cell content (labels, numbers, short descriptions)
+        - Cells that are self-contained (not mid-word splits)
+        """
         if not table.rows:
             return False
 
@@ -160,7 +178,7 @@ class TableExtractor:
         if len(table.rows) < 2:
             return False
 
-        # Count columns with actual content
+        # Count columns with actual content per row
         col_counts = []
         for row in table.rows:
             non_empty = sum(1 for cell in row if cell and cell.strip())
@@ -169,30 +187,66 @@ class TableExtractor:
         # Average columns with content
         avg_cols = sum(col_counts) / len(col_counts) if col_counts else 0
 
-        # Real tables typically have multiple columns with content
-        if avg_cols < 2:
+        # Key heuristic: Real tables have avg 2+ columns per row
+        if avg_cols < 1.5:
             return False
 
-        # Check consistency: real tables have similar column usage across rows
-        if col_counts:
-            min_cols = min(col_counts)
-            max_cols = max(col_counts)
-            # If column usage varies wildly, it's probably text, not a table
-            if max_cols > 0 and min_cols / max_cols < 0.3:
+        # Check consistency: real tables have similar column counts
+        # Filter out rows with 0 columns for consistency check
+        non_zero_counts = [c for c in col_counts if c > 0]
+        if non_zero_counts:
+            min_cols = min(non_zero_counts)
+            max_cols = max(non_zero_counts)
+            # Allow some variation, but not extreme
+            if max_cols > 0 and min_cols / max_cols < 0.25:
                 return False
 
-        # Check for long text cells (tables rarely have very long cells)
-        long_cells = 0
+        # Check for very long text cells (paragraph text)
+        very_long_cells = 0
         total_cells = 0
         for row in table.rows:
             for cell in row:
-                if cell:
+                if cell and cell.strip():
                     total_cells += 1
-                    if len(cell) > 100:  # Long text
-                        long_cells += 1
+                    # Very long single cell = likely paragraph text
+                    if len(cell) > 150:
+                        very_long_cells += 1
 
-        # If more than 30% of cells are long text, it's probably not a table
-        if total_cells > 0 and long_cells / total_cells > 0.3:
+        # If more than 20% of cells are very long, probably not a table
+        if total_cells > 0 and very_long_cells / total_cells > 0.2:
+            return False
+
+        # Check for sentence fragments (text split across columns)
+        # When pdfplumber extracts text as tables, cells often end mid-word
+        # Key sign: cell ends with incomplete word (hyphen at end or abrupt end)
+        # AND next cell continues the word (starts with lowercase letter)
+        fragment_indicators = 0
+        for row in table.rows:
+            cells = [c.strip() for c in row if c and c.strip()]
+            if len(cells) >= 2:
+                for i in range(len(cells) - 1):
+                    cell = cells[i]
+                    next_cell = cells[i + 1]
+                    if not cell or not next_cell:
+                        continue
+
+                    # Strong indicator: cell ends with hyphen (word split)
+                    if cell[-1] == '-':
+                        fragment_indicators += 2  # Strong signal
+
+                    # Weaker indicator: cell ends mid-word (letter, no punct)
+                    # AND next cell starts with lowercase
+                    # This catches "versagen, wenn die An" + "meldefrist nicht einge"
+                    last_char = cell[-1]
+                    if (last_char.isalpha() and
+                        next_cell[0].islower() and
+                        last_char not in '.,:;!?)'
+                    ):
+                        fragment_indicators += 1
+
+        # If more than 40% of row transitions look like fragments, not a table
+        total_transitions = sum(max(0, c - 1) for c in col_counts if c > 1)
+        if total_transitions > 0 and fragment_indicators / total_transitions > 0.4:
             return False
 
         return True
