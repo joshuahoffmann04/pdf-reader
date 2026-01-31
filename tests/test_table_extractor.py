@@ -377,3 +377,206 @@ class TestTableExtractorIntegration:
         main_table = tables[0]
         assert main_table.end_page is not None
         assert main_table.end_page > main_table.page_number
+
+
+class TestColumnMarkerDetection:
+    """Tests for column marker detection and handling."""
+
+    @pytest.fixture
+    def extractor(self):
+        return TableExtractor()
+
+    def test_is_column_marker_row_valid(self, extractor):
+        """Test detecting column marker rows like (a), (b), (c), (d)."""
+        row = ["(a)", "(b)", "(c)", "(d)"]
+        assert extractor._is_column_marker_row(row) is True
+
+    def test_is_column_marker_row_with_numbers(self, extractor):
+        """Test detecting numeric column markers like (1), (2), (3)."""
+        row = ["(1)", "(2)", "(3)"]
+        assert extractor._is_column_marker_row(row) is True
+
+    def test_is_column_marker_row_with_whitespace(self, extractor):
+        """Test column markers with whitespace."""
+        row = ["  (a)  ", "(b)", " (c) "]
+        assert extractor._is_column_marker_row(row) is True
+
+    def test_is_column_marker_row_mixed_empty(self, extractor):
+        """Test column markers with some empty cells."""
+        row = ["(a)", "(b)", "", "(d)"]
+        # Should work - only checks non-empty cells
+        assert extractor._is_column_marker_row(row) is True
+
+    def test_is_column_marker_row_not_markers(self, extractor):
+        """Test that real headers are not detected as markers."""
+        row = ["Name", "Age", "City"]
+        assert extractor._is_column_marker_row(row) is False
+
+    def test_is_column_marker_row_single_element(self, extractor):
+        """Test single element is not a marker row."""
+        row = ["(a)", "", ""]
+        # Not enough non-empty cells
+        assert extractor._is_column_marker_row(row) is False
+
+
+class TestABTextFiltering:
+    """Tests for AB text filtering from tables."""
+
+    @pytest.fixture
+    def extractor(self):
+        return TableExtractor()
+
+    def test_filter_ab_text_rows(self, extractor):
+        """Test that rows with AB text are filtered."""
+        rows = [
+            ["Header1", "Header2"],
+            ["Textauszug aus den Allgemeinen Bestimmungen: § 28", ""],
+            ["Normal", "Data"],
+        ]
+        filtered = extractor._filter_ab_text_rows(rows)
+
+        assert len(filtered) == 2
+        assert ["Header1", "Header2"] in filtered
+        assert ["Normal", "Data"] in filtered
+
+    def test_filter_ab_text_keeps_normal(self, extractor):
+        """Test that normal rows are kept."""
+        rows = [
+            ["Data1", "Data2"],
+            ["More", "Values"],
+        ]
+        filtered = extractor._filter_ab_text_rows(rows)
+        assert len(filtered) == 2
+
+
+class TestParagraphRowFiltering:
+    """Tests for paragraph/long text row filtering."""
+
+    @pytest.fixture
+    def extractor(self):
+        return TableExtractor()
+
+    def test_filter_paragraph_rows(self, extractor):
+        """Test that long paragraph rows are filtered."""
+        long_text = "This is a very long paragraph that contains multiple sentences and is definitely not table data. " * 5
+        rows = [
+            ["Header1", "Header2", "Header3", "Header4"],
+            ["Short", "Data", "Here", "OK"],
+            [long_text, "", "", ""],  # Long text with empty cells
+        ]
+        filtered = extractor._filter_paragraph_rows(rows)
+
+        assert len(filtered) == 2
+        assert ["Short", "Data", "Here", "OK"] in filtered
+
+    def test_filter_paragraph_keeps_short(self, extractor):
+        """Test that short rows are kept."""
+        rows = [
+            ["A", "B", "C"],
+            ["1", "2", "3"],
+        ]
+        filtered = extractor._filter_paragraph_rows(rows)
+        assert len(filtered) == 2
+
+
+class TestHeaderDetectionAdvanced:
+    """Advanced tests for header detection."""
+
+    @pytest.fixture
+    def extractor(self):
+        return TableExtractor()
+
+    def test_detect_headers_skips_column_markers(self, extractor):
+        """Test that column markers are skipped when detecting headers."""
+        rows = [
+            ["(a)", "(b)", "(c)", "(d)"],
+            ["Punkte", "Bewertung", "Note", "Definition"],
+            ["15", "1.0", "sehr gut", "excellent"],
+        ]
+        headers, data = extractor._detect_headers(rows)
+
+        assert headers == ["Punkte", "Bewertung", "Note", "Definition"]
+        assert len(data) == 1
+        assert data[0] == ["15", "1.0", "sehr gut", "excellent"]
+
+    def test_detect_headers_no_markers(self, extractor):
+        """Test header detection without column markers."""
+        rows = [
+            ["Name", "Age", "City"],
+            ["Alice", "30", "Berlin"],
+        ]
+        headers, data = extractor._detect_headers(rows)
+
+        assert headers == ["Name", "Age", "City"]
+        assert len(data) == 1
+
+    def test_looks_like_header_rejects_data_patterns(self, extractor):
+        """Test that data-like patterns are not detected as headers."""
+        # Row with space-separated numbers (like grades "15 14 13")
+        row = ["9 8 7", "2,7 3,0 3,3", "befriedigend", "eine Leistung"]
+        assert extractor._looks_like_header(row) is False
+
+    def test_looks_like_header_accepts_real_headers(self, extractor):
+        """Test that real headers are accepted."""
+        row = ["Punkte", "Bewertung im traditionellen Notensystem", "Note in Worten", "Definition"]
+        assert extractor._looks_like_header(row) is True
+
+    def test_looks_like_header_rejects_comma_decimals(self, extractor):
+        """Test that comma-decimal patterns are rejected."""
+        row = ["0,7 1,0 1,3", "2,0 2,3", "some text", "other"]
+        # 2/4 cells look like data (comma-decimals)
+        assert extractor._looks_like_header(row) is False
+
+
+class TestGradeTableExtraction:
+    """Integration tests for grade table extraction (the problematic table)."""
+
+    @pytest.fixture
+    def pdf_path(self):
+        import os
+        path = "pdfs/Pruefungsordnung_BSc_Inf_2024.pdf"
+        if not os.path.exists(path):
+            pytest.skip(f"Test PDF not found: {path}")
+        return path
+
+    def test_grade_table_headers(self, pdf_path):
+        """Test that grade table has correct headers (not column markers)."""
+        extractor = TableExtractor()
+        tables = extractor.extract_from_pdf(pdf_path, pages=[22, 23], merge_cross_page=True)
+
+        # Find the 4-column grade table
+        grade_table = None
+        for table in tables:
+            if table.headers and len(table.headers) == 4:
+                if "Punkte" in table.headers[0]:
+                    grade_table = table
+                    break
+
+        assert grade_table is not None, "Grade table not found"
+
+        # Headers should NOT be column markers
+        assert grade_table.headers[0] != "(a)"
+        assert "Punkte" in grade_table.headers[0]
+
+    def test_grade_table_complete_data(self, pdf_path):
+        """Test that all grade rows are extracted."""
+        extractor = TableExtractor()
+        tables = extractor.extract_from_pdf(pdf_path, pages=[22, 23], merge_cross_page=True)
+
+        # Find the grade table
+        grade_table = None
+        for table in tables:
+            if table.headers and len(table.headers) == 4:
+                if "Punkte" in table.headers[0]:
+                    grade_table = table
+                    break
+
+        assert grade_table is not None
+
+        # Should have all 5 grade rows
+        assert len(grade_table.rows) >= 5
+
+        # Check for "befriedigend" row (was previously missing)
+        row_texts = [" ".join(row) for row in grade_table.rows]
+        assert any("befriedigend" in text for text in row_texts), \
+            "befriedigend row is missing from grade table"

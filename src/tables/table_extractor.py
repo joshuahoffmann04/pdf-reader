@@ -67,11 +67,18 @@ class TableExtractor:
     - Automatic table detection with multiple strategies
     - Multi-page table merging with header deduplication
     - Page number filtering
+    - Column marker detection (a), (b), (c), (d)
     - Fallback to text-based extraction for borderless tables
     """
 
     # Pattern to detect standalone page numbers
     PAGE_NUMBER_PATTERN = re.compile(r'^\s*\d{1,3}\s*$')
+
+    # Pattern to detect column markers like (a), (b), (1), (2)
+    COLUMN_MARKER_PATTERN = re.compile(r'^\s*\([a-z0-9]\)\s*$', re.IGNORECASE)
+
+    # Pattern to detect AB excerpt text
+    AB_TEXT_PATTERN = re.compile(r'Textauszug\s+aus\s+den\s+Allgemeinen', re.IGNORECASE)
 
     def __init__(self, snap_tolerance: int = 3, join_tolerance: int = 3):
         """Initialize the table extractor."""
@@ -240,14 +247,20 @@ class TableExtractor:
         # Filter rows that are just page numbers
         cleaned_rows = self._filter_page_number_rows(cleaned_rows)
 
+        # Filter rows with AB excerpt text
+        cleaned_rows = self._filter_ab_text_rows(cleaned_rows)
+
+        # Filter rows that are long paragraph text (not table data)
+        cleaned_rows = self._filter_paragraph_rows(cleaned_rows)
+
         if not cleaned_rows:
             return None
 
-        # Detect headers
-        headers = []
-        if self._looks_like_header(cleaned_rows[0]):
-            headers = cleaned_rows[0]
-            cleaned_rows = cleaned_rows[1:]
+        # Detect headers (with column marker handling)
+        headers, cleaned_rows = self._detect_headers(cleaned_rows)
+
+        if not cleaned_rows:
+            return None
 
         return ExtractedTable(
             page_number=table.page_number,
@@ -268,8 +281,86 @@ class TableExtractor:
                 filtered.append(row)
         return filtered
 
+    def _filter_ab_text_rows(self, rows: list[list[str]]) -> list[list[str]]:
+        """Remove rows that contain AB excerpt text markers."""
+        filtered = []
+        for row in rows:
+            has_ab_text = any(
+                cell and self.AB_TEXT_PATTERN.search(cell)
+                for cell in row
+            )
+            if not has_ab_text:
+                filtered.append(row)
+        return filtered
+
+    def _filter_paragraph_rows(self, rows: list[list[str]]) -> list[list[str]]:
+        """Remove rows that are long paragraph text, not table data.
+
+        Tables rarely have cells with very long text. If a row has one cell
+        with very long text and other cells are mostly empty, it's likely
+        paragraph text captured by mistake.
+        """
+        filtered = []
+        for row in rows:
+            non_empty = [c for c in row if c.strip()]
+            if not non_empty:
+                continue
+
+            # If there's a single cell with very long text (>300 chars), skip
+            max_cell_len = max(len(c) for c in row if c)
+            if max_cell_len > 300:
+                # Check if most other cells are empty
+                empty_count = sum(1 for c in row if not c.strip())
+                if empty_count >= len(row) / 2:
+                    continue  # Skip this row - it's paragraph text
+
+            filtered.append(row)
+        return filtered
+
+    def _is_column_marker_row(self, row: list[str]) -> bool:
+        """Check if row contains only column markers like (a), (b), (c), (d)."""
+        non_empty = [c for c in row if c.strip()]
+        if len(non_empty) < 2:
+            return False
+
+        # All non-empty cells must match the column marker pattern
+        return all(self.COLUMN_MARKER_PATTERN.match(c) for c in non_empty)
+
+    def _detect_headers(self, rows: list[list[str]]) -> tuple[list[str], list[list[str]]]:
+        """Detect headers, handling column markers and multi-row headers.
+
+        Returns:
+            Tuple of (headers, remaining_rows)
+        """
+        if not rows:
+            return [], []
+
+        start_idx = 0
+
+        # Check if first row is column markers like (a), (b), (c), (d)
+        if self._is_column_marker_row(rows[0]):
+            start_idx = 1
+
+        if start_idx >= len(rows):
+            return [], rows
+
+        # Check if the row at start_idx looks like a header
+        if self._looks_like_header(rows[start_idx]):
+            headers = rows[start_idx]
+            remaining = rows[start_idx + 1:]
+            return headers, remaining
+
+        # No headers detected
+        return [], rows[start_idx:]
+
     def _looks_like_header(self, row: list[str]) -> bool:
-        """Heuristic: is this row a header?"""
+        """Heuristic: is this row a header?
+
+        A row is likely a header if:
+        - It has mostly non-empty cells
+        - Cells contain text labels (not numeric data)
+        - Cells don't look like data patterns (multiple numbers, grades, etc.)
+        """
         if not row:
             return False
 
@@ -277,16 +368,32 @@ class TableExtractor:
         if len(non_empty) < len(row) / 2:
             return False
 
-        # Headers typically aren't purely numeric
-        numeric = 0
+        # Check for data-like patterns that indicate this is NOT a header
+        data_like = 0
         for cell in non_empty:
+            # Multiple space-separated numbers (like "15 14 13" or "9 8 7")
+            if re.match(r'^[\d\s]+$', cell.strip()) and len(cell.split()) > 1:
+                data_like += 1
+                continue
+
+            # Multiple comma-decimal numbers (like "0,7 1,0 1,3")
+            if re.match(r'^[\d,\s\.]+$', cell.strip()) and ',' in cell:
+                data_like += 1
+                continue
+
+            # Single number
             try:
                 float(cell.replace(",", ".").replace(" ", ""))
-                numeric += 1
+                data_like += 1
+                continue
             except ValueError:
                 pass
 
-        return numeric <= len(non_empty) / 2
+        # If half or more cells look like data, this is not a header
+        if data_like >= len(non_empty) / 2:
+            return False
+
+        return True
 
     def _merge_cross_page_tables(self, tables: list[ExtractedTable]) -> list[ExtractedTable]:
         """Merge tables that span multiple pages."""

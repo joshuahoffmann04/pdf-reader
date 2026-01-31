@@ -349,6 +349,9 @@ class DocumentParser:
 
         AB excerpts are linked to the preceding main section via follows_section
         and ab_references fields.
+
+        Content boundaries: Main section content stops at the AB marker if one exists
+        before the next section.
         """
         sections = []
         ab_excerpts = []
@@ -385,8 +388,10 @@ class DocumentParser:
                 "title": title,
             })
 
-        # Find all AB marker positions
-        ab_marker_positions = [m.end() for m in self.AB_MARKER_PATTERN.finditer(text)]
+        # Find all AB marker positions (start positions for content boundary detection)
+        ab_marker_matches = list(self.AB_MARKER_PATTERN.finditer(text))
+        ab_marker_starts = [m.start() for m in ab_marker_matches]
+        ab_marker_ends = [m.end() for m in ab_marker_matches]
 
         # Identify main sections vs AB excerpts
         max_main_number = 0
@@ -396,17 +401,7 @@ class DocumentParser:
             # Determine section content boundaries
             section_start = marker["position"]
             content_start = marker["end"]
-            section_end = section_markers[i + 1]["position"] if i + 1 < len(section_markers) else len(text)
-
-            # Get pages using efficient index lookup
-            pages = self._get_pages_for_range(section_start, section_end, page_index)
-
-            # Extract clean content (after header)
-            raw_content = text[content_start:section_end]
-            content = self._clean_page_markers(raw_content)
-
-            # Determine if this is a main section or AB excerpt
-            is_ab = False
+            default_section_end = section_markers[i + 1]["position"] if i + 1 < len(section_markers) else len(text)
 
             # Check if there's an AB marker directly before this section
             prev_section_end = section_markers[i - 1]["end"] if i > 0 else 0
@@ -414,17 +409,36 @@ class DocumentParser:
             between_text_end = marker["position"]
 
             has_direct_ab_marker = any(
-                between_text_start <= ab_pos <= between_text_end
-                for ab_pos in ab_marker_positions
+                between_text_start <= ab_end <= between_text_end
+                for ab_end in ab_marker_ends
             )
 
+            # Determine if this is a main section or AB excerpt
+            is_ab = False
             if has_direct_ab_marker:
                 is_ab = True
             elif marker["number"] < max_main_number:
                 is_ab = True
 
+            # For main sections: check if content should stop at an AB marker
+            section_end = default_section_end
+            if not is_ab:
+                # Find if there's an AB marker between content_start and default_section_end
+                for ab_start in ab_marker_starts:
+                    if content_start < ab_start < default_section_end:
+                        # Content ends at the AB marker (trim any trailing whitespace/newlines)
+                        section_end = ab_start
+                        break
+
             if not is_ab:
                 max_main_number = max(max_main_number, marker["number"])
+
+            # Get pages using efficient index lookup
+            pages = self._get_pages_for_range(section_start, section_end, page_index)
+
+            # Extract clean content (after header)
+            raw_content = text[content_start:section_end]
+            content = self._clean_page_markers(raw_content).strip()
 
             section = Section(
                 id=f"§{marker['number_str']}",

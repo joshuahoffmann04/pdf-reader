@@ -349,6 +349,83 @@ More content.
         assert "<<<PAGE" not in s1.content
         assert "Content here" in s1.content
 
+    def test_ab_marker_not_in_main_section_content(self, parser):
+        """Test that AB marker text is not included in main section content."""
+        text = """<<<PAGE:1>>>
+4
+I.
+Test Chapter
+§ 10
+Module und Leistungspunkte
+Es gelten die Regelungen des § 10 Allgemeine Bestimmungen.
+
+Textauszug aus den Allgemeinen Bestimmungen:
+
+§ 10
+Module und Leistungspunkte
+(1) Das Lehrangebot wird in modularer Form angeboten.
+(2) Module werden als Pflichtmodule bezeichnet.
+
+§ 11
+Next Section
+More content.
+"""
+        doc = parser.parse(text)
+        chapter = doc.chapters[0]
+
+        # Find main §10
+        main_10 = next(s for s in chapter.sections if s.id == "§10")
+
+        # Main section content should NOT contain the AB marker
+        assert "Textauszug aus den Allgemeinen Bestimmungen" not in main_10.content
+
+        # Main section content should only contain the reference text
+        assert "Es gelten die Regelungen" in main_10.content
+
+        # AB excerpt should exist and contain the actual AB content
+        ab_10 = next(s for s in chapter.ab_excerpts if s.id == "§10")
+        assert "(1) Das Lehrangebot" in ab_10.content
+        assert ab_10.follows_section == "§10"
+
+    def test_same_section_number_for_main_and_ab(self, parser):
+        """Test that same § number works for both main section and AB excerpt."""
+        text = """<<<PAGE:1>>>
+4
+I.
+Test
+§ 5
+Main Five
+Content of main §5.
+
+Textauszug aus den Allgemeinen Bestimmungen:
+
+§ 5
+AB Five
+Content of AB §5.
+
+§ 6
+Main Six
+Content of main §6.
+"""
+        doc = parser.parse(text)
+        chapter = doc.chapters[0]
+
+        # Main sections should be §5 and §6
+        main_ids = [s.id for s in chapter.sections]
+        assert "§5" in main_ids
+        assert "§6" in main_ids
+
+        # AB excerpt should also be §5
+        ab_ids = [s.id for s in chapter.ab_excerpts]
+        assert "§5" in ab_ids
+
+        # Check linking
+        main_5 = next(s for s in chapter.sections if s.id == "§5")
+        ab_5 = next(s for s in chapter.ab_excerpts if s.id == "§5")
+
+        assert "§5" in main_5.ab_references
+        assert ab_5.follows_section == "§5"
+
 
 class TestSection:
     """Tests for Section dataclass."""
