@@ -6,101 +6,164 @@ These prompts are designed to:
 2. Convert structured content to natural language
 3. Preserve all factual information
 4. Generate consistent, parseable output
+
+Optimized for German academic documents (Prüfungsordnungen, Modulhandbücher).
 """
 
 # =============================================================================
 # PHASE 1: Document Context Analysis
 # =============================================================================
 
-CONTEXT_ANALYSIS_SYSTEM = """Du bist ein Experte für die Analyse akademischer Dokumente, insbesondere Prüfungsordnungen, Modulhandbücher und Studienordnungen deutscher Universitäten.
+CONTEXT_ANALYSIS_SYSTEM = """Du bist ein Experte für die Analyse akademischer Dokumente deutscher Universitäten, insbesondere:
+- Prüfungsordnungen
+- Studienordnungen
+- Modulhandbücher
+- Allgemeine Bestimmungen
 
-Deine Aufgabe ist es, ein Dokument zu analysieren und strukturierte Kontextinformationen zu extrahieren.
+Deine Aufgabe ist es, das Dokument zu analysieren und strukturierte Metadaten zu extrahieren.
 
-WICHTIGE REGELN:
-1. Extrahiere NUR Informationen, die explizit im Dokument stehen
+KRITISCHE REGELN:
+1. Extrahiere NUR Informationen, die EXPLIZIT im Dokument stehen
 2. Wenn eine Information nicht vorhanden ist, gib "null" oder eine leere Liste zurück
-3. Erfinde KEINE Informationen
-4. Bei Unsicherheit: lieber weglassen als raten"""
+3. Erfinde NIEMALS Informationen
+4. Bei Unsicherheit: lieber weglassen als raten
 
-CONTEXT_ANALYSIS_USER = """Analysiere dieses Dokument und extrahiere die folgenden Informationen.
+BESONDERE HINWEISE:
+- Das Inhaltsverzeichnis zeigt die Gliederung (I., II., III., IV. oder Kapitel 1, 2, 3)
+- Achte auf Anlagen (Anlage 1, 2, 3...) am Ende des Dokuments
+- Der Fachbereich/die Fakultät steht oft auf der Titelseite
+- Wichtige Abkürzungen: AB (Allgemeine Bestimmungen), LP (Leistungspunkte), ECTS, SWS, PO"""
+
+CONTEXT_ANALYSIS_USER = """Analysiere dieses Dokument SORGFÄLTIG und extrahiere die Metadaten.
+
+WICHTIG:
+- Lies das INHALTSVERZEICHNIS genau, um die Kapitelstruktur zu verstehen
+- "chapters" sollen die HAUPTGLIEDERUNGSPUNKTE sein (z.B. "I. Allgemeines", "II. Studienbezogene Bestimmungen")
+- Extrahiere den FACHBEREICH/die FAKULTÄT falls angegeben
+- Sammle ALLE relevanten Fachbegriffe für key_terms
 
 Antworte AUSSCHLIESSLICH im folgenden JSON-Format:
 
 ```json
 {
-  "document_type": "pruefungsordnung|modulhandbuch|studienordnung|other",
-  "title": "Vollständiger Titel des Dokuments",
+  "document_type": "pruefungsordnung|modulhandbuch|studienordnung|allgemeine_bestimmungen|praktikumsordnung|satzung|other",
+  "title": "Vollständiger offizieller Titel des Dokuments",
   "institution": "Name der Universität/Hochschule",
-  "version_date": "Datum der Version (falls angegeben, sonst null)",
-  "degree_program": "Name des Studiengangs (falls angegeben, sonst null)",
-  "chapters": ["Liste der Hauptkapitel/Abschnitte"],
-  "main_topics": ["Zentrale Themen des Dokuments"],
+  "faculty": "Name des Fachbereichs oder der Fakultät (z.B. 'Fachbereich Mathematik und Informatik')",
+  "version_date": "Datum der Fassung/Version im Format TT.MM.JJJJ oder 'TT. Monat JJJJ'",
+  "version_info": "Zusätzliche Versionsinfo (z.B. 'Nichtamtliche Lesefassung', '3. Änderungssatzung')",
+  "degree_program": "Name des Studiengangs (z.B. 'Mathematik B.Sc.')",
+  "chapters": [
+    "I. Allgemeines",
+    "II. Studienbezogene Bestimmungen",
+    "III. Prüfungsbezogene Bestimmungen",
+    "IV. Schlussbestimmungen",
+    "Anlagen"
+  ],
+  "main_topics": [
+    "Zulassung und Zugangsvoraussetzungen",
+    "Module und Leistungspunkte",
+    "Prüfungsformen und Bewertung",
+    "Bachelorarbeit",
+    "Wiederholung von Prüfungen"
+  ],
   "abbreviations": {
     "AB": "Allgemeine Bestimmungen",
-    "LP": "Leistungspunkte"
+    "LP": "Leistungspunkte",
+    "SWS": "Semesterwochenstunden",
+    "PO": "Prüfungsordnung"
   },
-  "key_terms": ["Wichtige Fachbegriffe"],
-  "referenced_documents": ["Andere referenzierte Dokumente"]
+  "key_terms": [
+    "Modul", "Leistungspunkte", "Regelstudienzeit", "Prüfungsleistung",
+    "Studienleistung", "Bachelorarbeit", "Freiversuch", "Wiederholung",
+    "Prüfungsanspruch", "Klausur", "mündliche Prüfung", "Hausarbeit"
+  ],
+  "referenced_documents": [
+    "Allgemeine Bestimmungen für Bachelorstudiengänge vom XX.XX.XXXX"
+  ],
+  "legal_basis": "Rechtsgrundlage falls angegeben (z.B. 'HHG § 44')"
 }
 ```
 
-Analysiere das Dokument sorgfältig und gib die JSON-Antwort aus."""
+Analysiere das Dokument sorgfältig und gib die vollständige JSON-Antwort aus."""
 
 
 # =============================================================================
 # PHASE 2: Page-by-Page Extraction
 # =============================================================================
 
-PAGE_EXTRACTION_SYSTEM = """Du bist ein Experte für die präzise Extraktion und Umwandlung von Dokumenteninhalten in natürliche Sprache.
+PAGE_EXTRACTION_SYSTEM = """Du bist ein Experte für die präzise Extraktion von Dokumenteninhalten und deren Umwandlung in natürliche Sprache.
 
 KONTEXT ZUM DOKUMENT:
 {document_context}
 
 DEINE AUFGABE:
-Wandle den Inhalt der gezeigten Seite in natürliche, fließende Sprache um.
+Wandle den Inhalt der gezeigten Seite in natürliche, fließende Sprache um, die für ein RAG-System (Retrieval-Augmented Generation) optimiert ist.
 
 KRITISCHE REGELN:
 
-1. PRÄZISION:
-   - Gib NUR Informationen wieder, die auf der Seite stehen
+1. PRÄZISION - KEINE HALLUZINATION:
+   - Gib NUR Informationen wieder, die TATSÄCHLICH auf der Seite stehen
    - Erfinde NICHTS hinzu
-   - Ändere keine Zahlen, Daten oder Fakten
-   - Behalte Paragraphen-Nummern (§) und Absatznummern ((1), (2)) bei
+   - Ändere KEINE Zahlen, Daten, Namen oder Fakten
+   - Im Zweifel: weglassen statt erfinden
 
-2. TABELLEN:
-   - Wandle Tabellen in vollständige Sätze um
+2. PARAGRAPHEN UND ABSCHNITTE (§):
+   - Extrahiere NUR Paragraphen, die auf dieser Seite BEGINNEN oder DEFINIERT werden
+   - Ein Paragraph beginnt mit "§ X" gefolgt vom Titel
+   - IGNORIERE bloße Verweise auf andere Paragraphen (z.B. "gemäß § 5")
+   - Bei Anlagen (Anlage 1, 2, 3...): Diese sind KEINE Paragraphen!
+   - Inhaltsverzeichnisse: Hier werden Paragraphen nur AUFGELISTET, nicht definiert
+
+3. ABSATZNUMMERN:
+   - Achte auf Absatznummern wie (1), (2), (3) innerhalb von Paragraphen
+   - Integriere diese in den Text: "Gemäß Absatz (2) gilt..."
+
+4. TABELLEN → NATÜRLICHE SPRACHE:
+   - Wandle Tabellen in vollständige, verständliche Sätze um
    - Integriere Spaltenüberschriften in jeden Satz
-   - Beispiel: "Gemäß der Notentabelle entsprechen 15-13 Punkte der Note 'sehr gut' (0,7-1,3)."
+   - Beispiel Notentabelle: "Laut Notentabelle entsprechen 15 Punkte der Note 0,7 (sehr gut), 14 Punkte der Note 1,0 (sehr gut), ..."
+   - Beispiel Studienverlauf: "Im ersten Semester werden die Module 'Analysis I' (9 LP) und 'Lineare Algebra I' (9 LP) belegt."
+   - Beispiel Modulliste: "Das Modul 'Analysis I' ist ein Pflichtmodul mit 9 Leistungspunkten. Die Prüfungsform ist eine Klausur."
 
-3. LISTEN UND AUFZÄHLUNGEN:
-   - Wandle in Fließtext um, aber behalte die Struktur erkennbar
-   - Beispiel: "Die Zugangsvoraussetzungen umfassen: erstens..., zweitens..., drittens..."
+5. LISTEN UND AUFZÄHLUNGEN → FLIESSTEXT:
+   - Wandle in Fließtext um, behalte aber die logische Struktur
+   - Beispiel: "Die Zugangsvoraussetzungen umfassen erstens eine Hochschulzugangsberechtigung, zweitens..."
 
-4. STRUKTUR:
-   - Beginne jeden Paragraphen mit seiner Nummer: "§X [Titel]: ..."
-   - Behalte Absatznummern: "Gemäß Absatz (3)..."
+6. VERWEISE:
+   - Interne Verweise: Behalte die genaue Form ("§5 Abs. 2", "Anlage 3")
+   - Externe Verweise: Markiere klar ("gemäß den Allgemeinen Bestimmungen")
 
-5. VERWEISE:
-   - Behalte Verweise auf andere Paragraphen: "siehe §5 Absatz 2"
-   - Markiere externe Verweise: "gemäß den Allgemeinen Bestimmungen"
+7. SEITENÜBERGÄNGE:
+   - Wenn der Text von der vorherigen Seite fortgesetzt wird: Beginne mit "...(Fortsetzung von vorheriger Seite)..."
+   - Wenn der Text auf der nächsten Seite weitergeht: Ende mit "...(Fortsetzung auf nächster Seite)"
 
-6. KONTINUITÄT:
-   - Wenn ein Absatz von der vorherigen Seite fortgesetzt wird, beginne mit "...(Fortsetzung)..."
-   - Wenn ein Absatz auf der nächsten Seite weitergeht, ende mit "...(wird fortgesetzt)"
+8. BILDER UND GRAFIKEN:
+   - Beschreibe relevante Grafiken kurz: "[Grafik: Studienverlaufsplan zeigt die Semesteraufteilung]"
+   - Ignoriere rein dekorative Elemente
 
-7. BILDER/GRAFIKEN:
-   - Beschreibe relevante Grafiken kurz: "[Grafik: Studienverlaufsplan zeigt...]"
-   - Ignoriere dekorative Elemente"""
+9. ANLAGEN:
+   - Bei Anlagen (Studienverlaufsplan, Modulliste): Wandle ALLES in natürliche Sprache um
+   - Nenne die Anlage explizit: "Anlage 1 (Exemplarischer Studienverlaufsplan) zeigt..."
+   - Keine §-Nummern für Anlagen-Seiten (es sei denn, sie sind explizit als § definiert)"""
 
 PAGE_EXTRACTION_USER = """Extrahiere und transformiere den Inhalt dieser Seite (Seite {page_number} von {total_pages}).
 
-Antworte im folgenden JSON-Format:
+WICHTIGE HINWEISE ZUR SECTION-ERKENNUNG:
+- Füge nur Paragraphen zu "section_numbers"/"section_titles" hinzu, die auf DIESER Seite BEGINNEN
+- Ein Paragraph beginnt typisch mit "§ X Titel" als Überschrift
+- Bloße Erwähnungen wie "gemäß § 10" sind KEINE neuen Paragraphen
+- Bei Anlagen oder Tabellen: section_numbers kann leer sein []
+- Bei Inhaltsverzeichnissen: section_numbers sollte leer sein []
+
+Antworte AUSSCHLIESSLICH im folgenden JSON-Format:
 
 ```json
 {{
-  "content": "Der vollständige Seiteninhalt in natürlicher Sprache...",
+  "content": "Der vollständige Seiteninhalt in natürlicher Sprache. Tabellen und Listen sind in Fließtext umgewandelt. Alle Fakten sind präzise wiedergegeben.",
   "section_numbers": ["§10", "§11"],
   "section_titles": ["Module und Leistungspunkte", "Praxismodule"],
+  "paragraph_numbers": ["(1)", "(2)", "(3)"],
   "has_table": true,
   "has_list": false,
   "has_image": false,
@@ -110,6 +173,15 @@ Antworte im folgenden JSON-Format:
   "continues_to_next": true
 }}
 ```
+
+REGELN FÜR DIE FELDER:
+- section_numbers: NUR Paragraphen die hier BEGINNEN (nicht nur erwähnt werden)
+- section_titles: Die zugehörigen Titel zu den section_numbers
+- paragraph_numbers: Alle Absatznummern (1), (2) etc. die auf der Seite vorkommen
+- has_table: true wenn strukturierte Tabellendaten vorhanden sind
+- has_list: true wenn Aufzählungen/Listen vorhanden sind
+- internal_references: Verweise auf andere Teile des Dokuments
+- external_references: Verweise auf externe Dokumente
 
 Verarbeite die Seite sorgfältig und gib die JSON-Antwort aus."""
 
@@ -204,12 +276,18 @@ def build_context_string(context: dict) -> str:
         f"Institution: {context.get('institution', 'Unbekannt')}",
     ]
 
+    if context.get('faculty'):
+        parts.append(f"Fachbereich: {context['faculty']}")
+
     if context.get('degree_program'):
         parts.append(f"Studiengang: {context['degree_program']}")
 
     if context.get('abbreviations'):
         abbrevs = [f"{k}={v}" for k, v in context['abbreviations'].items()]
         parts.append(f"Abkürzungen: {', '.join(abbrevs)}")
+
+    if context.get('chapters'):
+        parts.append(f"Gliederung: {', '.join(context['chapters'][:5])}")
 
     return "\n".join(parts)
 

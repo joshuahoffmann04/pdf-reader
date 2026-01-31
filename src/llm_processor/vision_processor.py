@@ -389,6 +389,8 @@ class VisionProcessor:
                 title=data.get("title", "Unknown"),
                 institution=data.get("institution", "Unknown"),
                 version_date=data.get("version_date"),
+                version_info=data.get("version_info"),
+                faculty=data.get("faculty"),
                 total_pages=total_pages,
                 chapters=data.get("chapters", []),
                 main_topics=data.get("main_topics", []),
@@ -396,6 +398,7 @@ class VisionProcessor:
                 abbreviations=abbreviations,
                 key_terms=data.get("key_terms", []),
                 referenced_documents=data.get("referenced_documents", []),
+                legal_basis=data.get("legal_basis"),
             )
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Failed to parse context response: {e}")
@@ -425,6 +428,9 @@ class VisionProcessor:
                     starts_on_page=True,
                 ))
 
+            # Parse paragraph numbers
+            paragraph_numbers = data.get("paragraph_numbers", [])
+
             # Determine content types
             content_types = []
             if data.get("has_table"):
@@ -438,6 +444,7 @@ class VisionProcessor:
                 page_number=page_number,
                 content=data.get("content", ""),
                 sections=sections,
+                paragraph_numbers=paragraph_numbers,
                 content_types=content_types,
                 has_table=data.get("has_table", False),
                 has_list=data.get("has_list", False),

@@ -229,6 +229,12 @@ class ExtractedPage(BaseModel):
         description="Sections that start or continue on this page"
     )
 
+    # Paragraph numbers found on this page
+    paragraph_numbers: list[str] = Field(
+        default_factory=list,
+        description="Paragraph numbers like (1), (2), (3) found on this page"
+    )
+
     # Content classification
     content_types: list[ChunkType] = Field(
         default_factory=list,
