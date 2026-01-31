@@ -25,6 +25,13 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Load .env file if python-dotenv is installed
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed, use environment variables directly
+
 from src.llm_processor.models import ProcessingConfig
 from src.llm_processor.pdf_to_images import PDFToImages, estimate_api_cost
 from src.llm_processor.vision_processor import VisionProcessor
