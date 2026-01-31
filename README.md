@@ -83,13 +83,13 @@ pip install openai
 export ANTHROPIC_API_KEY="your-key-here"
 
 # Process a PDF
-python scripts/process_for_rag.py document.pdf -o output/
+python scripts/process_for_rag.py pdfs/Pruefungsordnung_BSc_Inf_2024.pdf -o output/
 
 # Estimate cost first
-python scripts/process_for_rag.py document.pdf --estimate-cost
+python scripts/process_for_rag.py pdfs/Pruefungsordnung_BSc_Inf_2024.pdf --estimate-cost
 
 # Use a cheaper model
-python scripts/process_for_rag.py document.pdf --model claude-3-haiku-20240307
+python scripts/process_for_rag.py pdfs/Pruefungsordnung_BSc_Inf_2024.pdf --model claude-3-haiku-20240307
 ```
 
 ### Python API
