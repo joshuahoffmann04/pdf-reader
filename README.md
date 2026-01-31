@@ -1,109 +1,52 @@
 # PDF to RAG Pipeline
 
-A Vision-LLM powered pipeline for converting PDF documents into RAG-optimized natural language chunks.
+A production-ready pipeline for converting PDF documents into RAG-optimized natural language chunks using OpenAI's GPT-4o Vision API.
 
-## Overview
+## Features
 
-This tool uses Vision-capable LLMs (Claude, GPT-4V) to extract content from PDF documents and convert it into chunks optimized for Retrieval-Augmented Generation (RAG) systems.
+- **Vision-LLM Processing**: Uses GPT-4o to extract and understand PDF content
+- **Natural Language Output**: Converts tables, lists, and structured content to flowing text
+- **Rich Metadata**: Section numbers, chapters, topics, keywords for filtered retrieval
+- **Multi-Framework Export**: Compatible with LangChain, LlamaIndex, and Haystack
+- **German Academic Documents**: Optimized for Prüfungsordnungen, Modulhandbücher, etc.
 
-**Key Features:**
-- Converts tables, lists, and structured content to natural language
-- Preserves document structure (§ sections, paragraphs)
-- Generates rich metadata for filtered retrieval
-- Compatible with LangChain, LlamaIndex, and Haystack
-- Supports both Anthropic (Claude) and OpenAI (GPT-4V) APIs
+## Quick Start
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Processing Pipeline                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Phase 1: Context Analysis                                       │
-│  ┌──────────┐    ┌──────────┐    ┌──────────────────┐           │
-│  │   PDF    │───▶│  Sample  │───▶│   Vision LLM    │           │
-│  │          │    │  Pages   │    │ (Context Prompt) │           │
-│  └──────────┘    └──────────┘    └────────┬─────────┘           │
-│                                           │                      │
-│                                           ▼                      │
-│                                  DocumentContext                 │
-│                                  - document_type                 │
-│                                  - title, institution            │
-│                                  - abbreviations                 │
-│                                  - key_terms                     │
-│                                                                  │
-│  Phase 2: Page-by-Page Extraction                                │
-│  ┌──────────┐    ┌──────────┐    ┌──────────────────┐           │
-│  │  Page N  │───▶│  Image   │───▶│   Vision LLM    │           │
-│  │          │    │          │    │ (+ Context)      │           │
-│  └──────────┘    └──────────┘    └────────┬─────────┘           │
-│                                           │                      │
-│                                           ▼                      │
-│                                     ExtractedPage                │
-│                                  - natural language text         │
-│                                  - section info                  │
-│                                  - references                    │
-│                                                                  │
-│  Phase 3: Chunk Generation                                       │
-│  ┌──────────────┐    ┌──────────────────┐                       │
-│  │ All Pages    │───▶│  Smart Chunking  │                       │
-│  │              │    │  + Metadata      │                       │
-│  └──────────────┘    └────────┬─────────┘                       │
-│                               │                                  │
-│                               ▼                                  │
-│                          RAGChunk (JSONL)                        │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Installation
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/joshuahoffmann04/pdf-reader.git
+git clone https://github.com/yourusername/pdf-reader.git
 cd pdf-reader
 
 # Install dependencies
 pip install -r requirements.txt
 
-# For Anthropic Claude
-pip install anthropic
-
-# For OpenAI GPT-4V
-pip install openai
+# Set your OpenAI API key
+export OPENAI_API_KEY="sk-your-key-here"
 ```
 
-## Quick Start
-
-### Command Line
+### Usage
 
 ```bash
-# Set your API key
-export ANTHROPIC_API_KEY="your-key-here"
+# Process a PDF (default: gpt-4o)
+python scripts/process_for_rag.py document.pdf -o output/
 
-# Process a PDF
-python scripts/process_for_rag.py pdfs/Pruefungsordnung_BSc_Inf_2024.pdf -o output/
+# Estimate cost before processing
+python scripts/process_for_rag.py document.pdf --estimate-cost
 
-# Estimate cost first
-python scripts/process_for_rag.py pdfs/Pruefungsordnung_BSc_Inf_2024.pdf --estimate-cost
-
-# Use a cheaper model
-python scripts/process_for_rag.py pdfs/Pruefungsordnung_BSc_Inf_2024.pdf --model claude-3-haiku-20240307
+# Use cheaper model
+python scripts/process_for_rag.py document.pdf --model gpt-4o-mini
 ```
 
 ### Python API
 
 ```python
-from src.llm_processor import (
-    VisionProcessor,
-    ChunkGenerator,
-    ProcessingConfig,
-)
+from src.llm_processor import VisionProcessor, ChunkGenerator, ProcessingConfig
 
 # Configure
 config = ProcessingConfig(
-    model="claude-sonnet-4-20250514",
+    model="gpt-4o",
     target_chunk_size=500,
 )
 
@@ -113,7 +56,7 @@ extraction = processor.process_document("document.pdf")
 
 # Generate chunks
 generator = ChunkGenerator(config=config)
-result = generator.generate_from_extraction(extraction, "document-name")
+result = generator.generate_from_extraction(extraction, "my-document")
 
 # Export for different frameworks
 langchain_docs = result.export_chunks_langchain()
@@ -123,16 +66,60 @@ llamaindex_nodes = result.export_chunks_llamaindex()
 result.export_chunks_jsonl("output.jsonl")
 ```
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     PDF to RAG Pipeline                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Phase 1: Context Analysis                                   │
+│  ┌──────────┐    ┌──────────────┐    ┌─────────────────┐    │
+│  │   PDF    │───▶│ Sample Pages │───▶│   GPT-4o Vision │    │
+│  │          │    │ (1, mid, end)│    │                 │    │
+│  └──────────┘    └──────────────┘    └────────┬────────┘    │
+│                                               │              │
+│                                               ▼              │
+│                                      DocumentContext         │
+│                                      ├─ document_type        │
+│                                      ├─ chapters             │
+│                                      ├─ abbreviations        │
+│                                      └─ key_terms            │
+│                                                              │
+│  Phase 2: Page-by-Page Extraction                            │
+│  ┌──────────┐    ┌──────────────┐    ┌─────────────────┐    │
+│  │ Page N   │───▶│ Page Image   │───▶│   GPT-4o Vision │    │
+│  │          │    │              │    │   + Context     │    │
+│  └──────────┘    └──────────────┘    └────────┬────────┘    │
+│                                               │              │
+│                                               ▼              │
+│                                         ExtractedPage        │
+│                                      ├─ natural language     │
+│                                      ├─ section markers      │
+│                                      └─ references           │
+│                                                              │
+│  Phase 3: Chunk Generation                                   │
+│  ┌──────────────┐    ┌──────────────────┐                   │
+│  │  All Pages   │───▶│  Smart Chunking  │                   │
+│  │              │    │  + Metadata      │                   │
+│  └──────────────┘    └────────┬─────────┘                   │
+│                               │                              │
+│                               ▼                              │
+│                          RAGChunk[]                          │
+│                      ├─ id, text                             │
+│                      └─ metadata (section, topics, etc.)     │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ## Output Format
 
 ### RAGChunk Structure
 
-Each chunk is optimized for RAG retrieval with rich metadata:
-
 ```python
 RAGChunk(
     id="doc-name-§10-abc123",
-    text="§10 Module und Leistungspunkte: Ein Modul ist eine...",
+    text="§10 Module und Leistungspunkte: Ein Modul umfasst...",
     metadata=ChunkMetadata(
         source_document="Pruefungsordnung_2024",
         source_pages=[9, 10],
@@ -143,93 +130,50 @@ RAGChunk(
         chunk_type="section",
         topics=["Module", "Leistungspunkte"],
         keywords=["Modul", "LP", "ECTS"],
-        related_sections=["§7", "§11"],
         institution="Philipps-Universität Marburg",
-        degree_program="Mathematik B.Sc.",
     )
 )
 ```
 
 ### Export Formats
 
-**LangChain:**
+| Framework | Method | Format |
+|-----------|--------|--------|
+| LangChain | `chunk.to_langchain_document()` | `{"page_content": ..., "metadata": ...}` |
+| LlamaIndex | `chunk.to_llamaindex_node()` | `{"id_": ..., "text": ..., "metadata": ...}` |
+| Haystack | `chunk.to_haystack_document()` | `{"id": ..., "content": ..., "meta": ...}` |
+| JSONL | `chunk.to_jsonl_entry()` | JSON string per line |
+
+## Configuration
+
 ```python
-chunk.to_langchain_document()
-# Returns: {"page_content": "...", "metadata": {...}}
+ProcessingConfig(
+    # Model (OpenAI GPT-4o variants)
+    model="gpt-4o",              # Best quality
+    # model="gpt-4o-mini",       # Faster, cheaper
+
+    # Chunking
+    target_chunk_size=500,       # Target chars per chunk
+    max_chunk_size=1000,         # Maximum chars per chunk
+    chunk_overlap=50,            # Overlap between chunks
+
+    # Processing
+    temperature=0.0,             # Deterministic output
+    max_tokens_per_request=4096,
+)
 ```
-
-**LlamaIndex:**
-```python
-chunk.to_llamaindex_node()
-# Returns: {"id_": "...", "text": "...", "metadata": {...}}
-```
-
-**Haystack:**
-```python
-chunk.to_haystack_document()
-# Returns: {"id": "...", "content": "...", "meta": {...}}
-```
-
-**JSONL (for file storage):**
-```python
-chunk.to_jsonl_entry()
-# Returns JSON string with all fields
-```
-
-## Data Models
-
-### DocumentContext
-Document-level metadata extracted during context analysis:
-- `document_type`: pruefungsordnung, modulhandbuch, etc.
-- `title`: Official document title
-- `institution`: University/organization
-- `abbreviations`: List of abbreviations and expansions
-- `key_terms`: Important domain terminology
-- `chapters`: Document structure
-
-### ExtractedPage
-Content extracted from each page:
-- `content`: Natural language text
-- `sections`: Section markers (§10, §11, etc.)
-- `has_table`, `has_list`: Content classification
-- `continues_from_previous`, `continues_to_next`: Pagination info
-
-### RAGChunk
-Final chunk for RAG ingestion:
-- `id`: Unique identifier
-- `text`: Natural language content
-- `metadata`: Rich metadata for filtering and context
 
 ## Cost Estimation
 
 | Model | ~Cost per 50 pages |
 |-------|-------------------|
-| claude-sonnet-4-20250514 | $0.15 - $0.25 |
-| claude-3-haiku | $0.02 - $0.04 |
-| gpt-4o | $0.12 - $0.20 |
-| gpt-4o-mini | $0.01 - $0.02 |
+| gpt-4o | $0.30 - $0.50 |
+| gpt-4o-mini | $0.02 - $0.04 |
 
-## Configuration Options
+Use `--estimate-cost` to see estimated costs before processing:
 
-```python
-ProcessingConfig(
-    # API settings
-    api_provider="anthropic",  # or "openai"
-    model="claude-sonnet-4-20250514",
-    temperature=0.0,  # Deterministic output
-
-    # Chunking settings
-    target_chunk_size=500,   # Target chars per chunk
-    max_chunk_size=1000,     # Maximum chars
-    chunk_overlap=50,        # Overlap between chunks
-
-    # Processing options
-    expand_abbreviations=True,
-    merge_cross_page_content=True,
-
-    # Output settings
-    output_format="jsonl",   # or "json"
-)
+```bash
+python scripts/process_for_rag.py document.pdf --estimate-cost
 ```
 
 ## Project Structure
@@ -238,19 +182,83 @@ ProcessingConfig(
 pdf-reader/
 ├── src/
 │   └── llm_processor/
-│       ├── __init__.py
-│       ├── models.py          # Pydantic data models
-│       ├── vision_processor.py # Main LLM processor
-│       ├── chunk_generator.py  # Chunking logic
-│       ├── pdf_to_images.py   # PDF rendering
-│       ├── prompts.py         # LLM prompts
-│       └── README.md
+│       ├── __init__.py          # Public API exports
+│       ├── models.py            # Pydantic data models
+│       ├── vision_processor.py  # OpenAI Vision API processor
+│       ├── chunk_generator.py   # Chunking logic
+│       ├── pdf_to_images.py     # PDF rendering
+│       └── prompts.py           # LLM prompts
 ├── scripts/
-│   └── process_for_rag.py     # CLI tool
-├── archived/                   # Old approach (kept for reference)
-├── pdfs/                       # Test PDFs
+│   └── process_for_rag.py       # CLI tool
+├── tests/
+│   ├── test_models.py           # Model tests
+│   ├── test_chunk_generator.py  # Chunking tests
+│   ├── test_prompts.py          # Prompt tests
+│   ├── test_vision_processor.py # Processor tests (mocked)
+│   └── test_integration.py      # Real API tests
+├── pdfs/                        # Test PDFs
 ├── requirements.txt
+├── .env.example
 └── README.md
+```
+
+## Testing
+
+```bash
+# Install test dependencies
+pip install pytest pytest-mock
+
+# Run unit tests (no API calls)
+pytest tests/ -v --ignore=tests/test_integration.py
+
+# Run integration tests (requires API key, costs money!)
+export OPENAI_API_KEY="sk-your-key"
+pytest tests/test_integration.py -v
+```
+
+## API Reference
+
+### VisionProcessor
+
+```python
+from src.llm_processor import VisionProcessor
+
+processor = VisionProcessor(
+    config=ProcessingConfig(),  # Optional
+    api_key="sk-...",           # Or set OPENAI_API_KEY env var
+)
+
+result = processor.process_document(
+    pdf_path="document.pdf",
+    progress_callback=lambda cur, total, status: print(f"{cur}/{total}: {status}"),
+)
+
+# Result contains:
+# - result.context: DocumentContext
+# - result.pages: list[ExtractedPage]
+# - result.processing_time_seconds: float
+# - result.total_input_tokens: int
+# - result.total_output_tokens: int
+# - result.errors: list[str]
+```
+
+### ChunkGenerator
+
+```python
+from src.llm_processor import ChunkGenerator
+
+generator = ChunkGenerator(config=ProcessingConfig())
+
+result = generator.generate_from_extraction(
+    extraction_result,
+    source_document="my-document",
+)
+
+# Result is ProcessingResult with:
+# - result.chunks: list[RAGChunk]
+# - result.export_chunks_langchain()
+# - result.export_chunks_llamaindex()
+# - result.export_chunks_jsonl(path)
 ```
 
 ## License

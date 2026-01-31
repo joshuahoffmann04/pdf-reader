@@ -1,8 +1,8 @@
 """
 Vision LLM Processor
 
-Handles communication with Vision-capable LLMs (Claude, GPT-4V) for
-PDF content extraction and transformation.
+Processes PDF documents using OpenAI's Vision API (GPT-4o) for
+high-quality content extraction and transformation.
 
 This is the main processing engine that:
 1. Analyzes document context from sample pages
@@ -12,9 +12,12 @@ This is the main processing engine that:
 
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Optional, Callable
+
+from openai import OpenAI
 
 from .pdf_to_images import PDFToImages
 from .models import (
@@ -63,15 +66,18 @@ class VisionProcessorResult:
 
 class VisionProcessor:
     """
-    Main processor for Vision-LLM based PDF extraction.
+    Main processor for Vision-LLM based PDF extraction using OpenAI GPT-4o.
 
     Two-phase approach:
     1. Context Analysis: Understand the entire document structure
     2. Page Extraction: Extract content page by page with full context
 
     Usage:
-        processor = VisionProcessor(config=ProcessingConfig())
+        processor = VisionProcessor()
         result = processor.process_document("document.pdf")
+
+    Environment:
+        OPENAI_API_KEY: Your OpenAI API key
     """
 
     def __init__(
@@ -84,35 +90,23 @@ class VisionProcessor:
 
         Args:
             config: Processing configuration
-            api_key: API key (or set ANTHROPIC_API_KEY / OPENAI_API_KEY env var)
+            api_key: OpenAI API key (or set OPENAI_API_KEY env var)
         """
         self.config = config or ProcessingConfig()
-        self.api_key = api_key
-        self.pdf_converter = PDFToImages(dpi=150)
+        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
 
-        # Initialize API client
-        self._init_client()
+        if not self.api_key:
+            raise ValueError(
+                "OpenAI API key required. Set OPENAI_API_KEY environment variable "
+                "or pass api_key parameter."
+            )
+
+        self.client = OpenAI(api_key=self.api_key)
+        self.pdf_converter = PDFToImages(dpi=150)
 
         # Statistics
         self.total_input_tokens = 0
         self.total_output_tokens = 0
-
-    def _init_client(self):
-        """Initialize the appropriate API client."""
-        if self.config.api_provider == "anthropic":
-            try:
-                from anthropic import Anthropic
-                self.client = Anthropic(api_key=self.api_key)
-            except ImportError:
-                raise ImportError("Please install anthropic: pip install anthropic")
-        elif self.config.api_provider == "openai":
-            try:
-                from openai import OpenAI
-                self.client = OpenAI(api_key=self.api_key)
-            except ImportError:
-                raise ImportError("Please install openai: pip install openai")
-        else:
-            raise ValueError(f"Unknown API provider: {self.config.api_provider}")
 
     def process_document(
         self,
@@ -184,7 +178,7 @@ class VisionProcessor:
                     extraction_notes=str(e),
                 ))
 
-            # Rate limiting
+            # Rate limiting (avoid hitting API limits)
             time.sleep(0.5)
 
         processing_time = time.time() - start_time
@@ -219,15 +213,13 @@ class VisionProcessor:
         # Render sample pages
         images = self.pdf_converter.render_pages_batch(pdf_path, sample_pages)
 
-        # Build message content with images
+        # Build message content with images (OpenAI format)
         content = []
         for img in images:
             content.append({
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": img.mime_type,
-                    "data": img.image_base64,
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{img.mime_type};base64,{img.image_base64}"
                 }
             })
 
@@ -263,18 +255,18 @@ class VisionProcessor:
             "document_type": context.document_type.value,
             "title": context.title,
             "institution": context.institution,
+            "faculty": context.faculty,
             "degree_program": context.degree_program,
             "abbreviations": context.get_abbreviation_dict(),
+            "chapters": context.chapters,
         }
 
-        # Build message content
+        # Build message content (OpenAI format)
         content = [
             {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": page_image.mime_type,
-                    "data": page_image.image_base64,
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{page_image.mime_type};base64,{page_image.image_base64}"
                 }
             },
             {
@@ -298,60 +290,21 @@ class VisionProcessor:
         system_prompt: str,
         content: list,
     ) -> str:
-        """Make an API call to the Vision LLM."""
-        if self.config.api_provider == "anthropic":
-            return self._call_anthropic(system_prompt, content)
-        elif self.config.api_provider == "openai":
-            return self._call_openai(system_prompt, content)
-        else:
-            raise ValueError(f"Unknown provider: {self.config.api_provider}")
-
-    def _call_anthropic(self, system_prompt: str, content: list) -> str:
-        """Call Anthropic Claude API."""
-        response = self.client.messages.create(
-            model=self.config.model,
-            max_tokens=self.config.max_tokens_per_request,
-            temperature=self.config.temperature,
-            system=system_prompt,
-            messages=[
-                {"role": "user", "content": content}
-            ],
-        )
-
-        # Track tokens
-        self.total_input_tokens += response.usage.input_tokens
-        self.total_output_tokens += response.usage.output_tokens
-
-        return response.content[0].text
-
-    def _call_openai(self, system_prompt: str, content: list) -> str:
-        """Call OpenAI GPT-4V API."""
-        # Convert content format for OpenAI
-        openai_content = []
-        for item in content:
-            if item["type"] == "image":
-                openai_content.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:{item['source']['media_type']};base64,{item['source']['data']}"
-                    }
-                })
-            else:
-                openai_content.append(item)
-
+        """Make an API call to OpenAI's Vision API."""
         response = self.client.chat.completions.create(
             model=self.config.model,
             max_tokens=self.config.max_tokens_per_request,
             temperature=self.config.temperature,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": openai_content},
+                {"role": "user", "content": content},
             ],
         )
 
         # Track tokens
-        self.total_input_tokens += response.usage.prompt_tokens
-        self.total_output_tokens += response.usage.completion_tokens
+        if response.usage:
+            self.total_input_tokens += response.usage.prompt_tokens
+            self.total_output_tokens += response.usage.completion_tokens
 
         return response.choices[0].message.content
 

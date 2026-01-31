@@ -602,18 +602,14 @@ class ProcessingConfig(BaseModel):
     Configuration for the PDF processing pipeline.
 
     Controls:
-    - API provider and model selection
+    - Model selection (OpenAI GPT-4o variants)
     - Chunking strategy
     - Output format
     """
-    # API Configuration
-    api_provider: str = Field(
-        "anthropic",
-        description="API provider: 'anthropic' or 'openai'"
-    )
+    # API Configuration (OpenAI only)
     model: str = Field(
-        "claude-sonnet-4-20250514",
-        description="Model identifier"
+        "gpt-4o",
+        description="OpenAI model to use (gpt-4o, gpt-4o-mini, etc.)"
     )
     max_tokens_per_request: int = Field(
         4096,

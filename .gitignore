@@ -1,6 +1,9 @@
 # Output files
 output/
 output_*/
+*_result.json
+*_chunks.json
+*_chunks.jsonl
 
 # Python
 __pycache__/

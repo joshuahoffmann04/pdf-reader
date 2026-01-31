@@ -2,16 +2,16 @@
 """
 PDF to RAG Pipeline
 
-Processes PDF documents using Vision LLM for high-quality natural language extraction.
+Processes PDF documents using OpenAI's Vision API (GPT-4o) for
+high-quality natural language extraction optimized for RAG systems.
 
 Usage:
     python scripts/process_for_rag.py input.pdf -o output_dir/
     python scripts/process_for_rag.py input.pdf --estimate-cost
-    python scripts/process_for_rag.py input.pdf --model claude-3-haiku-20240307
+    python scripts/process_for_rag.py input.pdf --model gpt-4o-mini
 
 Environment:
-    ANTHROPIC_API_KEY: Your Anthropic API key (or use --api-key)
-    OPENAI_API_KEY: Your OpenAI API key (if using OpenAI)
+    OPENAI_API_KEY: Your OpenAI API key (required)
 """
 
 import argparse
@@ -54,32 +54,31 @@ def progress_callback(current: int, total: int, status: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Process PDF documents for RAG using Vision LLM',
+        description='Process PDF documents for RAG using OpenAI Vision API',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Process a PDF with default settings
+  # Process a PDF with default settings (gpt-4o)
   python scripts/process_for_rag.py document.pdf -o output/
 
   # Estimate cost before processing
   python scripts/process_for_rag.py document.pdf --estimate-cost
 
-  # Use a cheaper model
-  python scripts/process_for_rag.py document.pdf --model claude-3-haiku-20240307
+  # Use a cheaper/faster model
+  python scripts/process_for_rag.py document.pdf --model gpt-4o-mini
 
-  # Use OpenAI instead of Anthropic
-  python scripts/process_for_rag.py document.pdf --provider openai --model gpt-4o
+  # Process with custom chunk size
+  python scripts/process_for_rag.py document.pdf --chunk-size 800
         """
     )
 
     parser.add_argument('pdf_path', help='Path to the PDF file')
-    parser.add_argument('-o', '--output', default='output_rag',
-                        help='Output directory (default: output_rag)')
-    parser.add_argument('--api-key', help='API key (or set ANTHROPIC_API_KEY env var)')
-    parser.add_argument('--provider', choices=['anthropic', 'openai'], default='anthropic',
-                        help='API provider (default: anthropic)')
-    parser.add_argument('--model', default='claude-sonnet-4-20250514',
-                        help='Model to use (default: claude-sonnet-4-20250514)')
+    parser.add_argument('-o', '--output', default='output',
+                        help='Output directory (default: output)')
+    parser.add_argument('--api-key',
+                        help='OpenAI API key (or set OPENAI_API_KEY env var)')
+    parser.add_argument('--model', default='gpt-4o',
+                        help='OpenAI model to use (default: gpt-4o)')
     parser.add_argument('--estimate-cost', action='store_true',
                         help='Only estimate cost, do not process')
     parser.add_argument('--chunk-size', type=int, default=500,
@@ -110,18 +109,19 @@ Examples:
         sys.exit(1)
 
     print(f"\n{'='*60}")
-    print(f"PDF to RAG Processor")
+    print(f"PDF to RAG Processor (OpenAI GPT-4o)")
     print(f"{'='*60}")
     print(f"Document: {pdf_path.name}")
     print(f"Pages: {page_count}")
     if doc_info.get('title'):
         print(f"Title: {doc_info['title']}")
+    print(f"Model: {args.model}")
     print(f"{'='*60}\n")
 
     # Estimate cost
     cost_estimate = estimate_api_cost(page_count, args.model)
     if 'error' not in cost_estimate:
-        print(f"Cost Estimate ({args.model}):")
+        print(f"Cost Estimate:")
         print(f"  Input tokens:  ~{cost_estimate['estimated_input_tokens']:,}")
         print(f"  Output tokens: ~{cost_estimate['estimated_output_tokens']:,}")
         print(f"  Estimated cost: ${cost_estimate['estimated_cost_usd']:.4f}")
@@ -132,13 +132,10 @@ Examples:
         sys.exit(0)
 
     # Get API key
-    api_key = args.api_key
+    api_key = args.api_key or os.environ.get('OPENAI_API_KEY')
     if not api_key:
-        env_var = 'ANTHROPIC_API_KEY' if args.provider == 'anthropic' else 'OPENAI_API_KEY'
-        api_key = os.environ.get(env_var)
-        if not api_key:
-            logger.error(f"No API key provided. Set {env_var} or use --api-key")
-            sys.exit(1)
+        logger.error("No API key provided. Set OPENAI_API_KEY or use --api-key")
+        sys.exit(1)
 
     # Create output directory
     output_dir = Path(args.output)
@@ -146,7 +143,6 @@ Examples:
 
     # Configure processing
     config = ProcessingConfig(
-        api_provider=args.provider,
         model=args.model,
         target_chunk_size=args.chunk_size,
         max_chunk_size=args.chunk_size * 2,
@@ -210,6 +206,7 @@ Examples:
     result_data = {
         "document": str(pdf_path),
         "processed_at": datetime.now().isoformat(),
+        "model": args.model,
         "context": result.context.model_dump(),
         "pages": [p.model_dump() for p in result.pages],
         "stats": {
