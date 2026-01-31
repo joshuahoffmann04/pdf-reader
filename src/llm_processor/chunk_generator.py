@@ -1,24 +1,32 @@
 """
 RAG Chunk Generator
 
-Converts processed page contents into optimized chunks for RAG retrieval.
+Converts extracted page contents into optimized chunks for RAG retrieval.
+
+This module takes the output from VisionProcessor and creates:
+- Self-contained chunks optimized for embedding
+- Rich metadata for filtered retrieval
+- Cross-references between related chunks
 """
 
 import re
 import json
 import hashlib
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass
 
 from .models import (
     DocumentContext,
-    PageContent,
+    ExtractedPage,
     RAGChunk,
+    ChunkMetadata,
     ChunkType,
     ProcessingConfig,
+    ProcessingResult,
 )
-from .vision_processor import ProcessingResult
+from .vision_processor import VisionProcessorResult
 
 
 @dataclass
@@ -38,7 +46,11 @@ class ChunkGenerator:
     Strategies:
     1. Section-based: Split by §/paragraph boundaries
     2. Semantic: Split by topic/content changes
-    3. Fixed-size: Split by token count with overlap
+    3. Fixed-size: Split by character count with overlap
+
+    Usage:
+        generator = ChunkGenerator(config=ProcessingConfig())
+        result = generator.generate_from_extraction(extraction_result, "doc-name")
     """
 
     def __init__(self, config: Optional[ProcessingConfig] = None):
@@ -47,24 +59,52 @@ class ChunkGenerator:
         # Regex patterns for structure detection
         self.section_pattern = re.compile(r'§\s*(\d+)\s*([^:§]*?)(?::|(?=\s*\())')
         self.paragraph_pattern = re.compile(r'\((\d+)\)')
-        self.reference_pattern = re.compile(r'§\s*\d+(?:\s*Abs(?:atz|\.)\s*\d+)?')
+        self.reference_pattern = re.compile(r'§\s*\d+(?:\s*Abs(?:atz|\.)?\s*\d+)?')
 
-    def generate_chunks(
+    def generate_from_extraction(
         self,
-        result: ProcessingResult,
+        result: VisionProcessorResult,
+        source_document: str,
+    ) -> ProcessingResult:
+        """
+        Generate a complete ProcessingResult with RAG chunks.
+
+        Args:
+            result: VisionProcessorResult from VisionProcessor
+            source_document: Name/identifier of the source document
+
+        Returns:
+            ProcessingResult with context, pages, and chunks
+        """
+        chunks = self._generate_chunks(result, source_document)
+
+        return ProcessingResult(
+            source_file=source_document,
+            context=result.context,
+            pages=result.pages,
+            chunks=chunks,
+            processing_time_seconds=result.processing_time_seconds,
+            total_input_tokens=result.total_input_tokens,
+            total_output_tokens=result.total_output_tokens,
+            errors=result.errors,
+        )
+
+    def _generate_chunks(
+        self,
+        result: VisionProcessorResult,
         source_document: str,
     ) -> list[RAGChunk]:
         """
-        Generate RAG chunks from processing result.
+        Generate RAG chunks from extraction result.
 
         Args:
-            result: ProcessingResult from VisionProcessor
+            result: VisionProcessorResult from VisionProcessor
             source_document: Name/identifier of the source document
 
         Returns:
             List of RAGChunk objects
         """
-        chunks = []
+        chunks: list[RAGChunk] = []
 
         # First, merge continuous content across pages
         merged_content = self._merge_page_content(result.pages)
@@ -87,17 +127,21 @@ class ChunkGenerator:
 
         return chunks
 
-    def _merge_page_content(self, pages: list[PageContent]) -> list[dict]:
+    def _merge_page_content(self, pages: list[ExtractedPage]) -> list[dict]:
         """
         Merge content that spans multiple pages.
 
         Returns list of sections with merged content.
         """
-        sections = []
-        current_section = None
+        sections: list[dict] = []
+        current_section: Optional[dict] = None
 
         for page in pages:
             content = page.content
+
+            # Get section info from page
+            section_numbers = [s.number for s in page.sections]
+            section_titles = [s.title for s in page.sections if s.title]
 
             # Check if this continues previous section
             if page.continues_from_previous and current_section:
@@ -105,8 +149,8 @@ class ChunkGenerator:
                 current_section["pages"].append(page.page_number)
 
                 # Update section info if new sections found
-                current_section["section_numbers"].extend(page.section_numbers)
-                current_section["section_titles"].extend(page.section_titles)
+                current_section["section_numbers"].extend(section_numbers)
+                current_section["section_titles"].extend(section_titles)
             else:
                 # Save previous section if exists
                 if current_section:
@@ -116,10 +160,11 @@ class ChunkGenerator:
                 current_section = {
                     "content": content,
                     "pages": [page.page_number],
-                    "section_numbers": list(page.section_numbers),
-                    "section_titles": list(page.section_titles),
+                    "section_numbers": list(section_numbers),
+                    "section_titles": list(section_titles),
                     "has_table": page.has_table,
                     "has_list": page.has_list,
+                    "content_types": list(page.content_types),
                     "internal_references": list(page.internal_references),
                     "external_references": list(page.external_references),
                 }
@@ -145,14 +190,20 @@ class ChunkGenerator:
         Split a section into appropriate chunks.
         """
         content = section["content"]
-        chunks = []
+        chunks: list[RAGChunk] = []
 
-        # Determine chunk type
-        chunk_type = ChunkType.SECTION
-        if section.get("has_table"):
+        # Determine primary chunk type
+        content_types = section.get("content_types", [])
+        if ChunkType.TABLE in content_types:
+            chunk_type = ChunkType.TABLE
+        elif ChunkType.LIST in content_types:
+            chunk_type = ChunkType.LIST
+        elif section.get("has_table"):
             chunk_type = ChunkType.TABLE
         elif section.get("has_list"):
             chunk_type = ChunkType.LIST
+        else:
+            chunk_type = ChunkType.SECTION
 
         # Check if content is short enough for single chunk
         if len(content) <= self.config.max_chunk_size:
@@ -197,7 +248,7 @@ class ChunkGenerator:
         max_size = self.config.max_chunk_size
         overlap = self.config.chunk_overlap
 
-        chunks = []
+        chunks: list[str] = []
 
         # Try to split by paragraph markers first
         paragraphs = re.split(r'(?=\(\d+\)\s)', content)
@@ -222,7 +273,7 @@ class ChunkGenerator:
             chunks.append(current_chunk.strip())
 
         # If still too large, split by sentences
-        final_chunks = []
+        final_chunks: list[str] = []
         for chunk in chunks:
             if len(chunk) > max_size:
                 sentences = re.split(r'(?<=[.!?])\s+', chunk)
@@ -251,12 +302,14 @@ class ChunkGenerator:
         context: DocumentContext,
         chunk_index: Optional[int] = None,
     ) -> RAGChunk:
-        """Create a single RAG chunk."""
+        """Create a single RAG chunk with full metadata."""
         # Generate unique ID
         content_hash = hashlib.md5(content.encode()).hexdigest()[:8]
         section_part = section_numbers[0] if section_numbers else "general"
+        # Clean section part for ID (remove special chars)
+        section_part_clean = re.sub(r'[^\w]', '', section_part)
         index_part = f"-{chunk_index}" if chunk_index is not None else ""
-        chunk_id = f"{source_document[:20]}-{section_part}{index_part}-{content_hash}"
+        chunk_id = f"{source_document[:20]}-{section_part_clean}{index_part}-{content_hash}"
 
         # Extract references from content
         references = self.reference_pattern.findall(content)
@@ -264,7 +317,7 @@ class ChunkGenerator:
         # Determine chapter from context
         chapter = self._determine_chapter(section_numbers, context)
 
-        # Extract keywords (simple approach - can be enhanced)
+        # Extract keywords
         keywords = self._extract_keywords(content, context)
 
         # Extract paragraph number if present
@@ -273,19 +326,28 @@ class ChunkGenerator:
         if para_match:
             paragraph = f"({para_match.group(1)})"
 
-        return RAGChunk(
-            id=chunk_id,
-            text=content,
-            chunk_type=chunk_type,
+        # Create metadata
+        metadata = ChunkMetadata(
             source_document=source_document,
             source_pages=pages,
+            document_type=context.document_type,
             section_number=section_numbers[0] if section_numbers else None,
             section_title=section_titles[0] if section_titles else None,
             chapter=chapter,
             paragraph=paragraph,
+            chunk_type=chunk_type,
             topics=context.main_topics[:3] if context.main_topics else [],
             keywords=keywords,
             related_sections=list(set(references)),
+            institution=context.institution,
+            degree_program=context.degree_program,
+            version_date=context.version_date,
+        )
+
+        return RAGChunk(
+            id=chunk_id,
+            text=content,
+            metadata=metadata,
         )
 
     def _create_metadata_chunk(
@@ -294,28 +356,39 @@ class ChunkGenerator:
         source_document: str,
     ) -> RAGChunk:
         """Create a metadata chunk for document-level information."""
-        meta_text = f"""Dokument: {context.title}
-Institution: {context.institution}
-Typ: {context.document_type.value}
-"""
+        meta_parts = [
+            f"Dokument: {context.title}",
+            f"Institution: {context.institution}",
+            f"Typ: {context.document_type.value}",
+        ]
         if context.degree_program:
-            meta_text += f"Studiengang: {context.degree_program}\n"
+            meta_parts.append(f"Studiengang: {context.degree_program}")
         if context.version_date:
-            meta_text += f"Version: {context.version_date}\n"
+            meta_parts.append(f"Version: {context.version_date}")
         if context.chapters:
-            meta_text += f"Gliederung: {', '.join(context.chapters)}\n"
+            meta_parts.append(f"Gliederung: {', '.join(context.chapters)}")
         if context.abbreviations:
-            abbrevs = [f"{k} = {v}" for k, v in context.abbreviations.items()]
-            meta_text += f"Abkürzungen: {'; '.join(abbrevs)}\n"
+            abbrevs = [f"{a.short} = {a.long}" for a in context.abbreviations]
+            meta_parts.append(f"Abkürzungen: {'; '.join(abbrevs)}")
+
+        meta_text = "\n".join(meta_parts)
+
+        metadata = ChunkMetadata(
+            source_document=source_document,
+            source_pages=[1],
+            document_type=context.document_type,
+            chunk_type=ChunkType.METADATA,
+            topics=["Dokumentinformation", "Metadaten"],
+            keywords=["Prüfungsordnung", context.institution] + context.key_terms[:5],
+            institution=context.institution,
+            degree_program=context.degree_program,
+            version_date=context.version_date,
+        )
 
         return RAGChunk(
             id=f"{source_document[:20]}-metadata",
             text=meta_text,
-            chunk_type=ChunkType.METADATA,
-            source_document=source_document,
-            source_pages=[1],
-            topics=["Dokumentinformation", "Metadaten"],
-            keywords=["Prüfungsordnung", context.institution] + context.key_terms[:5],
+            metadata=metadata,
         )
 
     def _determine_chapter(
@@ -328,9 +401,11 @@ Typ: {context.document_type.value}
             return None
 
         # Simple heuristic based on section number
-        # This could be enhanced with the actual chapter mapping
         try:
-            section_num = int(re.search(r'\d+', section_numbers[0]).group())
+            match = re.search(r'\d+', section_numbers[0])
+            if not match:
+                return None
+            section_num = int(match.group())
             if section_num <= 3:
                 return context.chapters[0] if context.chapters else None
             elif section_num <= 17:
@@ -344,7 +419,7 @@ Typ: {context.document_type.value}
 
     def _extract_keywords(self, content: str, context: DocumentContext) -> list[str]:
         """Extract keywords from content."""
-        keywords = []
+        keywords: list[str] = []
 
         # Check for known key terms
         content_lower = content.lower()
@@ -367,21 +442,21 @@ Typ: {context.document_type.value}
     def _link_related_chunks(self, chunks: list[RAGChunk]) -> None:
         """Link chunks that reference each other."""
         # Build section number index
-        section_index = {}
+        section_index: dict[str, str] = {}
         for chunk in chunks:
-            if chunk.section_number:
-                section_index[chunk.section_number] = chunk.id
+            if chunk.metadata.section_number:
+                section_index[chunk.metadata.section_number] = chunk.id
 
         # Link references
         for chunk in chunks:
-            for ref in chunk.related_sections:
+            for ref in chunk.metadata.related_sections:
                 # Clean reference to just section number
                 match = re.search(r'§\s*(\d+)', ref)
                 if match:
                     section_num = f"§{match.group(1)}"
                     if section_num in section_index:
-                        if section_index[section_num] not in chunk.related_sections:
-                            chunk.related_sections.append(section_index[section_num])
+                        if section_index[section_num] not in chunk.metadata.related_sections:
+                            chunk.metadata.related_sections.append(section_index[section_num])
 
     def export_jsonl(self, chunks: list[RAGChunk], output_path: str | Path) -> None:
         """Export chunks to JSONL format."""
@@ -395,10 +470,11 @@ Typ: {context.document_type.value}
         output_path = Path(output_path)
         data = {
             "total_chunks": len(chunks),
+            "exported_at": datetime.utcnow().isoformat(),
             "chunks": [chunk.to_dict() for chunk in chunks],
         }
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
 
     def get_stats(self, chunks: list[RAGChunk]) -> ChunkingStats:
         """Get statistics about the generated chunks."""
@@ -412,9 +488,9 @@ Typ: {context.document_type.value}
             )
 
         lengths = [len(chunk.text) for chunk in chunks]
-        type_counts = {}
+        type_counts: dict[str, int] = {}
         for chunk in chunks:
-            type_name = chunk.chunk_type.value
+            type_name = chunk.metadata.chunk_type.value
             type_counts[type_name] = type_counts.get(type_name, 0) + 1
 
         return ChunkingStats(

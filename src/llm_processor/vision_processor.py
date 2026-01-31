@@ -3,6 +3,11 @@ Vision LLM Processor
 
 Handles communication with Vision-capable LLMs (Claude, GPT-4V) for
 PDF content extraction and transformation.
+
+This is the main processing engine that:
+1. Analyzes document context from sample pages
+2. Extracts content page-by-page with context awareness
+3. Returns structured data ready for chunking
 """
 
 import json
@@ -10,14 +15,16 @@ import logging
 import time
 from pathlib import Path
 from typing import Optional, Callable
-from dataclasses import dataclass
 
-from .pdf_to_images import PDFToImages, PageImage
+from .pdf_to_images import PDFToImages
 from .models import (
     DocumentContext,
-    PageContent,
+    ExtractedPage,
+    SectionMarker,
     ProcessingConfig,
     DocumentType,
+    ChunkType,
+    Abbreviation,
 )
 from .prompts import (
     CONTEXT_ANALYSIS_SYSTEM,
@@ -29,15 +36,29 @@ from .prompts import (
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ProcessingResult:
-    """Result of processing a PDF document."""
-    context: DocumentContext
-    pages: list[PageContent]
-    processing_time_seconds: float
-    total_input_tokens: int
-    total_output_tokens: int
-    errors: list[str]
+class VisionProcessorResult:
+    """
+    Result of processing a PDF document.
+
+    This is a lightweight container for extraction results.
+    Use ProcessingResult for full pipeline output with chunks.
+    """
+
+    def __init__(
+        self,
+        context: DocumentContext,
+        pages: list[ExtractedPage],
+        processing_time_seconds: float,
+        total_input_tokens: int,
+        total_output_tokens: int,
+        errors: list[str],
+    ):
+        self.context = context
+        self.pages = pages
+        self.processing_time_seconds = processing_time_seconds
+        self.total_input_tokens = total_input_tokens
+        self.total_output_tokens = total_output_tokens
+        self.errors = errors
 
 
 class VisionProcessor:
@@ -47,6 +68,10 @@ class VisionProcessor:
     Two-phase approach:
     1. Context Analysis: Understand the entire document structure
     2. Page Extraction: Extract content page by page with full context
+
+    Usage:
+        processor = VisionProcessor(config=ProcessingConfig())
+        result = processor.process_document("document.pdf")
     """
 
     def __init__(
@@ -93,7 +118,7 @@ class VisionProcessor:
         self,
         pdf_path: str | Path,
         progress_callback: Optional[Callable[[int, int, str], None]] = None,
-    ) -> ProcessingResult:
+    ) -> VisionProcessorResult:
         """
         Process an entire PDF document.
 
@@ -102,11 +127,11 @@ class VisionProcessor:
             progress_callback: Optional callback(current_page, total_pages, status)
 
         Returns:
-            ProcessingResult with context and all page contents
+            VisionProcessorResult with context and all page contents
         """
         pdf_path = Path(pdf_path)
         start_time = time.time()
-        errors = []
+        errors: list[str] = []
 
         logger.info(f"Starting document processing: {pdf_path}")
 
@@ -134,7 +159,7 @@ class VisionProcessor:
             )
 
         # Phase 2: Page-by-Page Extraction
-        pages = []
+        pages: list[ExtractedPage] = []
         for page_num in range(1, total_pages + 1):
             if progress_callback:
                 progress_callback(page_num, total_pages, f"Processing page {page_num}...")
@@ -144,7 +169,7 @@ class VisionProcessor:
                     pdf_path,
                     page_num,
                     total_pages,
-                    context.to_dict(),
+                    context,
                 )
                 pages.append(page_content)
                 logger.debug(f"Page {page_num} extracted successfully")
@@ -152,9 +177,11 @@ class VisionProcessor:
                 logger.error(f"Page {page_num} extraction failed: {e}")
                 errors.append(f"Page {page_num} error: {str(e)}")
                 # Create placeholder
-                pages.append(PageContent(
+                pages.append(ExtractedPage(
                     page_number=page_num,
                     content=f"[Extraction failed: {str(e)}]",
+                    extraction_confidence=0.0,
+                    extraction_notes=str(e),
                 ))
 
             # Rate limiting
@@ -163,7 +190,7 @@ class VisionProcessor:
         processing_time = time.time() - start_time
         logger.info(f"Processing complete in {processing_time:.1f}s")
 
-        return ProcessingResult(
+        return VisionProcessorResult(
             context=context,
             pages=pages,
             processing_time_seconds=processing_time,
@@ -223,13 +250,22 @@ class VisionProcessor:
         pdf_path: Path,
         page_number: int,
         total_pages: int,
-        context_dict: dict,
-    ) -> PageContent:
+        context: DocumentContext,
+    ) -> ExtractedPage:
         """
         Phase 2: Extract content from a single page.
         """
         # Render page
         page_image = self.pdf_converter.render_page(pdf_path, page_number)
+
+        # Build context dict for prompt
+        context_dict = {
+            "document_type": context.document_type.value,
+            "title": context.title,
+            "institution": context.institution,
+            "degree_program": context.degree_program,
+            "abbreviations": context.get_abbreviation_dict(),
+        }
 
         # Build message content
         content = [
@@ -320,7 +356,7 @@ class VisionProcessor:
         return response.choices[0].message.content
 
     def _parse_context_response(self, response: str, total_pages: int) -> DocumentContext:
-        """Parse the context analysis response."""
+        """Parse the context analysis response into a DocumentContext."""
         try:
             # Extract JSON from response
             json_str = self._extract_json(response)
@@ -332,8 +368,21 @@ class VisionProcessor:
                 "pruefungsordnung": DocumentType.PRUEFUNGSORDNUNG,
                 "modulhandbuch": DocumentType.MODULHANDBUCH,
                 "studienordnung": DocumentType.STUDIENORDNUNG,
+                "allgemeine_bestimmungen": DocumentType.ALLGEMEINE_BESTIMMUNGEN,
+                "praktikumsordnung": DocumentType.PRAKTIKUMSORDNUNG,
+                "zulassungsordnung": DocumentType.ZULASSUNGSORDNUNG,
+                "satzung": DocumentType.SATZUNG,
+                "website": DocumentType.WEBSITE,
+                "faq": DocumentType.FAQ,
             }
             doc_type = doc_type_map.get(doc_type_str, DocumentType.OTHER)
+
+            # Parse abbreviations
+            abbrevs_raw = data.get("abbreviations", {})
+            abbreviations = [
+                Abbreviation(short=k, long=v)
+                for k, v in abbrevs_raw.items()
+            ] if isinstance(abbrevs_raw, dict) else []
 
             return DocumentContext(
                 document_type=doc_type,
@@ -344,7 +393,7 @@ class VisionProcessor:
                 chapters=data.get("chapters", []),
                 main_topics=data.get("main_topics", []),
                 degree_program=data.get("degree_program"),
-                abbreviations=data.get("abbreviations", {}),
+                abbreviations=abbreviations,
                 key_terms=data.get("key_terms", []),
                 referenced_documents=data.get("referenced_documents", []),
             )
@@ -357,20 +406,42 @@ class VisionProcessor:
                 total_pages=total_pages,
             )
 
-    def _parse_page_response(self, response: str, page_number: int) -> PageContent:
-        """Parse the page extraction response."""
+    def _parse_page_response(self, response: str, page_number: int) -> ExtractedPage:
+        """Parse the page extraction response into an ExtractedPage."""
         try:
             json_str = self._extract_json(response)
             data = json.loads(json_str)
 
-            return PageContent(
+            # Parse section markers
+            section_numbers = data.get("section_numbers", [])
+            section_titles = data.get("section_titles", [])
+            sections = []
+            for i, num in enumerate(section_numbers):
+                title = section_titles[i] if i < len(section_titles) else None
+                sections.append(SectionMarker(
+                    number=num,
+                    title=title,
+                    level=1,
+                    starts_on_page=True,
+                ))
+
+            # Determine content types
+            content_types = []
+            if data.get("has_table"):
+                content_types.append(ChunkType.TABLE)
+            if data.get("has_list"):
+                content_types.append(ChunkType.LIST)
+            if not content_types:
+                content_types.append(ChunkType.SECTION)
+
+            return ExtractedPage(
                 page_number=page_number,
                 content=data.get("content", ""),
-                section_numbers=data.get("section_numbers", []),
-                section_titles=data.get("section_titles", []),
+                sections=sections,
+                content_types=content_types,
                 has_table=data.get("has_table", False),
                 has_list=data.get("has_list", False),
-                has_image=data.get("has_image", False),
+                has_figure=data.get("has_image", False),
                 internal_references=data.get("internal_references", []),
                 external_references=data.get("external_references", []),
                 continues_from_previous=data.get("continues_from_previous", False),
@@ -379,9 +450,11 @@ class VisionProcessor:
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Failed to parse page {page_number} response: {e}")
             # Return raw content as fallback
-            return PageContent(
+            return ExtractedPage(
                 page_number=page_number,
                 content=response,
+                extraction_confidence=0.5,
+                extraction_notes=f"JSON parsing failed: {e}",
             )
 
     def _extract_json(self, text: str) -> str:

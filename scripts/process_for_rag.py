@@ -162,7 +162,7 @@ Examples:
     print("This may take a while depending on document size.\n")
 
     try:
-        result = processor.process_document(
+        extraction_result = processor.process_document(
             pdf_path,
             progress_callback=progress_callback,
         )
@@ -170,26 +170,26 @@ Examples:
         logger.error(f"Processing failed: {e}")
         sys.exit(1)
 
-    print(f"\nProcessing complete in {result.processing_time_seconds:.1f}s")
-    print(f"Tokens used: {result.total_input_tokens:,} input, {result.total_output_tokens:,} output")
+    print(f"\nExtraction complete in {extraction_result.processing_time_seconds:.1f}s")
+    print(f"Tokens used: {extraction_result.total_input_tokens:,} input, {extraction_result.total_output_tokens:,} output")
 
-    if result.errors:
-        print(f"\nWarnings/Errors ({len(result.errors)}):")
-        for error in result.errors[:5]:
+    if extraction_result.errors:
+        print(f"\nWarnings/Errors ({len(extraction_result.errors)}):")
+        for error in extraction_result.errors[:5]:
             print(f"  - {error}")
-        if len(result.errors) > 5:
-            print(f"  ... and {len(result.errors) - 5} more")
+        if len(extraction_result.errors) > 5:
+            print(f"  ... and {len(extraction_result.errors) - 5} more")
 
     # Generate chunks
     print("\nGenerating RAG chunks...")
     source_name = pdf_path.stem
-    chunks = chunk_generator.generate_chunks(result, source_name)
+    result = chunk_generator.generate_from_extraction(extraction_result, source_name)
 
-    stats = chunk_generator.get_stats(chunks)
-    print(f"Generated {stats.total_chunks} chunks")
-    print(f"  Average length: {stats.avg_chunk_length:.0f} chars")
-    print(f"  Range: {stats.min_chunk_length} - {stats.max_chunk_length} chars")
-    print(f"  Types: {stats.chunks_by_type}")
+    stats = result.get_chunk_stats()
+    print(f"Generated {stats['total_chunks']} chunks")
+    print(f"  Average length: {stats['avg_length']:.0f} chars")
+    print(f"  Range: {stats['min_length']} - {stats['max_length']} chars")
+    print(f"  Types: {stats['by_type']}")
 
     # Export
     print("\nExporting...")
@@ -197,31 +197,31 @@ Examples:
 
     if args.format in ['jsonl', 'both']:
         jsonl_path = output_dir / f"{source_name}_{timestamp}_chunks.jsonl"
-        chunk_generator.export_jsonl(chunks, jsonl_path)
+        result.export_chunks_jsonl(str(jsonl_path))
         print(f"  JSONL: {jsonl_path}")
 
     if args.format in ['json', 'both']:
         json_path = output_dir / f"{source_name}_{timestamp}_chunks.json"
-        chunk_generator.export_json(chunks, json_path)
+        chunk_generator.export_json(result.chunks, json_path)
         print(f"  JSON:  {json_path}")
 
-    # Save processing result
+    # Save full processing result
     result_path = output_dir / f"{source_name}_{timestamp}_result.json"
     result_data = {
         "document": str(pdf_path),
         "processed_at": datetime.now().isoformat(),
-        "context": result.context.to_dict(),
-        "pages": [p.to_dict() for p in result.pages],
+        "context": result.context.model_dump(),
+        "pages": [p.model_dump() for p in result.pages],
         "stats": {
             "processing_time_seconds": result.processing_time_seconds,
             "total_input_tokens": result.total_input_tokens,
             "total_output_tokens": result.total_output_tokens,
-            "chunk_count": stats.total_chunks,
+            "chunk_count": stats['total_chunks'],
         },
         "errors": result.errors,
     }
     with open(result_path, 'w', encoding='utf-8') as f:
-        json.dump(result_data, f, ensure_ascii=False, indent=2)
+        json.dump(result_data, f, ensure_ascii=False, indent=2, default=str)
     print(f"  Full result: {result_path}")
 
     print(f"\n{'='*60}")

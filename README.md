@@ -1,350 +1,258 @@
-# PDF Reader
+# PDF to RAG Pipeline
 
-A high-accuracy PDF extraction tool for German legal and academic documents. Extracts and structures content with **99%+ similarity** to the original text.
+A Vision-LLM powered pipeline for converting PDF documents into RAG-optimized natural language chunks.
 
-## Features
+## Overview
 
-- **Text Extraction**: Layout-preserving extraction using PyMuPDF
-- **Structure Recognition**: Automatic detection of chapters (I., II., ...), sections (§1, §2, ...), and appendices (Anlage 1, 2, ...)
-- **Table Extraction**: Multi-page table support with intelligent merging
-- **Image Extraction**: With deduplication and size filtering
-- **AB Linking**: Automatic linking of "Allgemeine Bestimmungen" excerpts to main sections
-- **Page Tracking**: Every section includes page number references
-- **Quality Evaluation**: Built-in similarity metrics for extraction validation
-- **Dual Export**: JSON and Markdown output formats
+This tool uses Vision-capable LLMs (Claude, GPT-4V) to extract content from PDF documents and convert it into chunks optimized for Retrieval-Augmented Generation (RAG) systems.
 
-## Supported Document Types
+**Key Features:**
+- Converts tables, lists, and structured content to natural language
+- Preserves document structure (§ sections, paragraphs)
+- Generates rich metadata for filtered retrieval
+- Compatible with LangChain, LlamaIndex, and Haystack
+- Supports both Anthropic (Claude) and OpenAI (GPT-4V) APIs
 
-This tool is optimized for German legal and academic documents that follow common structural patterns:
+## Architecture
 
-| Pattern | Example | Description |
-|---------|---------|-------------|
-| Chapters | `I. Allgemeines` | Roman numeral headings |
-| Sections | `§ 1 Geltungsbereich` | Paragraph sections |
-| Appendices | `Anlage 1` / `Anhang 1` | Numbered attachments |
-| AB Excerpts | `Textauszug aus den Allgemeinen Bestimmungen` | Referenced general provisions |
-
-**Example documents**: Prüfungsordnungen (examination regulations), Satzungen (statutes), Ordnungen (regulations)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Processing Pipeline                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Phase 1: Context Analysis                                       │
+│  ┌──────────┐    ┌──────────┐    ┌──────────────────┐           │
+│  │   PDF    │───▶│  Sample  │───▶│   Vision LLM    │           │
+│  │          │    │  Pages   │    │ (Context Prompt) │           │
+│  └──────────┘    └──────────┘    └────────┬─────────┘           │
+│                                           │                      │
+│                                           ▼                      │
+│                                  DocumentContext                 │
+│                                  - document_type                 │
+│                                  - title, institution            │
+│                                  - abbreviations                 │
+│                                  - key_terms                     │
+│                                                                  │
+│  Phase 2: Page-by-Page Extraction                                │
+│  ┌──────────┐    ┌──────────┐    ┌──────────────────┐           │
+│  │  Page N  │───▶│  Image   │───▶│   Vision LLM    │           │
+│  │          │    │          │    │ (+ Context)      │           │
+│  └──────────┘    └──────────┘    └────────┬─────────┘           │
+│                                           │                      │
+│                                           ▼                      │
+│                                     ExtractedPage                │
+│                                  - natural language text         │
+│                                  - section info                  │
+│                                  - references                    │
+│                                                                  │
+│  Phase 3: Chunk Generation                                       │
+│  ┌──────────────┐    ┌──────────────────┐                       │
+│  │ All Pages    │───▶│  Smart Chunking  │                       │
+│  │              │    │  + Metadata      │                       │
+│  └──────────────┘    └────────┬─────────┘                       │
+│                               │                                  │
+│                               ▼                                  │
+│                          RAGChunk (JSONL)                        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ## Installation
 
-### Using pip
-
 ```bash
+# Clone the repository
+git clone https://github.com/joshuahoffmann04/pdf-reader.git
+cd pdf-reader
+
+# Install dependencies
 pip install -r requirements.txt
+
+# For Anthropic Claude
+pip install anthropic
+
+# For OpenAI GPT-4V
+pip install openai
 ```
-
-### Using pip with development dependencies
-
-```bash
-pip install -e ".[dev]"
-```
-
-### Requirements
-
-- Python 3.10+
-- PyMuPDF (fitz)
-- pdfplumber
-- Pillow
-- numpy
-- scikit-learn
-- nltk
 
 ## Quick Start
 
 ### Command Line
 
 ```bash
-# Basic extraction
-python main.py document.pdf
+# Set your API key
+export ANTHROPIC_API_KEY="your-key-here"
 
-# Custom output directory and format
-python main.py document.pdf -o results/ -f json
+# Process a PDF
+python scripts/process_for_rag.py document.pdf -o output/
 
-# Verbose output
-python main.py document.pdf -v
+# Estimate cost first
+python scripts/process_for_rag.py document.pdf --estimate-cost
 
-# Skip image/table extraction
-python main.py document.pdf --no-images --no-tables
+# Use a cheaper model
+python scripts/process_for_rag.py document.pdf --model claude-3-haiku-20240307
 ```
 
 ### Python API
 
 ```python
-from pathlib import Path
-from main import PDFReaderPipeline, ExtractionConfig
-
-# Configure extraction
-config = ExtractionConfig(
-    extract_images=True,
-    extract_tables=True,
-    merge_cross_page_tables=True,
-    output_format="both"  # "json", "markdown", or "both"
+from src.llm_processor import (
+    VisionProcessor,
+    ChunkGenerator,
+    ProcessingConfig,
 )
 
-# Run extraction
-pipeline = PDFReaderPipeline(config)
-result = pipeline.extract(Path("document.pdf"), Path("output/"))
+# Configure
+config = ProcessingConfig(
+    model="claude-sonnet-4-20250514",
+    target_chunk_size=500,
+)
 
-# Access results
-print(f"Found {result.statistics['chapters']} chapters")
-print(f"Found {result.statistics['main_sections']} sections")
+# Process document
+processor = VisionProcessor(config=config)
+extraction = processor.process_document("document.pdf")
 
-for chapter in result.chapters:
-    print(f"{chapter['numeral']}. {chapter['title']}")
-    for section in chapter['sections']:
-        print(f"  {section['id']}: {section['title']}")
+# Generate chunks
+generator = ChunkGenerator(config=config)
+result = generator.generate_from_extraction(extraction, "document-name")
+
+# Export for different frameworks
+langchain_docs = result.export_chunks_langchain()
+llamaindex_nodes = result.export_chunks_llamaindex()
+
+# Or export to file
+result.export_chunks_jsonl("output.jsonl")
 ```
 
-### Low-Level API
+## Output Format
+
+### RAGChunk Structure
+
+Each chunk is optimized for RAG retrieval with rich metadata:
 
 ```python
-from src import PDFExtractor, DocumentParser, TableExtractor, ImageExtractor
-
-# Extract raw text
-extractor = PDFExtractor()
-pdf_doc = extractor.extract("document.pdf")
-
-# Parse structure (with page markers for tracking)
-parser = DocumentParser()
-doc = parser.parse(pdf_doc.get_full_text(include_page_markers=True))
-
-# Access parsed structure
-for chapter in doc.chapters:
-    print(f"{chapter.numeral}. {chapter.title}")
-    for section in chapter.sections:
-        print(f"  {section.id} {section.title} (Pages: {section.pages})")
-
-# Extract tables
-table_extractor = TableExtractor()
-tables = table_extractor.extract_from_pdf("document.pdf")
-
-# Extract images
-image_extractor = ImageExtractor(min_width=100, min_height=100)
-images = image_extractor.extract_from_pdf("document.pdf", output_dir="images/")
+RAGChunk(
+    id="doc-name-§10-abc123",
+    text="§10 Module und Leistungspunkte: Ein Modul ist eine...",
+    metadata=ChunkMetadata(
+        source_document="Pruefungsordnung_2024",
+        source_pages=[9, 10],
+        document_type="pruefungsordnung",
+        section_number="§10",
+        section_title="Module und Leistungspunkte",
+        chapter="II. Studienbezogene Bestimmungen",
+        chunk_type="section",
+        topics=["Module", "Leistungspunkte"],
+        keywords=["Modul", "LP", "ECTS"],
+        related_sections=["§7", "§11"],
+        institution="Philipps-Universität Marburg",
+        degree_program="Mathematik B.Sc.",
+    )
+)
 ```
 
-## Output Structure
+### Export Formats
 
-### JSON Schema
-
-```json
-{
-  "version": "1.0",
-  "extracted_at": "2024-01-15T10:30:00",
-  "metadata": {
-    "source": "document.pdf",
-    "title": "Document Title",
-    "total_pages": 50
-  },
-  "preamble": "Introductory text...",
-  "chapters": [
-    {
-      "id": "I",
-      "numeral": "I",
-      "title": "Allgemeines",
-      "sections": [
-        {
-          "id": "§1",
-          "number": 1,
-          "title": "Geltungsbereich",
-          "content": "Section content...",
-          "pages": [3, 4],
-          "ab_references": ["§6"]
-        }
-      ],
-      "ab_excerpts": [
-        {
-          "id": "§6",
-          "title": "Prüfungsausschuss",
-          "content": "AB excerpt content...",
-          "follows_section": "§5"
-        }
-      ]
-    }
-  ],
-  "appendices": [
-    {
-      "id": "Anlage 1",
-      "number": "1",
-      "title": "Modulhandbuch",
-      "content": "...",
-      "sections": []
-    }
-  ],
-  "tables": [...],
-  "images": [...],
-  "statistics": {
-    "chapters": 4,
-    "main_sections": 40,
-    "ab_excerpts": 8,
-    "appendices": 5,
-    "tables": 12,
-    "images": 3
-  }
-}
+**LangChain:**
+```python
+chunk.to_langchain_document()
+# Returns: {"page_content": "...", "metadata": {...}}
 ```
 
-## Scripts
-
-### Analyze PDF Structure
-
-Analyze a PDF to understand its structure before extraction:
-
-```bash
-python -m scripts.analyze document.pdf
-python -m scripts.analyze document.pdf --verbose
+**LlamaIndex:**
+```python
+chunk.to_llamaindex_node()
+# Returns: {"id_": "...", "text": "...", "metadata": {...}}
 ```
 
-### Validate Extraction
-
-Validate the parsed structure:
-
-```bash
-python -m scripts.validate document.pdf
-python -m scripts.validate document.pdf --expected-chapters 4
+**Haystack:**
+```python
+chunk.to_haystack_document()
+# Returns: {"id": "...", "content": "...", "meta": {...}}
 ```
 
-### Evaluate Quality
-
-Compare extracted content against the original PDF:
-
-```bash
-python -m scripts.evaluate --pdf document.pdf --json output/document_extracted.json
-python -m scripts.evaluate --pdf document.pdf --json output/document_extracted.json --output report.json
+**JSONL (for file storage):**
+```python
+chunk.to_jsonl_entry()
+# Returns JSON string with all fields
 ```
 
-## Quality Metrics
+## Data Models
 
-The evaluation system provides comprehensive quality metrics:
+### DocumentContext
+Document-level metadata extracted during context analysis:
+- `document_type`: pruefungsordnung, modulhandbuch, etc.
+- `title`: Official document title
+- `institution`: University/organization
+- `abbreviations`: List of abbreviations and expansions
+- `key_terms`: Important domain terminology
+- `chapters`: Document structure
 
-| Metric | Description |
-|--------|-------------|
-| Cosine Similarity | Content accuracy based on TF-IDF vectors |
-| BLEU Score | N-gram precision (1-4 grams) |
-| Word Overlap | Jaccard similarity of word sets |
-| Overall Score | Weighted combination (0-100%) |
+### ExtractedPage
+Content extracted from each page:
+- `content`: Natural language text
+- `sections`: Section markers (§10, §11, etc.)
+- `has_table`, `has_list`: Content classification
+- `continues_from_previous`, `continues_to_next`: Pagination info
 
-**Typical results for German legal documents:**
-- Cosine Similarity: 99%+
-- BLEU Score: 98%+
-- Overall Score: 95%+
+### RAGChunk
+Final chunk for RAG ingestion:
+- `id`: Unique identifier
+- `text`: Natural language content
+- `metadata`: Rich metadata for filtering and context
+
+## Cost Estimation
+
+| Model | ~Cost per 50 pages |
+|-------|-------------------|
+| claude-sonnet-4-20250514 | $0.15 - $0.25 |
+| claude-3-haiku | $0.02 - $0.04 |
+| gpt-4o | $0.12 - $0.20 |
+| gpt-4o-mini | $0.01 - $0.02 |
+
+## Configuration Options
+
+```python
+ProcessingConfig(
+    # API settings
+    api_provider="anthropic",  # or "openai"
+    model="claude-sonnet-4-20250514",
+    temperature=0.0,  # Deterministic output
+
+    # Chunking settings
+    target_chunk_size=500,   # Target chars per chunk
+    max_chunk_size=1000,     # Maximum chars
+    chunk_overlap=50,        # Overlap between chunks
+
+    # Processing options
+    expand_abbreviations=True,
+    merge_cross_page_content=True,
+
+    # Output settings
+    output_format="jsonl",   # or "json"
+)
+```
 
 ## Project Structure
 
 ```
 pdf-reader/
-├── main.py                 # CLI and main pipeline
-├── pyproject.toml          # Project configuration
-├── requirements.txt        # Dependencies
 ├── src/
-│   ├── __init__.py         # Public API exports
-│   ├── logging_config.py   # Logging configuration
-│   ├── extractor/          # PDF text extraction
-│   │   ├── __init__.py
-│   │   └── pdf_extractor.py
-│   ├── parser/             # Document structure parsing
-│   │   ├── __init__.py
-│   │   └── document_parser.py
-│   ├── tables/             # Table extraction
-│   │   ├── __init__.py
-│   │   └── table_extractor.py
-│   ├── images/             # Image extraction
-│   │   ├── __init__.py
-│   │   └── image_extractor.py
-│   └── evaluation/         # Quality metrics
+│   └── llm_processor/
 │       ├── __init__.py
-│       └── evaluator.py
-├── scripts/                # Utility scripts
-│   ├── analyze.py          # PDF structure analysis
-│   ├── validate.py         # Structure validation
-│   └── evaluate.py         # Quality evaluation
-└── tests/                  # Test suite
-    ├── test_document_parser.py
-    ├── test_table_extractor.py
-    ├── test_image_extractor.py
-    ├── test_evaluator.py
-    └── test_integration.py
+│       ├── models.py          # Pydantic data models
+│       ├── vision_processor.py # Main LLM processor
+│       ├── chunk_generator.py  # Chunking logic
+│       ├── pdf_to_images.py   # PDF rendering
+│       ├── prompts.py         # LLM prompts
+│       └── README.md
+├── scripts/
+│   └── process_for_rag.py     # CLI tool
+├── archived/                   # Old approach (kept for reference)
+├── pdfs/                       # Test PDFs
+├── requirements.txt
+└── README.md
 ```
-
-## Architecture
-
-```
-PDF File
-    │
-    ▼
-┌─────────────────┐
-│  PDFExtractor   │  ──▶  Raw text with page markers
-└─────────────────┘
-    │
-    ▼
-┌─────────────────┐
-│ DocumentParser  │  ──▶  Hierarchical structure
-└─────────────────┘       (Chapters, Sections, Appendices)
-    │
-    ├──────────────────┐
-    ▼                  ▼
-┌─────────────────┐  ┌─────────────────┐
-│ TableExtractor  │  │ ImageExtractor  │
-└─────────────────┘  └─────────────────┘
-    │                  │
-    ▼                  ▼
-┌─────────────────────────────────────┐
-│         ExtractionResult            │
-│  (JSON / Markdown Export)           │
-└─────────────────────────────────────┘
-```
-
-## Testing
-
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_document_parser.py -v
-
-# Run with coverage
-pytest tests/ --cov=src --cov-report=html
-```
-
-## Configuration
-
-### ExtractionConfig Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `extract_images` | bool | True | Extract images from PDF |
-| `extract_tables` | bool | True | Extract tables from PDF |
-| `merge_cross_page_tables` | bool | True | Merge tables spanning multiple pages |
-| `min_image_width` | int | 100 | Minimum image width in pixels |
-| `min_image_height` | int | 100 | Minimum image height in pixels |
-| `output_format` | str | "both" | Output format: "json", "markdown", or "both" |
-
-## Extending for New Document Types
-
-To adapt the parser for different document structures:
-
-1. **Analyze the structure** using `scripts/analyze.py`
-2. **Modify patterns** in `src/parser/document_parser.py`:
-   - `CHAPTER_PATTERN` for chapter headers
-   - `SECTION_PATTERN` for section headers
-   - `APPENDIX_PATTERN` for appendices
-   - `AB_MARKER_PATTERN` for special excerpts
-
-3. **Validate** using `scripts/validate.py`
-4. **Evaluate quality** using `scripts/evaluate.py`
 
 ## License
 
-MIT
-
-## Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+MIT License
