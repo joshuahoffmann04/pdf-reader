@@ -1,20 +1,18 @@
 """
-Tests for data models.
+Tests for PDF Extractor data models.
 """
 
 import pytest
 from datetime import datetime
 
-from src.llm_processor.models import (
+from pdf_extractor import (
     DocumentContext,
     ExtractedPage,
+    ExtractionResult,
     SectionMarker,
-    RAGChunk,
-    ChunkMetadata,
     ProcessingConfig,
-    ProcessingResult,
     DocumentType,
-    ChunkType,
+    ContentType,
     Language,
     Abbreviation,
 )
@@ -56,6 +54,12 @@ class TestDocumentContext:
         reconstructed = DocumentContext(**data)
         assert reconstructed.title == sample_context.title
 
+    def test_to_dict(self, sample_context):
+        """Test to_dict method."""
+        data = sample_context.to_dict()
+        assert data["title"] == sample_context.title
+        assert isinstance(data, dict)
+
 
 class TestExtractedPage:
     """Tests for ExtractedPage model."""
@@ -89,67 +93,74 @@ class TestExtractedPage:
         assert data["page_number"] == 5
         assert len(data["sections"]) == 2
 
+    def test_to_dict(self, sample_page):
+        """Test to_dict method."""
+        data = sample_page.to_dict()
+        assert data["page_number"] == 5
+        assert isinstance(data, dict)
 
-class TestRAGChunk:
-    """Tests for RAGChunk model."""
 
-    def test_create_chunk(self, sample_chunk):
-        """Test creating a RAG chunk."""
-        assert sample_chunk.id == "pruefungsordnung-10-abc123"
-        assert "§10" in sample_chunk.text
-        assert sample_chunk.metadata.section_number == "§10"
+class TestExtractionResult:
+    """Tests for ExtractionResult model."""
 
-    def test_to_langchain_document(self, sample_chunk):
-        """Test LangChain export format."""
-        lc_doc = sample_chunk.to_langchain_document()
-        assert "page_content" in lc_doc
-        assert "metadata" in lc_doc
-        assert lc_doc["metadata"]["section"] == "§10"
-        assert lc_doc["metadata"]["doc_type"] == "pruefungsordnung"
-
-    def test_to_llamaindex_node(self, sample_chunk):
-        """Test LlamaIndex export format."""
-        li_node = sample_chunk.to_llamaindex_node()
-        assert "id_" in li_node
-        assert "text" in li_node
-        assert li_node["id_"] == sample_chunk.id
-        assert "excluded_embed_metadata_keys" in li_node
-
-    def test_to_haystack_document(self, sample_chunk):
-        """Test Haystack export format."""
-        hs_doc = sample_chunk.to_haystack_document()
-        assert "id" in hs_doc
-        assert "content" in hs_doc
-        assert "meta" in hs_doc
-        assert hs_doc["meta"]["section"] == "§10"
-
-    def test_to_jsonl_entry(self, sample_chunk):
-        """Test JSONL export format."""
-        jsonl = sample_chunk.to_jsonl_entry()
-        assert isinstance(jsonl, str)
-        assert "pruefungsordnung-10-abc123" in jsonl
-        assert "§10" in jsonl
-
-    def test_to_embedding_input(self, sample_chunk):
-        """Test embedding input generation."""
-        embedding_text = sample_chunk.to_embedding_input()
-        assert "§10" in embedding_text
-        assert "Module und Leistungspunkte" in embedding_text
-
-    def test_id_validation(self):
-        """Test chunk ID validation."""
-        metadata = ChunkMetadata(
-            source_document="test",
-            source_pages=[1],
-            document_type=DocumentType.OTHER,
+    def test_create_minimal(self, sample_context):
+        """Test creating result with minimal fields."""
+        result = ExtractionResult(
+            source_file="test.pdf",
+            context=sample_context,
         )
-        # Valid ID
-        chunk = RAGChunk(id="valid-id_123.test", text="Test", metadata=metadata)
-        assert chunk.id == "valid-id_123.test"
+        assert result.source_file == "test.pdf"
+        assert result.pages == []
+        assert result.errors == []
 
-        # Invalid ID (special characters)
-        with pytest.raises(ValueError):
-            RAGChunk(id="invalid id!", text="Test", metadata=metadata)
+    def test_create_full(self, sample_result):
+        """Test creating result with all fields."""
+        assert sample_result.source_file == "test.pdf"
+        assert len(sample_result.pages) == 3
+        assert sample_result.processing_time_seconds == 10.5
+
+    def test_get_page_stats(self, sample_result):
+        """Test page statistics calculation."""
+        stats = sample_result.get_page_stats()
+        assert stats["total_pages"] == 3
+        assert stats["pages_with_tables"] == 1
+        assert stats["pages_with_lists"] == 0
+        assert stats["avg_content_length"] > 0
+
+    def test_get_page_stats_empty(self, sample_context):
+        """Test stats with no pages."""
+        result = ExtractionResult(
+            source_file="test.pdf",
+            context=sample_context,
+        )
+        stats = result.get_page_stats()
+        assert stats["total_pages"] == 0
+        assert stats["avg_content_length"] == 0
+
+    def test_get_all_sections(self, sample_result):
+        """Test getting all sections."""
+        sections = sample_result.get_all_sections()
+        assert len(sections) == 3
+        assert sections[0].number == "§1"
+
+    def test_get_full_content(self, sample_result):
+        """Test getting full content."""
+        content = sample_result.get_full_content()
+        assert "Seite 1 Inhalt" in content
+        assert "Seite 2 Inhalt" in content
+
+    def test_to_dict(self, sample_result):
+        """Test to_dict method."""
+        data = sample_result.to_dict()
+        assert data["source_file"] == "test.pdf"
+        assert isinstance(data["pages"], list)
+        assert isinstance(data["context"], dict)
+
+    def test_to_json(self, sample_result):
+        """Test to_json method."""
+        json_str = sample_result.to_json()
+        assert isinstance(json_str, str)
+        assert "test.pdf" in json_str
 
 
 class TestProcessingConfig:
@@ -159,57 +170,52 @@ class TestProcessingConfig:
         """Test default configuration values."""
         config = ProcessingConfig()
         assert config.model == "gpt-4o"
-        assert config.target_chunk_size == 500
-        assert config.max_chunk_size == 1000
+        assert config.max_retries == 3
         assert config.temperature == 0.0
 
     def test_custom_values(self):
         """Test custom configuration."""
         config = ProcessingConfig(
             model="gpt-4o-mini",
-            target_chunk_size=800,
-            max_chunk_size=1600,
+            max_retries=5,
+            temperature=0.1,
         )
         assert config.model == "gpt-4o-mini"
-        assert config.target_chunk_size == 800
-
-    def test_chunk_size_validation(self):
-        """Test max_chunk_size must be >= target_chunk_size."""
-        with pytest.raises(ValueError):
-            ProcessingConfig(
-                target_chunk_size=1000,
-                max_chunk_size=500,  # Invalid: smaller than target
-            )
+        assert config.max_retries == 5
+        assert config.temperature == 0.1
 
 
-class TestProcessingResult:
-    """Tests for ProcessingResult model."""
+class TestSectionMarker:
+    """Tests for SectionMarker model."""
 
-    def test_get_chunk_stats_empty(self):
-        """Test stats with no chunks."""
-        result = ProcessingResult(
-            source_file="test.pdf",
-            context=DocumentContext(
-                document_type=DocumentType.OTHER,
-                title="Test",
-                institution="Test",
-            ),
+    def test_create_minimal(self):
+        """Test creating section marker with minimal fields."""
+        section = SectionMarker(number="§1")
+        assert section.number == "§1"
+        assert section.title is None
+        assert section.level == 1
+
+    def test_create_full(self):
+        """Test creating section marker with all fields."""
+        section = SectionMarker(
+            number="§10",
+            title="Module und Leistungspunkte",
+            level=2,
+            starts_on_page=True,
         )
-        stats = result.get_chunk_stats()
-        assert stats["total_chunks"] == 0
-        assert stats["avg_length"] == 0
+        assert section.number == "§10"
+        assert section.title == "Module und Leistungspunkte"
+        assert section.level == 2
 
-    def test_get_chunk_stats(self, sample_chunk, sample_context):
-        """Test stats calculation."""
-        result = ProcessingResult(
-            source_file="test.pdf",
-            context=sample_context,
-            chunks=[sample_chunk, sample_chunk],
-        )
-        stats = result.get_chunk_stats()
-        assert stats["total_chunks"] == 2
-        assert stats["avg_length"] > 0
-        assert "section" in stats["by_type"]
+
+class TestAbbreviation:
+    """Tests for Abbreviation model."""
+
+    def test_create(self):
+        """Test creating abbreviation."""
+        abbrev = Abbreviation(short="LP", long="Leistungspunkte")
+        assert abbrev.short == "LP"
+        assert abbrev.long == "Leistungspunkte"
 
 
 class TestEnums:
@@ -221,11 +227,11 @@ class TestEnums:
         assert DocumentType.MODULHANDBUCH.value == "modulhandbuch"
         assert DocumentType.OTHER.value == "other"
 
-    def test_chunk_types(self):
-        """Test all chunk types are accessible."""
-        assert ChunkType.SECTION.value == "section"
-        assert ChunkType.TABLE.value == "table"
-        assert ChunkType.DEFINITION.value == "definition"
+    def test_content_types(self):
+        """Test all content types are accessible."""
+        assert ContentType.SECTION.value == "section"
+        assert ContentType.TABLE.value == "table"
+        assert ContentType.DEFINITION.value == "definition"
 
     def test_language(self):
         """Test language enum."""

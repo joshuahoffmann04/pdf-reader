@@ -1,5 +1,5 @@
 """
-Vision LLM Processor
+PDF Extractor - Main Processing Engine
 
 Processes PDF documents using OpenAI's Vision API (GPT-4o) for
 high-quality content extraction and transformation.
@@ -7,7 +7,17 @@ high-quality content extraction and transformation.
 This is the main processing engine that:
 1. Analyzes document context from sample pages
 2. Extracts content page-by-page with context awareness
-3. Returns structured data ready for chunking
+3. Returns structured data ready for downstream processing
+
+Usage:
+    from pdf_extractor import PDFExtractor
+
+    extractor = PDFExtractor()
+    result = extractor.extract("document.pdf")
+    result.save("output.json")
+
+Environment:
+    OPENAI_API_KEY: Your OpenAI API key
 """
 
 import json
@@ -23,10 +33,11 @@ from .pdf_to_images import PDFToImages
 from .models import (
     DocumentContext,
     ExtractedPage,
+    ExtractionResult,
     SectionMarker,
     ProcessingConfig,
     DocumentType,
-    ChunkType,
+    ContentType,
     Abbreviation,
 )
 from .prompts import (
@@ -39,42 +50,25 @@ from .prompts import (
 logger = logging.getLogger(__name__)
 
 
-class VisionProcessorResult:
+class PDFExtractor:
     """
-    Result of processing a PDF document.
-
-    This is a lightweight container for extraction results.
-    Use ProcessingResult for full pipeline output with chunks.
-    """
-
-    def __init__(
-        self,
-        context: DocumentContext,
-        pages: list[ExtractedPage],
-        processing_time_seconds: float,
-        total_input_tokens: int,
-        total_output_tokens: int,
-        errors: list[str],
-    ):
-        self.context = context
-        self.pages = pages
-        self.processing_time_seconds = processing_time_seconds
-        self.total_input_tokens = total_input_tokens
-        self.total_output_tokens = total_output_tokens
-        self.errors = errors
-
-
-class VisionProcessor:
-    """
-    Main processor for Vision-LLM based PDF extraction using OpenAI GPT-4o.
+    Main extractor for Vision-LLM based PDF content extraction using OpenAI GPT-4o.
 
     Two-phase approach:
     1. Context Analysis: Understand the entire document structure
     2. Page Extraction: Extract content page by page with full context
 
     Usage:
-        processor = VisionProcessor()
-        result = processor.process_document("document.pdf")
+        extractor = PDFExtractor()
+        result = extractor.extract("document.pdf")
+
+        # Access results
+        print(result.context.title)
+        for page in result.pages:
+            print(f"Page {page.page_number}: {page.content[:100]}...")
+
+        # Save to file
+        result.save("output.json")
 
     Environment:
         OPENAI_API_KEY: Your OpenAI API key
@@ -86,7 +80,7 @@ class VisionProcessor:
         api_key: Optional[str] = None,
     ):
         """
-        Initialize the Vision Processor.
+        Initialize the PDF Extractor.
 
         Args:
             config: Processing configuration
@@ -108,26 +102,27 @@ class VisionProcessor:
         self.total_input_tokens = 0
         self.total_output_tokens = 0
 
-    def process_document(
+    def extract(
         self,
         pdf_path: str | Path,
         progress_callback: Optional[Callable[[int, int, str], None]] = None,
-    ) -> VisionProcessorResult:
+    ) -> ExtractionResult:
         """
-        Process an entire PDF document.
+        Extract content from a PDF document.
 
         Args:
             pdf_path: Path to the PDF file
             progress_callback: Optional callback(current_page, total_pages, status)
 
         Returns:
-            VisionProcessorResult with context and all page contents
+            ExtractionResult with context and all page contents
         """
         pdf_path = Path(pdf_path)
         start_time = time.time()
         errors: list[str] = []
+        warnings: list[str] = []
 
-        logger.info(f"Starting document processing: {pdf_path}")
+        logger.info(f"Starting document extraction: {pdf_path}")
 
         # Get document info
         doc_info = self.pdf_converter.get_document_info(pdf_path)
@@ -165,7 +160,7 @@ class VisionProcessor:
                 page_num,
                 total_pages,
                 context,
-                max_retries=3,
+                max_retries=self.config.max_retries,
             )
 
             # Check if extraction failed (refusal or error)
@@ -181,17 +176,20 @@ class VisionProcessor:
         # Log summary of failed pages
         if failed_pages:
             logger.warning(f"Failed pages: {failed_pages}")
+            warnings.append(f"Failed to extract pages: {failed_pages}")
 
         processing_time = time.time() - start_time
-        logger.info(f"Processing complete in {processing_time:.1f}s")
+        logger.info(f"Extraction complete in {processing_time:.1f}s")
 
-        return VisionProcessorResult(
+        return ExtractionResult(
+            source_file=str(pdf_path),
             context=context,
             pages=pages,
             processing_time_seconds=processing_time,
             total_input_tokens=self.total_input_tokens,
             total_output_tokens=self.total_output_tokens,
             errors=errors,
+            warnings=warnings,
         )
 
     def _analyze_context(
@@ -513,11 +511,11 @@ class VisionProcessor:
             # Determine content types
             content_types = []
             if data.get("has_table"):
-                content_types.append(ChunkType.TABLE)
+                content_types.append(ContentType.TABLE)
             if data.get("has_list"):
-                content_types.append(ChunkType.LIST)
+                content_types.append(ContentType.LIST)
             if not content_types:
-                content_types.append(ChunkType.SECTION)
+                content_types.append(ContentType.SECTION)
 
             return ExtractedPage(
                 page_number=page_number,
@@ -572,3 +570,7 @@ class VisionProcessor:
                         return text[start:i+1]
 
         return text
+
+
+# Backwards compatibility alias
+VisionProcessor = PDFExtractor

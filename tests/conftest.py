@@ -1,19 +1,18 @@
 """
-Pytest fixtures for LLM PDF Processor tests.
+Pytest fixtures for PDF Extractor tests.
 """
 
 import pytest
 from pathlib import Path
 
-from src.llm_processor.models import (
+from pdf_extractor import (
     DocumentContext,
     ExtractedPage,
+    ExtractionResult,
     SectionMarker,
-    RAGChunk,
-    ChunkMetadata,
     ProcessingConfig,
     DocumentType,
-    ChunkType,
+    ContentType,
     Abbreviation,
 )
 
@@ -23,8 +22,7 @@ def sample_config():
     """Create a sample ProcessingConfig."""
     return ProcessingConfig(
         model="gpt-4o",
-        target_chunk_size=500,
-        max_chunk_size=1000,
+        max_retries=3,
     )
 
 
@@ -65,36 +63,13 @@ def sample_page():
             SectionMarker(number="§2", title="Ziele des Studiums", level=1),
         ],
         paragraph_numbers=["(1)", "(2)"],
+        content_types=[ContentType.SECTION],
         has_table=False,
         has_list=True,
         internal_references=["§5 Abs. 2"],
         external_references=["Allgemeine Bestimmungen"],
         continues_from_previous=False,
         continues_to_next=True,
-    )
-
-
-@pytest.fixture
-def sample_chunk():
-    """Create a sample RAGChunk."""
-    metadata = ChunkMetadata(
-        source_document="Pruefungsordnung_2024",
-        source_pages=[5, 6],
-        document_type=DocumentType.PRUEFUNGSORDNUNG,
-        section_number="§10",
-        section_title="Module und Leistungspunkte",
-        chapter="II. Studienbezogene Bestimmungen",
-        chunk_type=ChunkType.SECTION,
-        topics=["Module", "Leistungspunkte"],
-        keywords=["Modul", "LP", "ECTS"],
-        related_sections=["§7", "§11"],
-        institution="Philipps-Universität Marburg",
-        degree_program="Mathematik B.Sc.",
-    )
-    return RAGChunk(
-        id="pruefungsordnung-10-abc123",
-        text="§10 Module und Leistungspunkte: Ein Modul ist eine inhaltlich...",
-        metadata=metadata,
     )
 
 
@@ -123,6 +98,19 @@ def sample_pages():
             has_table=True,
         ),
     ]
+
+
+@pytest.fixture
+def sample_result(sample_context, sample_pages):
+    """Create a sample ExtractionResult."""
+    return ExtractionResult(
+        source_file="test.pdf",
+        context=sample_context,
+        pages=sample_pages,
+        processing_time_seconds=10.5,
+        total_input_tokens=5000,
+        total_output_tokens=2500,
+    )
 
 
 @pytest.fixture

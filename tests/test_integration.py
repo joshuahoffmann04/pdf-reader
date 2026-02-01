@@ -1,5 +1,5 @@
 """
-Integration tests for the PDF to RAG pipeline.
+Integration tests for the PDF Extractor.
 
 These tests use the real OpenAI API and require:
 1. OPENAI_API_KEY environment variable to be set
@@ -12,15 +12,12 @@ Note: These tests will incur API costs!
 
 import pytest
 import os
-import json
-import tempfile
 from pathlib import Path
 
-from src.llm_processor import (
-    VisionProcessor,
-    ChunkGenerator,
+from pdf_extractor import (
+    PDFExtractor,
     ProcessingConfig,
-    ProcessingResult,
+    ExtractionResult,
     DocumentType,
 )
 
@@ -52,21 +49,17 @@ def config():
     """Create test configuration with cheaper model."""
     return ProcessingConfig(
         model="gpt-4o-mini",  # Use cheaper model for tests
-        target_chunk_size=500,
-        max_chunk_size=1000,
+        max_retries=3,
     )
 
 
-class TestVisionProcessorIntegration:
-    """Integration tests for VisionProcessor."""
+class TestPDFExtractorIntegration:
+    """Integration tests for PDFExtractor."""
 
-    def test_process_single_page(self, api_key, test_pdf, config):
-        """Test processing just the first page."""
-        processor = VisionProcessor(config=config, api_key=api_key)
-
-        # Only process first page by mocking page count
-        # (This is a simplified test)
-        result = processor.process_document(test_pdf)
+    def test_extract_document(self, api_key, test_pdf, config):
+        """Test extracting a document."""
+        extractor = PDFExtractor(config=config, api_key=api_key)
+        result = extractor.extract(test_pdf)
 
         assert result.context is not None
         assert result.context.document_type in DocumentType
@@ -75,8 +68,8 @@ class TestVisionProcessorIntegration:
 
     def test_context_extraction(self, api_key, test_pdf, config):
         """Test that context is correctly extracted."""
-        processor = VisionProcessor(config=config, api_key=api_key)
-        result = processor.process_document(test_pdf)
+        extractor = PDFExtractor(config=config, api_key=api_key)
+        result = extractor.extract(test_pdf)
 
         context = result.context
 
@@ -94,8 +87,8 @@ class TestVisionProcessorIntegration:
 
     def test_page_extraction_quality(self, api_key, test_pdf, config):
         """Test that pages are correctly extracted."""
-        processor = VisionProcessor(config=config, api_key=api_key)
-        result = processor.process_document(test_pdf)
+        extractor = PDFExtractor(config=config, api_key=api_key)
+        result = extractor.extract(test_pdf)
 
         # Check first few pages
         for page in result.pages[:3]:
@@ -108,8 +101,8 @@ class TestVisionProcessorIntegration:
 
     def test_table_conversion(self, api_key, test_pdf, config):
         """Test that tables are converted to natural language."""
-        processor = VisionProcessor(config=config, api_key=api_key)
-        result = processor.process_document(test_pdf)
+        extractor = PDFExtractor(config=config, api_key=api_key)
+        result = extractor.extract(test_pdf)
 
         # Find pages with tables
         table_pages = [p for p in result.pages if p.has_table]
@@ -121,128 +114,66 @@ class TestVisionProcessorIntegration:
                 assert "|" not in page.content or page.content.count("|") < 5
 
 
-class TestChunkGeneratorIntegration:
-    """Integration tests for ChunkGenerator."""
+class TestExtractionResultIntegration:
+    """Integration tests for ExtractionResult."""
 
-    def test_generate_chunks(self, api_key, test_pdf, config):
-        """Test full chunk generation pipeline."""
-        processor = VisionProcessor(config=config, api_key=api_key)
-        generator = ChunkGenerator(config=config)
+    def test_result_methods(self, api_key, test_pdf, config):
+        """Test ExtractionResult methods."""
+        extractor = PDFExtractor(config=config, api_key=api_key)
+        result = extractor.extract(test_pdf)
 
-        extraction = processor.process_document(test_pdf)
-        result = generator.generate_from_extraction(extraction, "test-document")
+        # Test get_page_stats
+        stats = result.get_page_stats()
+        assert stats["total_pages"] > 0
+        assert stats["avg_content_length"] > 0
 
-        assert len(result.chunks) > 0
+        # Test get_all_sections
+        sections = result.get_all_sections()
+        # Should have some sections
+        assert len(sections) >= 0
 
-        # First chunk should be metadata
-        assert result.chunks[0].metadata.chunk_type.value == "metadata"
+        # Test get_full_content
+        full_content = result.get_full_content()
+        assert len(full_content) > 0
 
-    def test_chunk_quality(self, api_key, test_pdf, config):
-        """Test that chunks meet quality requirements."""
-        processor = VisionProcessor(config=config, api_key=api_key)
-        generator = ChunkGenerator(config=config)
+    def test_save_and_load(self, api_key, test_pdf, config, tmp_path):
+        """Test saving and loading results."""
+        extractor = PDFExtractor(config=config, api_key=api_key)
+        result = extractor.extract(test_pdf)
 
-        extraction = processor.process_document(test_pdf)
-        result = generator.generate_from_extraction(extraction, "test-document")
+        # Save result
+        save_path = tmp_path / "result.json"
+        result.save(str(save_path))
 
-        for chunk in result.chunks:
-            # Each chunk should have content
-            assert len(chunk.text) > 0
+        # Load result
+        loaded = ExtractionResult.load(str(save_path))
 
-            # Chunks should be within size limits
-            assert len(chunk.text) <= config.max_chunk_size * 1.5  # Allow some overflow
-
-            # Each chunk should have required metadata
-            assert chunk.metadata.source_document is not None
-            assert len(chunk.metadata.source_pages) > 0
-
-    def test_export_formats(self, api_key, test_pdf, config):
-        """Test that all export formats work."""
-        processor = VisionProcessor(config=config, api_key=api_key)
-        generator = ChunkGenerator(config=config)
-
-        extraction = processor.process_document(test_pdf)
-        result = generator.generate_from_extraction(extraction, "test-document")
-
-        # Test LangChain export
-        langchain_docs = result.export_chunks_langchain()
-        assert len(langchain_docs) == len(result.chunks)
-        assert all("page_content" in doc for doc in langchain_docs)
-
-        # Test LlamaIndex export
-        llamaindex_nodes = result.export_chunks_llamaindex()
-        assert len(llamaindex_nodes) == len(result.chunks)
-        assert all("text" in node for node in llamaindex_nodes)
-
-        # Test JSONL export
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
-            output_path = f.name
-
-        try:
-            result.export_chunks_jsonl(output_path)
-
-            with open(output_path, 'r') as f:
-                lines = f.readlines()
-
-            assert len(lines) == len(result.chunks)
-        finally:
-            Path(output_path).unlink(missing_ok=True)
+        assert loaded.source_file == result.source_file
+        assert loaded.context.title == result.context.title
+        assert len(loaded.pages) == len(result.pages)
 
 
 class TestEndToEnd:
     """End-to-end integration tests."""
 
-    def test_full_pipeline(self, api_key, test_pdf, config):
-        """Test the complete pipeline from PDF to chunks."""
+    def test_full_extraction(self, api_key, test_pdf, config):
+        """Test the complete extraction pipeline."""
         # Process document
-        processor = VisionProcessor(config=config, api_key=api_key)
-        extraction = processor.process_document(test_pdf)
-
-        # Generate chunks
-        generator = ChunkGenerator(config=config)
-        result = generator.generate_from_extraction(extraction, "test-document")
+        extractor = PDFExtractor(config=config, api_key=api_key)
+        result = extractor.extract(test_pdf)
 
         # Verify result
-        assert isinstance(result, ProcessingResult)
+        assert isinstance(result, ExtractionResult)
         assert result.context.document_type == DocumentType.PRUEFUNGSORDNUNG
         assert len(result.pages) > 0
-        assert len(result.chunks) > 0
 
         # Verify statistics
-        stats = result.get_chunk_stats()
-        assert stats["total_chunks"] > 0
-        assert stats["avg_length"] > 0
+        stats = result.get_page_stats()
+        assert stats["total_pages"] > 0
 
-        print(f"\nPipeline completed successfully:")
+        print(f"\nExtraction completed successfully:")
         print(f"  Pages processed: {len(result.pages)}")
-        print(f"  Chunks generated: {stats['total_chunks']}")
-        print(f"  Average chunk length: {stats['avg_length']:.0f} chars")
         print(f"  Processing time: {result.processing_time_seconds:.1f}s")
         print(f"  Input tokens: {result.total_input_tokens:,}")
         print(f"  Output tokens: {result.total_output_tokens:,}")
-
-    def test_chunk_retrieval_simulation(self, api_key, test_pdf, config):
-        """Simulate a retrieval query."""
-        processor = VisionProcessor(config=config, api_key=api_key)
-        extraction = processor.process_document(test_pdf)
-
-        generator = ChunkGenerator(config=config)
-        result = generator.generate_from_extraction(extraction, "test-document")
-
-        # Simulate searching for "Bachelorarbeit"
-        query = "bachelorarbeit"
-        matching_chunks = [
-            chunk for chunk in result.chunks
-            if query in chunk.text.lower()
-        ]
-
-        print(f"\nSimulated retrieval for '{query}':")
-        print(f"  Found {len(matching_chunks)} matching chunks")
-
-        if matching_chunks:
-            # Show first match
-            first_match = matching_chunks[0]
-            print(f"\n  First match:")
-            print(f"    Section: {first_match.metadata.section_number}")
-            print(f"    Pages: {first_match.metadata.source_pages}")
-            print(f"    Text preview: {first_match.text[:200]}...")
+        print(f"  Errors: {len(result.errors)}")

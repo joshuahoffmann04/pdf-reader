@@ -4,7 +4,7 @@ Tests for prompt templates and helper functions.
 
 import pytest
 
-from src.llm_processor.prompts import (
+from pdf_extractor.prompts import (
     CONTEXT_ANALYSIS_SYSTEM,
     CONTEXT_ANALYSIS_USER,
     PAGE_EXTRACTION_SYSTEM,

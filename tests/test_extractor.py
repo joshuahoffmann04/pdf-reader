@@ -1,64 +1,65 @@
 """
-Tests for VisionProcessor with mocked OpenAI API.
+Tests for PDFExtractor with mocked OpenAI API.
 """
 
 import pytest
 import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from pathlib import Path
 
-from src.llm_processor.vision_processor import VisionProcessor, VisionProcessorResult
-from src.llm_processor.models import (
+from pdf_extractor import (
+    PDFExtractor,
     ProcessingConfig,
     DocumentContext,
     ExtractedPage,
+    ExtractionResult,
     DocumentType,
 )
 
 
-class TestVisionProcessorInit:
-    """Tests for VisionProcessor initialization."""
+class TestPDFExtractorInit:
+    """Tests for PDFExtractor initialization."""
 
     def test_init_with_api_key(self):
         """Test initialization with API key."""
-        with patch('src.llm_processor.vision_processor.OpenAI'):
-            processor = VisionProcessor(api_key="test-key")
-            assert processor.api_key == "test-key"
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+            assert extractor.api_key == "test-key"
 
     def test_init_without_api_key_raises(self):
         """Test initialization without API key raises error."""
         with patch.dict('os.environ', {}, clear=True):
             with pytest.raises(ValueError, match="OpenAI API key required"):
-                VisionProcessor()
+                PDFExtractor()
 
     def test_init_with_env_var(self):
         """Test initialization with environment variable."""
         with patch.dict('os.environ', {'OPENAI_API_KEY': 'env-key'}):
-            with patch('src.llm_processor.vision_processor.OpenAI'):
-                processor = VisionProcessor()
-                assert processor.api_key == "env-key"
+            with patch('pdf_extractor.extractor.OpenAI'):
+                extractor = PDFExtractor()
+                assert extractor.api_key == "env-key"
 
     def test_init_with_custom_config(self):
         """Test initialization with custom config."""
         config = ProcessingConfig(model="gpt-4o-mini")
-        with patch('src.llm_processor.vision_processor.OpenAI'):
-            processor = VisionProcessor(config=config, api_key="test-key")
-            assert processor.config.model == "gpt-4o-mini"
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(config=config, api_key="test-key")
+            assert extractor.config.model == "gpt-4o-mini"
 
 
-class TestVisionProcessorMocked:
-    """Tests for VisionProcessor with mocked API calls."""
+class TestPDFExtractorMocked:
+    """Tests for PDFExtractor with mocked API calls."""
 
     @pytest.fixture
     def mock_openai(self):
         """Create a mocked OpenAI client."""
-        with patch('src.llm_processor.vision_processor.OpenAI') as mock:
+        with patch('pdf_extractor.extractor.OpenAI') as mock:
             yield mock
 
     @pytest.fixture
     def mock_pdf_converter(self):
         """Create a mocked PDF converter."""
-        with patch('src.llm_processor.vision_processor.PDFToImages') as mock:
+        with patch('pdf_extractor.extractor.PDFToImages') as mock:
             converter = Mock()
             converter.get_document_info.return_value = {"page_count": 3}
             converter.get_page_count.return_value = 3
@@ -75,8 +76,8 @@ class TestVisionProcessorMocked:
             yield mock
 
     @pytest.fixture
-    def processor(self, mock_openai, mock_pdf_converter, mock_context_response, mock_openai_response):
-        """Create a VisionProcessor with mocked dependencies."""
+    def extractor(self, mock_openai, mock_pdf_converter, mock_context_response, mock_openai_response):
+        """Create a PDFExtractor with mocked dependencies."""
         # Setup mock responses
         mock_client = Mock()
 
@@ -101,21 +102,21 @@ class TestVisionProcessorMocked:
 
         mock_openai.return_value = mock_client
 
-        return VisionProcessor(api_key="test-key")
+        return PDFExtractor(api_key="test-key")
 
-    def test_process_document(self, processor, pdf_path):
-        """Test full document processing."""
+    def test_extract(self, extractor, pdf_path):
+        """Test full document extraction."""
         if pdf_path is None:
             pytest.skip("Test PDF not available")
 
-        result = processor.process_document(pdf_path)
+        result = extractor.extract(pdf_path)
 
-        assert isinstance(result, VisionProcessorResult)
+        assert isinstance(result, ExtractionResult)
         assert result.context is not None
         assert len(result.pages) == 3  # Mocked page count
 
-    def test_process_document_with_callback(self, processor, pdf_path):
-        """Test processing with progress callback."""
+    def test_extract_with_callback(self, extractor, pdf_path):
+        """Test extraction with progress callback."""
         if pdf_path is None:
             pytest.skip("Test PDF not available")
 
@@ -124,97 +125,97 @@ class TestVisionProcessorMocked:
         def callback(current, total, status):
             callback_calls.append((current, total, status))
 
-        result = processor.process_document(pdf_path, progress_callback=callback)
+        result = extractor.extract(pdf_path, progress_callback=callback)
 
         # Should have been called for context + each page
         assert len(callback_calls) >= 3
 
-    def test_parse_context_response(self, processor, mock_context_response):
+    def test_parse_context_response(self, extractor, mock_context_response):
         """Test context response parsing."""
         response_json = json.dumps(mock_context_response)
-        context = processor._parse_context_response(response_json, 10)
+        context = extractor._parse_context_response(response_json, 10)
 
         assert isinstance(context, DocumentContext)
         assert context.document_type == DocumentType.PRUEFUNGSORDNUNG
         assert context.title == mock_context_response["title"]
         assert len(context.abbreviations) == 2
 
-    def test_parse_context_response_invalid(self, processor):
+    def test_parse_context_response_invalid(self, extractor):
         """Test handling of invalid context response."""
-        context = processor._parse_context_response("invalid json", 10)
+        context = extractor._parse_context_response("invalid json", 10)
 
         assert context.document_type == DocumentType.OTHER
         assert context.title == "Unknown"
 
-    def test_parse_page_response(self, processor, mock_openai_response):
+    def test_parse_page_response(self, extractor, mock_openai_response):
         """Test page response parsing."""
         response_json = json.dumps(mock_openai_response)
-        page = processor._parse_page_response(response_json, 1)
+        page = extractor._parse_page_response(response_json, 1)
 
         assert isinstance(page, ExtractedPage)
         assert page.page_number == 1
         assert page.content == mock_openai_response["content"]
         assert len(page.sections) == 1
 
-    def test_parse_page_response_with_json_block(self, processor, mock_openai_response):
+    def test_parse_page_response_with_json_block(self, extractor, mock_openai_response):
         """Test parsing response with markdown code block."""
         response = f"Here is the JSON:\n```json\n{json.dumps(mock_openai_response)}\n```"
-        page = processor._parse_page_response(response, 1)
+        page = extractor._parse_page_response(response, 1)
 
         assert page.content == mock_openai_response["content"]
 
-    def test_parse_page_response_invalid(self, processor):
+    def test_parse_page_response_invalid(self, extractor):
         """Test handling of invalid page response."""
-        page = processor._parse_page_response("invalid response", 1)
+        page = extractor._parse_page_response("invalid response", 1)
 
         assert page.page_number == 1
         assert page.extraction_confidence == 0.5
         assert "invalid response" in page.content
 
-    def test_extract_json_from_code_block(self, processor):
+    def test_extract_json_from_code_block(self, extractor):
         """Test JSON extraction from code blocks."""
         text = 'Some text\n```json\n{"key": "value"}\n```\nMore text'
-        result = processor._extract_json(text)
+        result = extractor._extract_json(text)
 
         assert result == '{"key": "value"}'
 
-    def test_extract_json_raw(self, processor):
+    def test_extract_json_raw(self, extractor):
         """Test JSON extraction from raw text."""
         text = 'Before {"key": "value"} after'
-        result = processor._extract_json(text)
+        result = extractor._extract_json(text)
 
         assert result == '{"key": "value"}'
 
-    def test_extract_json_nested(self, processor):
+    def test_extract_json_nested(self, extractor):
         """Test JSON extraction with nested objects."""
         text = '{"outer": {"inner": "value"}}'
-        result = processor._extract_json(text)
+        result = extractor._extract_json(text)
 
         assert '"inner"' in result
         assert json.loads(result)["outer"]["inner"] == "value"
 
-    def test_token_tracking(self, processor, pdf_path):
+    def test_token_tracking(self, extractor, pdf_path):
         """Test token usage tracking."""
         if pdf_path is None:
             pytest.skip("Test PDF not available")
 
-        result = processor.process_document(pdf_path)
+        result = extractor.extract(pdf_path)
 
         assert result.total_input_tokens > 0
         assert result.total_output_tokens > 0
 
     def test_error_handling(self, mock_openai, mock_pdf_converter):
-        """Test error handling during processing."""
+        """Test error handling during extraction."""
         mock_client = Mock()
         mock_client.chat.completions.create.side_effect = Exception("API Error")
         mock_openai.return_value = mock_client
 
-        processor = VisionProcessor(api_key="test-key")
+        extractor = PDFExtractor(api_key="test-key")
 
         # Use a mock path
         with patch.object(Path, 'exists', return_value=True):
             mock_path = Path("test.pdf")
-            result = processor.process_document(mock_path)
+            result = extractor.extract(mock_path)
 
             # Should have errors but not crash
             assert len(result.errors) > 0
@@ -225,45 +226,23 @@ class TestRefusalDetection:
 
     def test_is_refusal_detects_sorry(self, mocker):
         """Test refusal detection for 'sorry' messages."""
-        mocker.patch('src.llm_processor.vision_processor.OpenAI')
-        mocker.patch('src.llm_processor.vision_processor.PDFToImages')
+        mocker.patch('pdf_extractor.extractor.OpenAI')
+        mocker.patch('pdf_extractor.extractor.PDFToImages')
 
-        processor = VisionProcessor(api_key="test-key")
+        extractor = PDFExtractor(api_key="test-key")
 
-        assert processor._is_refusal("I'm sorry, I can't assist with that.")
-        assert processor._is_refusal("I cannot assist with this request.")
-        assert processor._is_refusal("I'm not able to process this image.")
-        assert processor._is_refusal("I am unable to help with that.")
+        assert extractor._is_refusal("I'm sorry, I can't assist with that.")
+        assert extractor._is_refusal("I cannot assist with this request.")
+        assert extractor._is_refusal("I'm not able to process this image.")
+        assert extractor._is_refusal("I am unable to help with that.")
 
     def test_is_refusal_allows_normal_content(self, mocker):
         """Test that normal content is not flagged as refusal."""
-        mocker.patch('src.llm_processor.vision_processor.OpenAI')
-        mocker.patch('src.llm_processor.vision_processor.PDFToImages')
+        mocker.patch('pdf_extractor.extractor.OpenAI')
+        mocker.patch('pdf_extractor.extractor.PDFToImages')
 
-        processor = VisionProcessor(api_key="test-key")
+        extractor = PDFExtractor(api_key="test-key")
 
-        assert not processor._is_refusal("Das Modul Analysis I hat 9 LP.")
-        assert not processor._is_refusal("§10 regelt die Prüfungsformen.")
-        assert not processor._is_refusal("Die Bachelorarbeit umfasst 12 Leistungspunkte.")
-
-
-class TestVisionProcessorResult:
-    """Tests for VisionProcessorResult class."""
-
-    def test_result_attributes(self, sample_context, sample_pages):
-        """Test result has all required attributes."""
-        result = VisionProcessorResult(
-            context=sample_context,
-            pages=sample_pages,
-            processing_time_seconds=10.5,
-            total_input_tokens=1000,
-            total_output_tokens=500,
-            errors=["Test error"],
-        )
-
-        assert result.context == sample_context
-        assert len(result.pages) == len(sample_pages)
-        assert result.processing_time_seconds == 10.5
-        assert result.total_input_tokens == 1000
-        assert result.total_output_tokens == 500
-        assert "Test error" in result.errors
+        assert not extractor._is_refusal("Das Modul Analysis I hat 9 LP.")
+        assert not extractor._is_refusal("§10 regelt die Prüfungsformen.")
+        assert not extractor._is_refusal("Die Bachelorarbeit umfasst 12 Leistungspunkte.")

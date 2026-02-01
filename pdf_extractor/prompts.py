@@ -1,5 +1,5 @@
 """
-Prompt templates for the Vision-LLM PDF processor.
+Prompt templates for the Vision-LLM PDF Extractor.
 
 These prompts are designed to:
 1. Extract information precisely without hallucination
@@ -245,84 +245,6 @@ Verarbeite die Seite sorgfältig und gib die JSON-Antwort aus."""
 
 
 # =============================================================================
-# PHASE 3: Chunk Generation (Optional - for complex documents)
-# =============================================================================
-
-CHUNK_GENERATION_SYSTEM = """Du bist ein Experte für die Erstellung von RAG-optimierten Textchunks.
-
-Deine Aufgabe ist es, einen längeren Text in selbstständige, sinnvolle Abschnitte zu unterteilen.
-
-REGELN FÜR CHUNKS:
-1. Jeder Chunk muss für sich allein verständlich sein
-2. Chunks sollten {target_size} Zeichen (+/- 20%) haben
-3. Trenne NIE mitten in einem Satz
-4. Trenne NIE mitten in einer Aufzählung
-5. Behalte Paragraphen-Kontext bei (z.B. "§10 Absatz 3: ...")
-6. Füge bei Bedarf Kontext hinzu: "Im Rahmen von §10 (Module und Leistungspunkte)..."
-"""
-
-CHUNK_GENERATION_USER = """Unterteile folgenden Text in sinnvolle Chunks.
-
-TEXT:
-{text}
-
-KONTEXT:
-- Dokument: {document_title}
-- Abschnitt: {section}
-- Seiten: {pages}
-
-Erstelle Chunks im folgenden Format:
-
-```json
-{{
-  "chunks": [
-    {{
-      "text": "Chunk-Text...",
-      "section_number": "§10",
-      "paragraph": "(3)",
-      "topics": ["Module", "Leistungspunkte"],
-      "keywords": ["Regelstudienzeit", "ECTS"]
-    }}
-  ]
-}}
-```"""
-
-
-# =============================================================================
-# METADATA EXTRACTION (For existing structured content)
-# =============================================================================
-
-METADATA_EXTRACTION_SYSTEM = """Du bist ein Experte für die Extraktion von Metadaten aus akademischen Texten.
-
-Analysiere den gegebenen Text und extrahiere strukturierte Metadaten."""
-
-METADATA_EXTRACTION_USER = """Extrahiere Metadaten aus folgendem Text:
-
-TEXT:
-{text}
-
-KONTEXT:
-- Quelle: {source}
-- Seiten: {pages}
-
-Antworte im JSON-Format:
-
-```json
-{{
-  "section_number": "§10 oder null",
-  "section_title": "Titel oder null",
-  "paragraph_numbers": ["(1)", "(2)"],
-  "topics": ["Hauptthemen"],
-  "keywords": ["Schlüsselwörter"],
-  "references_to": ["Verweise auf andere §§"],
-  "definitions": ["Definierte Begriffe"],
-  "is_definitive": true,
-  "requires_context": ["Kontext, der zum Verständnis nötig ist"]
-}}
-```"""
-
-
-# =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
 
@@ -344,7 +266,10 @@ def build_context_string(context: dict) -> str:
         abbrevs = context['abbreviations']
         # Handle both list format and dict format for backwards compatibility
         if isinstance(abbrevs, list):
-            abbrev_strs = [f"{a.get('short', a.get('abbr', ''))}={a.get('long', a.get('full', ''))}" for a in abbrevs if isinstance(a, dict)]
+            abbrev_strs = [
+                f"{a.get('short', a.get('abbr', ''))}={a.get('long', a.get('full', ''))}"
+                for a in abbrevs if isinstance(a, dict)
+            ]
         elif isinstance(abbrevs, dict):
             abbrev_strs = [f"{k}={v}" for k, v in abbrevs.items()]
         else:

@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 """
-PDF to RAG Pipeline
+PDF Extraction Script
 
-Processes PDF documents using OpenAI's Vision API (GPT-4o) for
-high-quality natural language extraction optimized for RAG systems.
+Extracts content from PDF documents using OpenAI's Vision API (GPT-4o).
+Produces structured output ready for downstream processing (chunking, RAG, etc.).
 
 Usage:
-    python scripts/process_for_rag.py input.pdf -o output_dir/
-    python scripts/process_for_rag.py input.pdf --estimate-cost
-    python scripts/process_for_rag.py input.pdf --model gpt-4o-mini
+    python scripts/extract_pdf.py input.pdf -o output/
+    python scripts/extract_pdf.py input.pdf --estimate-cost
+    python scripts/extract_pdf.py input.pdf --model gpt-4o-mini
 
 Environment:
     OPENAI_API_KEY: Your OpenAI API key (required)
 """
 
 import argparse
-import json
 import logging
 import os
 import sys
@@ -32,10 +31,12 @@ try:
 except ImportError:
     pass  # dotenv not installed, use environment variables directly
 
-from src.llm_processor.models import ProcessingConfig
-from src.llm_processor.pdf_to_images import PDFToImages, estimate_api_cost
-from src.llm_processor.vision_processor import VisionProcessor
-from src.llm_processor.chunk_generator import ChunkGenerator
+from pdf_extractor import (
+    PDFExtractor,
+    PDFToImages,
+    ProcessingConfig,
+    estimate_api_cost,
+)
 
 
 def setup_logging(verbose: bool = False):
@@ -61,21 +62,21 @@ def progress_callback(current: int, total: int, status: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Process PDF documents for RAG using OpenAI Vision API',
+        description='Extract content from PDF documents using OpenAI Vision API',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Process a PDF with default settings (gpt-4o)
-  python scripts/process_for_rag.py document.pdf -o output/
+  # Extract content from a PDF with default settings (gpt-4o)
+  python scripts/extract_pdf.py document.pdf -o output/
 
   # Estimate cost before processing
-  python scripts/process_for_rag.py document.pdf --estimate-cost
+  python scripts/extract_pdf.py document.pdf --estimate-cost
 
   # Use a cheaper/faster model
-  python scripts/process_for_rag.py document.pdf --model gpt-4o-mini
+  python scripts/extract_pdf.py document.pdf --model gpt-4o-mini
 
-  # Process with custom chunk size
-  python scripts/process_for_rag.py document.pdf --chunk-size 800
+  # Verbose output for debugging
+  python scripts/extract_pdf.py document.pdf -o output/ -v
         """
     )
 
@@ -88,10 +89,8 @@ Examples:
                         help='OpenAI model to use (default: gpt-4o)')
     parser.add_argument('--estimate-cost', action='store_true',
                         help='Only estimate cost, do not process')
-    parser.add_argument('--chunk-size', type=int, default=500,
-                        help='Target chunk size in characters (default: 500)')
-    parser.add_argument('--format', choices=['jsonl', 'json', 'both'], default='both',
-                        help='Output format (default: both)')
+    parser.add_argument('--max-retries', type=int, default=3,
+                        help='Maximum retries for failed pages (default: 3)')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Verbose output')
 
@@ -116,7 +115,7 @@ Examples:
         sys.exit(1)
 
     print(f"\n{'='*60}")
-    print(f"PDF to RAG Processor (OpenAI GPT-4o)")
+    print(f"PDF Extractor (OpenAI GPT-4o Vision)")
     print(f"{'='*60}")
     print(f"Document: {pdf_path.name}")
     print(f"Pages: {page_count}")
@@ -151,85 +150,62 @@ Examples:
     # Configure processing
     config = ProcessingConfig(
         model=args.model,
-        target_chunk_size=args.chunk_size,
-        max_chunk_size=args.chunk_size * 2,
+        max_retries=args.max_retries,
     )
 
-    # Initialize processor
-    print("Initializing Vision Processor...")
-    processor = VisionProcessor(config=config, api_key=api_key)
-    chunk_generator = ChunkGenerator(config=config)
+    # Initialize extractor
+    print("Initializing PDF Extractor...")
+    extractor = PDFExtractor(config=config, api_key=api_key)
 
     # Process document
-    print("\nProcessing document...")
+    print("\nExtracting content...")
     print("This may take a while depending on document size.\n")
 
     try:
-        extraction_result = processor.process_document(
+        result = extractor.extract(
             pdf_path,
             progress_callback=progress_callback,
         )
     except Exception as e:
-        logger.error(f"Processing failed: {e}")
+        logger.error(f"Extraction failed: {e}")
         sys.exit(1)
 
-    print(f"\nExtraction complete in {extraction_result.processing_time_seconds:.1f}s")
-    print(f"Tokens used: {extraction_result.total_input_tokens:,} input, {extraction_result.total_output_tokens:,} output")
+    print(f"\nExtraction complete in {result.processing_time_seconds:.1f}s")
+    print(f"Tokens used: {result.total_input_tokens:,} input, {result.total_output_tokens:,} output")
 
-    if extraction_result.errors:
-        print(f"\nWarnings/Errors ({len(extraction_result.errors)}):")
-        for error in extraction_result.errors[:5]:
+    if result.errors:
+        print(f"\nErrors ({len(result.errors)}):")
+        for error in result.errors[:5]:
             print(f"  - {error}")
-        if len(extraction_result.errors) > 5:
-            print(f"  ... and {len(extraction_result.errors) - 5} more")
+        if len(result.errors) > 5:
+            print(f"  ... and {len(result.errors) - 5} more")
 
-    # Generate chunks
-    print("\nGenerating RAG chunks...")
-    source_name = pdf_path.stem
-    result = chunk_generator.generate_from_extraction(extraction_result, source_name)
+    if result.warnings:
+        print(f"\nWarnings ({len(result.warnings)}):")
+        for warning in result.warnings[:5]:
+            print(f"  - {warning}")
 
-    stats = result.get_chunk_stats()
-    print(f"Generated {stats['total_chunks']} chunks")
-    print(f"  Average length: {stats['avg_length']:.0f} chars")
-    print(f"  Range: {stats['min_length']} - {stats['max_length']} chars")
-    print(f"  Types: {stats['by_type']}")
+    # Get page statistics
+    stats = result.get_page_stats()
+    print(f"\nExtraction Statistics:")
+    print(f"  Total pages: {stats['total_pages']}")
+    print(f"  Pages with tables: {stats['pages_with_tables']}")
+    print(f"  Pages with lists: {stats['pages_with_lists']}")
+    print(f"  Failed pages: {stats['failed_pages']}")
+    print(f"  Avg content length: {stats['avg_content_length']:.0f} chars")
 
-    # Export
-    print("\nExporting...")
+    # Save result
+    print("\nSaving result...")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    source_name = pdf_path.stem
 
-    if args.format in ['jsonl', 'both']:
-        jsonl_path = output_dir / f"{source_name}_{timestamp}_chunks.jsonl"
-        result.export_chunks_jsonl(str(jsonl_path))
-        print(f"  JSONL: {jsonl_path}")
-
-    if args.format in ['json', 'both']:
-        json_path = output_dir / f"{source_name}_{timestamp}_chunks.json"
-        chunk_generator.export_json(result.chunks, json_path)
-        print(f"  JSON:  {json_path}")
-
-    # Save full processing result
     result_path = output_dir / f"{source_name}_{timestamp}_result.json"
-    result_data = {
-        "document": str(pdf_path),
-        "processed_at": datetime.now().isoformat(),
-        "model": args.model,
-        "context": result.context.model_dump(),
-        "pages": [p.model_dump() for p in result.pages],
-        "stats": {
-            "processing_time_seconds": result.processing_time_seconds,
-            "total_input_tokens": result.total_input_tokens,
-            "total_output_tokens": result.total_output_tokens,
-            "chunk_count": stats['total_chunks'],
-        },
-        "errors": result.errors,
-    }
-    with open(result_path, 'w', encoding='utf-8') as f:
-        json.dump(result_data, f, ensure_ascii=False, indent=2, default=str)
-    print(f"  Full result: {result_path}")
+    result.save(str(result_path))
+    print(f"  Saved to: {result_path}")
 
     print(f"\n{'='*60}")
     print("Done!")
+    print(f"\nOutput file ready for downstream processing (chunking, RAG, etc.)")
     print(f"{'='*60}\n")
 
 

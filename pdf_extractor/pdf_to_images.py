@@ -10,7 +10,6 @@ import fitz  # PyMuPDF
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional, Generator
-import io
 
 
 @dataclass
@@ -175,8 +174,6 @@ class PDFToImages:
         # Resize if too large
         if pix.width > self.max_dimension or pix.height > self.max_dimension:
             scale = self.max_dimension / max(pix.width, pix.height)
-            new_width = int(pix.width * scale)
-            new_height = int(pix.height * scale)
 
             # Re-render with adjusted matrix
             adjusted_zoom = self.zoom * scale
@@ -214,7 +211,7 @@ class PDFToImages:
 
 def estimate_api_cost(
     page_count: int,
-    model: str = "claude-sonnet-4-20250514",
+    model: str = "gpt-4o",
     avg_input_tokens_per_page: int = 1500,
     avg_output_tokens_per_page: int = 800,
 ) -> dict:
@@ -232,10 +229,7 @@ def estimate_api_cost(
     """
     # Pricing (as of 2024, may change)
     pricing = {
-        "claude-sonnet-4-20250514": {"input": 3.00, "output": 15.00},  # per 1M tokens
-        "claude-3-5-sonnet-20241022": {"input": 3.00, "output": 15.00},
-        "claude-3-haiku-20240307": {"input": 0.25, "output": 1.25},
-        "gpt-4o": {"input": 2.50, "output": 10.00},
+        "gpt-4o": {"input": 2.50, "output": 10.00},  # per 1M tokens
         "gpt-4o-mini": {"input": 0.15, "output": 0.60},
     }
 
@@ -244,8 +238,8 @@ def estimate_api_cost(
 
     prices = pricing[model]
 
-    # Context analysis (first pass with all pages)
-    context_input = page_count * 500  # Rough estimate for thumbnails/overview
+    # Context analysis (first pass with sample pages)
+    context_input = min(5, page_count) * 500  # Rough estimate for sample pages
     context_output = 500
 
     # Page-by-page extraction
