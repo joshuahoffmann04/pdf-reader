@@ -1,0 +1,1190 @@
+{
+  "source_file": "pdfs\\stpo_bsc-informatik_25-01-23_lese.pdf",
+  "context": {
+    "document_type": "pruefungsordnung",
+    "title": "Studien- und Prüfungsordnung für den Monobachelorstudiengang Informatik",
+    "institution": "Philipps-Universität Marburg",
+    "version_date": "25.01.2023",
+    "version_info": "Nichtamtliche Lesefassung",
+    "degree_program": "Informatik B.Sc.",
+    "faculty": "Fachbereich Mathematik und Informatik",
+    "total_pages": 50,
+    "chapters": [
+      "I. Allgemeines",
+      "II. Studienbezogene Bestimmungen",
+      "III. Prüfungsbezogene Bestimmungen",
+      "IV. Schlussbestimmungen"
+    ],
+    "abbreviations": [
+      {
+        "short": "LP",
+        "long": "Leistungspunkte"
+      }
+    ],
+    "key_terms": [
+      "Modul",
+      "Leistungspunkte",
+      "Prüfungsleistung"
+    ],
+    "referenced_documents": [
+      "Allgemeine Bestimmungen für Bachelorstudiengänge"
+    ],
+    "legal_basis": "Hessisches Hochschulgesetz § 50 Abs. 1",
+    "language": "de"
+  },
+  "sections": [
+    {
+      "section_type": "overview",
+      "section_number": null,
+      "section_title": "Präambel",
+      "content": "Die Präambel beschreibt, dass die Allgemeinen Bestimmungen studien- und prüfungsbezogene Regelungen für alle Studiengänge der Philipps-Universität Marburg festlegen. Für jeden Monobachelorstudiengang, Hauptfach- oder Nebenfachteilstudiengang sowie die Studienbereiche Marburg Skills und Interdisziplinarität gibt es eigene Regelungen, die von den jeweils federführenden Fachbereichen beschlossen werden. Ein Bachelorstudiengang besteht aus zwei bis vier Teilen, die jeweils in eigenen Studien- und Prüfungsordnungen geregelt sind. Diese umfassen die Studien- und Prüfungsordnung für das Monofach sowie die Studien- und Prüfungsordnung für die Studienbereiche Marburg Skills und Interdisziplinarität in den Monobachelorstudiengängen. Weiterhin gibt es Studien- und Prüfungsordnungen für den Hauptfachteilstudiengang und für den Nebenfachteilstudiengang sowie die Studien- und Prüfungsordnung für die Studienbereiche Marburg Skills und Interdisziplinarität im sechssemestrigen Kombinationsbachelorstudiengang. Schließlich gibt es Studien- und Prüfungsordnungen für den Hauptfachteilstudiengang und für die beiden Nebenfachteilstudiengänge sowie die Studien- und Prüfungsordnung für die Studienbereiche Marburg Skills und Interdisziplinarität im achtsemestrigen Kombinationsbachelorstudiengang. Die Leistungspunkte der Fachanteile sind bei allen Studiengängen und Teilstudiengängen identisch: 150 Leistungspunkte im sechssemestrigen Monobachelorstudiengang, 210 Leistungspunkte im achtsemestrigen Monobachelorstudiengang, 102 Leistungspunkte im Hauptfachteilstudiengang und 48 Leistungspunkte im Nebenfachteilstudiengang. Jeder Marburger Bachelorstudiengang beinhaltet zusätzlich die Bachelorarbeit mit 12 Leistungspunkten, die verbindlich in den Studien- und Prüfungsordnungen der Monobachelorstudiengänge sowie in den Studien- und Prüfungsordnungen der Hauptfachteilstudiengänge der Kombinationsbachelorstudiengänge geregelt ist. Sollte die Studien- und Prüfungsordnung des gewählten Nebenfachs die Möglichkeit zum Verfassen der Bachelorarbeit dort vorsehen, können Studierende einen Antrag auf Verfassen der Bachelorarbeit im Nebenfach stellen. Die folgende Studien- und Prüfungsordnung ist Teil dieser Struktur und ist immer im Zusammenhang mit den Studien- und Prüfungsordnungen der anderen Teilstudiengänge und Studienbereiche zu denken. Ihre Verzahnung erfolgt durch die Allgemeinen Bestimmungen. Über die angebotenen Fächer, ihre Kombinationsmöglichkeiten und die genaue Gestaltung der Struktur informiert eine zentrale Webseite.",
+      "pages": [
+        1,
+        2
+      ],
+      "chapter": "I. Allgemeines",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [
+        "Allgemeine Bestimmungen"
+      ],
+      "has_table": true,
+      "has_list": true,
+      "token_count": 633,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "overview",
+      "section_number": null,
+      "section_title": "Inhaltsverzeichnis",
+      "content": "Das Inhaltsverzeichnis der Studien- und Prüfungsordnung für den Monobachelorstudiengang Informatik an der Philipps-Universität Marburg ist in vier Hauptkapitel unterteilt. Kapitel I behandelt allgemeine Bestimmungen, einschließlich des Geltungsbereichs, der Ziele des Studiums und des Bachelorgrads. Kapitel II umfasst studienbezogene Bestimmungen, die sich mit Zugangsvoraussetzungen, Studienberatung, Strukturvarianten des Studiengangs, dem Studium selbst, Regelstudienzeit, Exzellenzförderung, Studienbeginn, Studienaufenthalten im Ausland, Modulen und Leistungspunkten, Praxismodulen, Modulen des Studienbereichs Marburg Skills, Modulen des Studienbereichs Interdisziplinarität, Modul- und Veranstaltungsanmeldung, Zugang zu Wahlpflichtmodulen, studiengangübergreifender Modulverwendung, Studienleistungen und Anwesenheitspflicht befassen. Kapitel III behandelt prüfungsbezogene Bestimmungen, einschließlich des Prüfungsausschusses, der Aufgaben des Prüfungsausschusses, Prüferinnen und Prüfer, Anerkennung von Studienleistungen, Modulliste, Prüfungen, Prüfungsformen, Bachelorarbeit, Prüfungsanmeldung, zeitliche Vorgaben, Familienförderung, Versäumnis, Leistungsbewertung, Freiversuch, Wiederholung von Prüfungen, Verlust des Prüfungsanspruchs, Ungültigkeit von Prüfungsleistungen, Zeugnis, Urkunde, Diploma Supplement und Transcript of Records. Kapitel IV enthält Schlussbestimmungen, Einsicht in die Prüfungsunterlagen und Inkrafttreten. Es gibt auch Anlagen, die exemplarische Studienverlaufspläne, eine Modulliste, eine Importmodulliste und eine Exportmodulliste umfassen.",
+      "pages": [
+        3
+      ],
+      "chapter": "Übersicht Inhaltsverzeichnis",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": true,
+      "token_count": 395,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 1",
+      "section_title": "Geltungsbereich",
+      "content": "Diese Studien- und Prüfungsordnung regelt ergänzend zu den Allgemeinen Bestimmungen für Bachelorstudiengänge an der Philipps-Universität Marburg vom 13. September 2010 (Amtliche Mitteilungen der Philipps-Universität Marburg, Nr. 51/2010) in der jeweils gültigen Fassung – nachfolgend Allgemeine Bestimmungen genannt – Ziele, Inhalte, Aufbau und Gliederung des Studiums sowie Anforderung und Verfahren der Prüfungsleistungen im Monobachelorstudiengang 'Informatik' mit dem Abschluss 'Bachelor of Science (B.Sc.)'.",
+      "pages": [
+        4
+      ],
+      "chapter": "I. Allgemeines",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [
+        "Allgemeine Bestimmungen"
+      ],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 128,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 2",
+      "section_title": "Ziele des Studiums",
+      "content": "Absatz (1) beschreibt, dass nach Abschluss des Bachelorstudiums Informatik die Absolventinnen und Absolventen über die erforderlichen fachlichen Kenntnisse, Fähigkeiten und Methoden der Informatik verfügen. Diese befähigen sie unter Berücksichtigung der Anforderungen und Veränderungen in der Berufswelt zu eigenverantwortlichem Handeln in der Praxis. Im Studium eignen sie sich Kenntnisse und Fertigkeiten in den wichtigsten Teilgebieten der Informatik an und verfügen auch über gute Kenntnisse in Mathematik. Zu den erworbenen fachlichen Kompetenzen zählen fundierte Kenntnisse im formalen, algorithmischen und mathematischen Bereich, in der Analyse, im Design und in der Realisierung von Software sowie in der Architektur, den Konzepten und Funktionsweisen von Systemen. Zentrale Bedeutung haben außerdem die Befähigung zu einer wissenschaftlichen Arbeitsweise, Methodenkompetenz, fachübergreifende Kompetenzen, Abstraktionsvermögen, konzeptionelles, analytisches und logisches Denken sowie die Befähigung zur Lösung einer umfangreichen Aufgabenstellung aus der Informatik, die sie auch bereits im Rahmen der Bachelorarbeit nachgewiesen haben. Neben fachlichen Kompetenzen haben die Absolventinnen und Absolventen in ihrem Bachelorstudium auch Schlüsselkompetenzen erworben, zu denen das Erkennen, Formulieren und Lösen von Problemen, der souveräne Umgang mit neuen Medien, Kommunikationsfertigkeiten, Befähigung zur Teamarbeit und Lernstrategien für lebenslanges Lernen zählen. Soweit die Schlüsselkompetenzen nicht in den Fachmodulen erworben wurden, sondern in den Modulen des Studienbereichs Marburg Skills, werden die Ziele des Studiums in einer separaten Prüfungsordnung für diesen Studienbereich dargestellt. Absatz (2) erklärt, dass der Bachelorstudiengang eine solide Ausbildung in Informatik umfasst, die von Studienbeginn an zu selbstständiger Arbeit anhält. Die Studienschwerpunkte werden nach den jeweiligen Interessen der Studierenden individuell gewählt und kombiniert. Außerdem erfolgt eine Grundausbildung in Mathematik. Absatz (3) beschreibt, dass parallel zu fast allen Vorlesungen zahlreiche Übungen angeboten werden, die der Wiederholung und Einübung des Erlernten dienen. Darüber hinaus ist das Studium durch zahlreiche betreute Praktika charakterisiert, in denen die Studierenden in der Regel in Kleingruppen die erlernten Methoden und Techniken erproben und trainieren. Schließlich werden Praxiskontakte durch die vom Fachbereich angebotenen Veranstaltungen zur Berufserkundung sowie durch weitere Absolventenkontakte gefördert. Absatz (4) erläutert, dass durch das erfolgreich abgeschlossene Bachelorstudium die Absolventinnen und Absolventen zur Mitarbeit in einem Team aus Informatikerinnen und Informatikern sowie Anwenderinnen und Anwendern in Industrie und Wirtschaft in der Lage und zur Wahrnehmung von Aufgaben in den Bereichen Entwicklung, Anwendung und Vertrieb befähigt sind. Außerdem sind sie für die Weiterqualifikation in Weiterbildungsprogrammen und für das Masterstudium vorbereitet.",
+      "pages": [
+        4
+      ],
+      "chapter": "I. Allgemeines",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)"
+      ],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 756,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 3",
+      "section_title": "Bachelorgrad",
+      "content": "Die Bachelorprüfung ist bestanden, wenn alle vorgesehenen Module des Monobachelorstudiengangs bestanden sind. Nach erfolgreichem Abschluss des Studiums gemäß Absatz 1 verleiht der Fachbereich Mathematik und Informatik den akademischen Grad 'Bachelor of Science (B.Sc.)'.",
+      "pages": [
+        4,
+        5
+      ],
+      "chapter": "I. Allgemeines",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 67,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 4",
+      "section_title": "Zugangsvoraussetzungen",
+      "content": "Absatz (1) regelt, dass zum Studiengang 'Informatik' berechtigt ist, wer über eine Hochschulzugangsberechtigung gemäß § 60 HessHG verfügt und den Prüfungsanspruch für diesen Studiengang oder für einen verwandten Studiengang nicht verloren hat oder aus anderen Gründen gemäß § 63 Abs. 1 und 2 HessHG an der Immatrikulation gehindert ist. Absatz (2) besagt, dass neben den allgemeinen Zugangsvoraussetzungen zum Studiengang die Teilnahme an einzelnen Modulen oder Modulteilen von der Erfüllung spezifischer Modulzugangsvoraussetzungen abhängig gemacht werden kann. In diesem Fall sind die Voraussetzungen in der Modulliste (Anlage 3) unter 'Voraussetzungen für die Teilnahme' aufgeführt.",
+      "pages": [
+        5
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [
+        "Anlage 3",
+        "§ 63 Abs. 1 und 2"
+      ],
+      "external_references": [
+        "HessHG"
+      ],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 171,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 5",
+      "section_title": "Studienberatung",
+      "content": "Die allgemeine Studienberatung erfolgt durch die Zentrale Allgemeine Studienberatung (ZAS) der Philipps-Universität Marburg. Die Fachstudienberatung wird in der Regel durch die Professorinnen und Professoren oder von beauftragten Personen wahrgenommen.",
+      "pages": [
+        5
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 63,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 6",
+      "section_title": "Strukturvariante des Studiengangs",
+      "content": "Der Studiengang 'Informatik' ist ein Monobachelorstudiengang. Auf die Erläuterungen in § 6 der Allgemeinen Bestimmungen wird verwiesen. Studiengänge können als Monobachelorstudiengänge oder als Hauptfach- und Nebenfachteilstudiengänge für den sechs- und achtsemestrigen Kombinationsbachelorstudiengang konzipiert werden. In sechssemestrigen Monobachelorstudiengängen umfasst das Monofach 150 Leistungspunkte, in achtsemestrigen 210 Leistungspunkte. Monobachelorstudiengänge können sowohl Angebote aus einzelnen Lehreinheiten umfassen als auch die Möglichkeit eröffnen, besonders aufeinander abgestimmte interdisziplinäre Angebote aus mehreren Lehreinheiten zu konzipieren. Der sechssemestrige Kombinationsbachelorstudiengang setzt sich aus einer individuell wählbaren Kombination aus Hauptfach und Nebenfach zusammen. Der achtsemestrige Kombinationsbachelorstudiengang setzt sich aus einer individuell wählbaren Kombination aus Hauptfach und zwei Nebenfächern zusammen. Die Fachgrenzen betragen 102 Leistungspunkte für das Hauptfach und jeweils 48 Leistungspunkte für ein Nebenfach. Sowohl die Mono- als auch die Kombinationsbachelorstudiengänge sehen den verpflichtenden Studienbereich der Marburg Skills in Umfang von 18 Leistungspunkten sowie eine Bachelorarbeit in Umfang von 12 Leistungspunkten vor. Der achtsemestrige Kombinationsbachelorstudiengang beinhaltet zusätzlich zu einem Hauptfach, zwei Nebenfächern und dem Studienbereich Marburg Skills einen Studienbereich Interdisziplinarität in Umfang von 12 Leistungspunkten. Wenn Module eines Studiengangs nicht aus der Lehreinheit stammen, die den Studiengang anbietet, sind bei Vorlage des Studiengangkonzeptes die entsprechenden Vereinbarungen mit den Verantwortlichen der exportierenden Lehreinheit über die zu erbringende Lehre beizulegen. Studiengänge können, sofern die personellen und sachlichen Kapazitäten der Hochschule gegeben sind, als Teilzeitstudiengänge (formales Teilzeitstudium) eingerichtet werden. Gesonderte Teilzeitstudiengänge stellen ein besonderes organisatorisches Angebot dar, in dem insbesondere Lebensumstände von Studierenden mit Kindern und pflegebedürftigen Angehörigen, Spitzensportlerinnen und Spitzensportlern sowie von Berufstätigen, die durchschnittlich nicht mehr als die Hälfte ihrer Arbeitszeit dem Studium widmen können, Berücksichtigung finden. Die Immatrikulation in diese Studiengänge erfolgt als Teilzeitstudierende.",
+      "pages": [
+        5
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)",
+        "(7)"
+      ],
+      "internal_references": [
+        "§ 6",
+        "§ 12",
+        "§ 25",
+        "§ 13"
+      ],
+      "external_references": [],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 604,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 7",
+      "section_title": "Studium: Aufbau, Inhalte, Studienverlaufsplan und Informationen",
+      "content": "Der Studiengang 'Informatik' gliedert sich in die Studienbereiche Informatik Basismodule, Informatik Weiterführende Module, Praxismodule, Mathematik Basis- und Weiterführende Module sowie Informatik Wahlpflichtmodule. Aus den Zuordnungen der Module, dem Grad ihrer Verbindlichkeit sowie dem kalkulierten studentischen Arbeitsaufwand (workload) in Leistungspunkten (LP) ergibt sich folgender Studienaufbau: Die Informatik Basismodule umfassen 45 Leistungspunkte und beinhalten die Pflichtmodule 'Algorithmen und Datenstrukturen', 'Deklarative Programmierung', 'Objektorientierte Programmierung', 'Systemsoftware und Rechnerkommunikation' sowie 'Technische Informatik', jeweils mit 9 Leistungspunkten. Die Informatik Weiterführenden Module umfassen 36 Leistungspunkte und beinhalten die Pflichtmodule 'Ausgewählte Themen der Informatik (Seminar)' mit 3 Leistungspunkten, 'Datenbanksysteme', 'Logik', 'Softwaretechnik' und 'Theoretische Informatik', jeweils mit 9 Leistungspunkten. Die Praxismodule umfassen 21 Leistungspunkte und beinhalten die Pflichtmodule 'Fortgeschrittenenpraktikum' mit 6 Leistungspunkten, 'Praktikum zur Statistik' mit 3 Leistungspunkten, 'Programmierpraktikum' und 'Software-Praktikum', jeweils mit 6 Leistungspunkten. Die Mathematik Basis- und Weiterführenden Module umfassen 24 Leistungspunkte und beinhalten die Pflichtmodule 'Grundlagen der Analysis', 'Grundlagen der linearen Algebra' und 'Grundlagen der Statistik', jeweils mit 9 Leistungspunkten. Die Informatik Wahlpflichtmodule umfassen 24 Leistungspunkte und bieten eine Auswahl an Modulen wie 'Einführung in die Bioinformatik', 'Einführung in die Kryptographie und ihre Anwendungen', 'Entwurf und Administration von Datenbanken', 'Grafikprogrammierung', 'Großes Aufbaumodul Informatik 1 bis 5', 'IT-Sicherheit', 'Kleines Aufbaumodul Informatik 1 bis 5', 'NoSQL Datenbanksysteme', 'Rechnernetze', 'Software Design und Programmiertechniken', 'Softwarequalität' und 'Verteiltes Datenmanagement', mit jeweils 6 oder 9 Leistungspunkten. Importmodule mit inhaltlichem oder methodischem Bezug zum Gegenstandsbereich der Informatik können zwischen 0 und 24 Leistungspunkten umfassen. Die Summe der Fachanteile im Monobachelorstudiengang über 6 Semester beträgt 150 Leistungspunkte. Die Bachelorarbeit umfasst 12 Leistungspunkte. Der Bereich 'Marburg Skills' gemäß § 12 und § 13 umfasst 18 Leistungspunkte, was zu einer Gesamtsumme von 180 Leistungspunkten führt. Im Studienbereich Informatik Basismodule erwerben Studierende grundlegende Kompetenzen in der Informatik, einschließlich Programmierparadigmen, Algorithmen, Datenstrukturen, Hardwarebausteine, Prozessorarchitektur, Betriebssysteme und Netzwerke. In den Informatik Weiterführenden Modulen werden weiterführende theoretische und praktische Kenntnisse vermittelt, einschließlich Automaten, formale Sprachen, Berechenbarkeit, logische Formeln, Modellierung und Datenbanksysteme. Im Praxismodulbereich werden praktische Problemstellungen angewendet und vertieft, einschließlich sozialer und medialer Kompetenzen. Im Bereich Mathematik Basis- und Weiterführende Module erwerben Studierende mathematische Kompetenzen in Analysis, Algebra und Statistik. Im Bereich Informatik Wahlpflichtmodule können Studierende individuell Module wählen, um ihre Interessen zu verfolgen und Kenntnisse zu vertiefen. Die beispielhafte Abfolge des modularisierten Studiums wird in den Studienverlaufsplänen dargestellt. Allgemeine Informationen und Regelungen sind auf der studiengangbezogenen Webseite der Universität einsehbar. Die Zuordnung der einzelnen Veranstaltungen zu den Modulen des Studiengangs ist aus dem Vorlesungsverzeichnis der Universität ersichtlich.",
+      "pages": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)",
+        "(7)",
+        "(8)",
+        "(9)",
+        "(10)"
+      ],
+      "internal_references": [
+        "§ 12",
+        "§ 13",
+        "Anlage 1"
+      ],
+      "external_references": [],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 920,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 8",
+      "section_title": "Allgemeine Regelstudienzeit, Exzellenzförderung und Studienbeginn",
+      "content": "Absatz (1) legt fest, dass die allgemeine Regelstudienzeit für den Studiengang 'Informatik' 6 Semester beträgt. Auf Grundlage dieser Studien- und Prüfungsordnung stellt der Fachbereich ein Lehrangebot sicher, das es den Studierenden ermöglicht, alle zum Bestehen des Studiums notwendigen Leistungen einschließlich der Anfertigung der Abschlussarbeit in der allgemeinen Regelstudienzeit wahrzunehmen. Absatz (2) beschreibt, dass der Fachbereich bemüht ist, besonders leistungsstarke Studierende zu fördern. Zu diesem Zweck werden eine Studienstruktur und Betreuung angeboten, die es den Studierenden erleichtern sollen, den Abschluss bereits vor dem Ablauf der allgemeinen Regelstudienzeit zu erwerben. Zudem können besonders motivierte Bachelorstudierende, die im Rahmen eines sechssemestrigen Mono- bzw. Kombinationsstudiengangs bereits mindestens 144 LP oder im Rahmen eines achtsemestrigen Mono- bzw. Kombinationsstudiengangs bereits 204 LP erworben haben und auf Antrag beim Prüfungsausschuss bereits Module eines zu spezifizierenden Masterstudiengangs im Umfang von maximal 18 LP nach Maßgabe der vorhandenen Kapazitäten als zusätzliche Module absolvieren. Diese Module gehen weder in die Anzahl der im Studiengang zu erwerbenden Leistungspunkte noch in die Gesamtnote des Bachelorstudiengangs ein. Sie können bei Aufnahme des entsprechenden Masterstudiengangs anerkannt werden. Absatz (3) regelt, dass der Studiengang sowohl zum Winter- als auch zum Sommersemester aufgenommen werden kann.",
+      "pages": [
+        8
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 373,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 9",
+      "section_title": "Studienaufenthalte im Ausland",
+      "content": "Absatz (1) beschreibt, dass ein freiwilliges Auslandsstudium von einem Semester in den Studienverlauf integriert werden kann, ohne die Studienzeit zu verlängern. Dafür ist der Zeitraum des vierten Semesters (bei Studienbeginn im Sommersemester) oder des fünften Semesters (bei Beginn im Wintersemester) vorgesehen. Die in Anlage 1 für diesen Zeitraum vorgesehenen Module sind besonders geeignet, um an ausländischen Hochschulen absolviert zu werden und für das Studium an der Philipps-Universität Marburg anerkannt zu werden. Absatz (2) erläutert, dass über verschiedene Zielhochschulen sowie über Praktikumsmöglichkeiten im Ausland, die fachlichen Anforderungen, Anerkennungsmöglichkeiten sowie Fördermöglichkeiten die Auslandsstudienberatung des Fachbereichs sowie die für das Auslandsstudium zuständigen Dienststellen der Philipps-Universität Marburg beraten. Absatz (3) erklärt, dass die Studierenden mit ihrem Fachbereich und der ausländischen Gasthochschule vor dem Auslandsaufenthalt einen Studienvertrag (Learning Agreement) abschließen. In einem solchen Learning Agreement sind das im Ausland zu absolvierende Studienprogramm sowie die bei erfolgreichem Abschluss eines Moduls bzw. einer Lehrveranstaltung zu vergebenden Leistungspunkte festzulegen. Die Studierenden stimmen zu, das vereinbarte Studienprogramm an der Gasthochschule als festen Bestandteil des Studiums zu absolvieren, der Fachbereich erkennt die erbrachten Leistungen an. Das Learning Agreement ist für die Beteiligten bindend. Für den Abschluss von Learning Agreements ist maßgeblich, dass die avisierten Lernergebnisse und Kompetenzen weitgehend übereinstimmen. Eine Übereinstimmung der Inhalte ist nicht erforderlich. Absatz (4) besagt, dass in begründeten Ausnahmefällen das Learning Agreement vor und während des Auslandsaufenthaltes auf Antrag der Studierenden im Einvernehmen mit dem Fachbereich abgeändert bzw. angepasst werden kann. Die Zustimmung der ausländischen Gasthochschule ist erforderlich. Absatz (5) regelt, dass Abweichungen von den im Learning Agreement getroffenen Vereinbarungen nachträglich nur dann gestattet sind, wenn sie von den Studierenden nicht zu verantworten sind und eine entsprechende Dokumentation vorgelegt wird.",
+      "pages": [
+        8,
+        9
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)"
+      ],
+      "internal_references": [
+        "Anlage 1"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 556,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 10",
+      "section_title": "Module und Leistungspunkte",
+      "content": "Absatz (1) beschreibt, dass das Lehrangebot in modularer Form angeboten wird. Jedes Modul ist originär in einer Studien- und Prüfungsordnung geregelt und kann in weitere Studien- und Prüfungsordnungen als Importmodul übernommen werden. In Absatz (2) wird erklärt, dass Module entsprechend ihrem Verpflichtungsgrad als Pflicht- und Wahlpflichtmodule bezeichnet werden. Pflichtmodule können nur vorgesehen werden, wenn sie in ausreichender Platzzahl für alle Studierenden angeboten werden. Entsprechend ihrem Niveau und ihrer didaktischen Funktion werden Module zusätzlich als Fachmodule, Basismodule, Aufbaumodule, Vertiefungsmodule, Praxismodule und Abschlussmodule gekennzeichnet. Außerdem gibt es Module für den Studienbereich Marburg Skills und/oder den Studienbereich Interdisziplinarität. Absatz (3) erläutert, dass der Arbeitsaufwand der Studierenden durch Leistungspunkte (LP) nach dem European Credit Transfer and Accumulation System (ECTS) dargestellt wird. Ein Leistungspunkt entspricht einer Gesamtarbeitsleistung der Studierenden im Präsenz- und Selbststudium von 25 bis höchstens 30 Zeitstunden. Die Festlegung des konkreten Stundenwerts eines Studiengangs erfolgt jeweils im Modulhandbuch. Absatz (4) legt fest, dass der Gesamtaufwand zum Erreichen der Ziele eines Semesters in der Regel 30 LP beträgt. Abweichungen im Rahmen von bis zu 3 LP sind möglich, sollten aber innerhalb eines Studienjahres ausgeglichen werden. Absatz (5) betont, dass im Interesse der Studierbarkeit ein Modul im Regelfall 6 LP oder 12 LP umfassen soll. Dies gilt insbesondere für Module, die in einem Austauschverhältnis mit anderen Studiengängen stehen. Bei abweichenden Modulgrößen muss die Modulgröße durch 3 teilbar sein. Absatz (6) erklärt, dass Module sich über ein, maximal zwei Semester erstrecken. Absatz (7) besagt, dass Voraussetzung für die Vergabe von Leistungspunkten der erfolgreiche Abschluss des gesamten Moduls ist. Absatz (8) beschreibt, dass die Teilnahme an einem Modul vom Bestehen anderer Module abhängig gemacht werden kann. Absatz (9) stellt klar, dass Module über den vorgesehenen LP-Umfang des Studiums hinaus nicht vorgesehen und nicht ausgewiesen werden.",
+      "pages": [
+        9
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)",
+        "(7)",
+        "(8)",
+        "(9)"
+      ],
+      "internal_references": [
+        "§ 5 Abs. 2",
+        "§ 10"
+      ],
+      "external_references": [
+        "Allgemeine Bestimmungen",
+        "European Credit Transfer and Accumulation System (ECTS)"
+      ],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 543,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 11",
+      "section_title": "Praxismodule",
+      "content": "Im Rahmen des Studiengangs 'Informatik' sind interne Praxismodule im Studienbereich Praxismodule gemäß § 7 dieser Studien- und Prüfungsordnung vorgesehen. Es ist kein externes Praxismodul gemäß § 7 dieser Studien- und Prüfungsordnung vorgesehen. Im Übrigen gelten die Regelungen des § 11 Allgemeine Bestimmungen. Zur Verbesserung der Arbeitsmarktfähigkeit können Studiengänge interne und externe Praxismodule vorsehen. Externe Praxismodule sind in der Regel unbenotet und werden mit 'bestanden' oder 'nicht bestanden' bewertet, interne Praxismodule sind in der Regel benotet. Nähere Bestimmungen zu Praktika in externen Praxismodulen können über die Modulbeschreibung hinaus in einer Praktikumsordnung als Anlage zur Studien- und Prüfungsordnung getroffen werden. Wenn der oder die Studierende trotz Bemühens keine Praktikumsstelle gefunden hat, kann der Fachbereich in einem angemessenen Zeitrahmen eine geeignete externe Praktikumsstelle vermitteln. Stattdessen oder ergänzend kann der Fachbereich gewährleisten, dass gleichwertige Module (interne Angebote) wahrgenommen werden können, die in Bezug auf die zu vermittelnden Kompetenzen und in den Bewertungsmodalitäten (benotet/unbenotet) mit dem Praxismodul abgestimmt sind.",
+      "pages": [
+        9,
+        10
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "internal_references": [
+        "§ 7",
+        "§ 11"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 306,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 12",
+      "section_title": "Module des Studienbereichs Marburg Skills",
+      "content": "Der Studienbereich Marburg Skills umfasst 18 Leistungspunkte und ist verpflichtender Bestandteil aller Mono- und Kombinationsbachelorstudiengänge. Er bündelt sowohl zentral angebotene Module für diesen Studienbereich als auch die Angebote der Fachbereiche an Studierende aller Fachbereiche und ermöglicht den Studierenden den Erwerb fächerübergreiflicher und allgemeiner Schlüsselkompetenzen. Studierende wählen maximal 6 Leistungspunkte aus den zentralen Angeboten und mindestens 12 Leistungspunkte aus dem Angebot der Fachbereiche. Auch weiterführende Fachmodule können für den Studienbereich Marburg Skills freigegeben werden. Damit werden sie auch für Studierende des bereitstellenden Fachs als Wahlpflichtmodule studierbar. Ein Ziel des zentralen Angebots ist die interdisziplinäre Zusammenarbeit zwischen den Fächern in demokratischer Mitbestimmung und für die Auseinandersetzung mit aktuellen gesellschaftlichen Themen und Herausforderungen. Module eines Monofachs oder eines Hauptfach- oder Nebenfachteilstudiengangs sowie deren modifizierte und reine Exportmodule, die für den Studienbereich Marburg Skills zur Verfügung stehen sollen, sind jeweils in der Exportanlage der Studien- und Prüfungsordnung zu regeln bzw. auszuweisen. Die zentral angebotenen Module der Studienbereiche Marburg Skills und Interdisziplinarität sind in einer gemeinsamen Studien- und Prüfungsordnung gemäß § 7 Abs. 6 geregelt.",
+      "pages": [
+        10
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [
+        "§ 7 Abs. 6"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 352,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 13",
+      "section_title": "Module des Studienbereichs Interdisziplinarität",
+      "content": "Der achstsemestrige Kombinationsbachelorstudiengang beinhaltet zusätzlich zu einem Hauptfach, zwei Nebenfächern und dem Studienbereich Marburg Skills einen Studienbereich Interdisziplinarität im Umfang von 12 Leistungspunkten. Die Module dieses Studienbereichs sollen eine überfachliche Ausrichtung haben, um der Vielzahl der möglichen individuellen Fächerkombinationen Rechnung zu tragen. Darin sollen die Stärken der interdisziplinären Zusammenarbeit zwischen den Fächern in demokratischer Mitbestimmung und für die Auseinandersetzung mit aktuellen gesellschaftlichen Themen und Herausforderungen gewährleistet sein. Module des Studienbereichs Interdisziplinarität können auch für Studierende des sechstsemestrigen Kombinationsbachelorstudiengangs sowie der Monobachelorstudiengänge im Studienbereich Marburg Skills freigegeben werden. Im Rahmen des Studienbereichs Marburg Skills stehen diese Module dann grundsätzlich allen Studierenden offen, jedoch sind Studierende des achstsemestrigen Kombinationsbachelorstudiengangs vorrangig zu berücksichtigen. Absatz (2) regelt, dass Module eines Monofachs oder eines Hauptfach- oder Nebenfachteilstudiengangs sowie deren modifizierte und reine Exportmodule, die für den Studienbereich Interdisziplinarität zur Verfügung stehen sollen, jeweils in der Exportanlage der Studien- und Prüfungsordnung zu regeln bzw. auszuweisen sind. Die zentral angebotenen Module der Studienbereiche Marburg Skills und Interdisziplinarität sind in einer gemeinsamen Studien- und Prüfungsordnung gemäß § 7 Abs. 6 geregelt.",
+      "pages": [
+        10
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [
+        "§ 7 Abs. 6"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 387,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 14",
+      "section_title": "Modul- und Veranstaltungsanmeldung sowie Modul- und Veranstaltungsabmeldung",
+      "content": "Absatz (1) regelt, dass für Module beziehungsweise Veranstaltungen im Einzelfall eine verbindliche Anmeldung erforderlich ist, soweit dies im Modulhandbuch angegeben ist. Absatz (2) beschreibt, dass das An- und Abmeldeverfahren sowie die An- und Abmeldefristen rechtzeitig auf der studiengangbezogenen Webseite gemäß § 7 Abs. 9 bekannt gegeben werden. Die Vergabe von Modul- oder Veranstaltungsplätzen erfolgt bei beschränkten Kapazitäten gemäß § 15 dieser Studien- und Prüfungsordnung.",
+      "pages": [
+        10,
+        11
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [
+        "§ 7 Abs. 9",
+        "§ 15"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 121,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 15",
+      "section_title": "Zugang zu Wahlpflichtmodulen oder Lehrveranstaltungen mit begrenzten Teilnahmemöglichkeiten",
+      "content": "Absatz (1) regelt, dass Wahlpflichtmodule und Lehrveranstaltungen durch einen Fachbereichsratsbeschluss Zulassungszahlen festsetzen können, wenn dies für einen geordneten Lehr- und Studienbetrieb oder zur Erreichung des Ausbildungsziels zwingend erforderlich ist. Die festgesetzte Teilnehmerzahl wird rechtzeitig vor Beginn des Wahlpflichtmoduls oder der Lehrveranstaltung bekannt gegeben. Absatz (2) besagt, dass bei einem Wahlpflichtmodul oder einer Lehrveranstaltung mit begrenzter Kapazität kein Anspruch auf die Teilnahme besteht, sofern das Studium mindestens eines anderen alternativen Wahlpflichtmoduls oder einer anderen Lehrveranstaltung offensteht. Absatz (3) beschreibt, dass bei einer Überschreitung der Anmeldungen die Zahl der zur Verfügung stehenden Plätze eine Auswahl erfordert, die durch das Los getroffen wird. Härtefälle und Studierende mit besonderem Interesse an der Teilnahme werden dabei berücksichtigt. Ein besonderes Interesse liegt vor, wenn Studierende aufgrund einer Spezialisierung verpflichtet sind, das Modul im Studiengang als Fachmodul vorgesehen ist, das Modul im Studienbereich Interdisziplinarität im Rahmen eines achtsemestrigen Kombinationsbachelorstudiengangs vorgesehen ist, oder wenn Studierende in einem vorangegangenen Semester trotz Anmeldung keinen Platz erhalten haben, obwohl der Studienverlaufsplan das Wahlpflichtmodul vorsah. Auch Studierende, die ohne Erfolg an dem Wahlpflichtmodul oder der Lehrveranstaltung teilgenommen haben, wenn eine nochmalige Teilnahme für die Wiederholungsprüfung zwingend ist, werden berücksichtigt. Genügen die vorhandenen Plätze nicht, sind Studierende der Prioritätsgruppe 1 vorrangig zuzulassen, innerhalb der Gruppen entscheidet das Los.",
+      "pages": [
+        11
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "internal_references": [
+        "§ 28 Abs. 1 und 2"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 430,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 16",
+      "section_title": "Studiengangübergreifende Modulverwendung",
+      "content": "Absatz (1) beschreibt, dass Module, die sich im Angebot und in den Prüfungsregeln nach den Bestimmungen anderer Studienangebote richten, als 'Importmodule' vorgesehen sind. Nähere Angaben zu diesen Modulen sind in Anlage 3 zusammengefasst. Absatz (2) erklärt, dass Module aus dem Angebot des Studiengangs 'Informatik', die auch im Rahmen anderer Studiengänge absolviert werden können, den Regelungen von § 22 Abs. 4 dieser Studien- und Prüfungsordnung sowie § 16 Abs. 1 Allgemeine Bestimmungen unterliegen.",
+      "pages": [
+        11
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [
+        "Anlage 3",
+        "§ 22 Abs. 4",
+        "§ 16 Abs. 1 Allgemeine Bestimmungen"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 126,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 17",
+      "section_title": "Studienleistungen und Anwesenheitspflicht",
+      "content": "Absatz (1) legt fest, dass, soweit dies in der Modulliste festgelegt ist, für alle oder für bestimmte Veranstaltungen eine Anwesenheitspflicht besteht. Die Anwesenheit in Lehrveranstaltungen gilt nicht als Studienleistung, es wird ausschließlich die physische Präsenz überprüft. Die regelmäßige Anwesenheit ist in diesem Fall die Voraussetzung für die Zulassung zur Modulprüfung bzw. für die Vergabe von Leistungspunkten. Die Anwesenheit ist in geeigneter Weise festzustellen. Soweit eine Anwesenheitspflicht vorgesehen ist, gilt eine maximal zulässige Fehlzeit von 20% der Veranstaltung. Bei darüberhinausgehenden Fehlzeiten kann der Prüfungsausschuss in Härtefällen die Möglichkeit einräumen, dass das Versäumnis auf begründeten Antrag zum Beispiel durch Nachholen bestimmter Leistungen kompensiert werden kann. Absatz (2) verweist im Übrigen auf § 17 der Allgemeinen Bestimmungen.",
+      "pages": [
+        11,
+        12
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [
+        "§ 17 Allgemeine Bestimmungen"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 220,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 18",
+      "section_title": "Prüfungsausschuss",
+      "content": "Der Prüfungsausschuss wird vom Fachbereich bestellt. Ihm gehören vier Angehörige der Gruppe der Professorinnen und Professoren, ein Mitglied der Gruppe der wissenschaftlichen Mitarbeiterinnen und Mitarbeiter sowie zwei Mitglieder der Gruppe der Studierenden an. Für jedes Mitglied soll ein stellvertretendes Mitglied gewählt werden. Von den Mitgliedern nach Nummer 1 sollen drei dem Fachgebiet Informatik und eines dem Fachgebiet Mathematik entstammen. Die Amtszeit, der Vorsitz, die Beschlussfähigkeit und weitere Aspekte regelt § 18 der Allgemeinen Bestimmungen.",
+      "pages": [
+        12,
+        13
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "internal_references": [
+        "§ 18 Allgemeine Bestimmungen"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 141,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 19",
+      "section_title": "Aufgaben des Prüfungsausschusses und der Prüfungsverwaltung",
+      "content": "Der Prüfungsausschuss trägt die Verantwortung dafür, dass die Bestimmungen der Studien- und Prüfungsordnung eingehalten werden. Insbesondere hat er die Verantwortung für folgende Aufgaben: Die Organisation des gesamten Prüfungsverfahrens, die Bestellung der Prüferinnen und Prüfer sowie der Beisitzerinnen und Beisitzer, Entscheidungen über Prüfungszulassungen, die Entscheidung über die Anerkennungen und Anrechnungen gemäß § 21, die Erteilung von Auflagen zu nachzuholenden Studien- und Prüfungsleistungen im Rahmen von Anerkennungen gemäß § 21 Abs. 6, die Abgabe von Einstufungsempfehlungen bei Studiengang- oder Studienortwechseln zur Vorlage beim Studierendensekretariat, das zeitnahe Ausstellen des Zeugnisses, der Urkunde, des Transcript of Records, des Diploma Supplement und der Einstufungstabelle, die Archivierung des Datenbestandes anhand einer von der Verwaltung zur Verfügung gestellten Vorlage, die jährliche Berichterstattung an den Fachbereichsrat und das Dekanat, insbesondere bezüglich der Entwicklung der Studieneinheiten, über die Nachfrage der Studierenden nach den verschiedenen Wahlpflichtmodulen einschließlich des Modulimports und -exports sowie die Verteilung der Modul- und Gesamtnoten, die Supervision und Kontrolle der Prüfungsverwaltung, die Abgabe von Anregungen zur Reform der Studien- und Prüfungsordnungen. Der Prüfungsausschuss kann die Anerkennung von Studien- und Prüfungsleistungen und andere Aufgaben an die Vorsitzende oder den Vorsitzenden delegieren. Die Zuständigkeit für die Anerkennung von Leistungen im Rahmen von Auslandsstudien gemäß § 9 kann der Prüfungsausschuss an die ECTS-Beauftragte oder den ECTS-Beauftragten delegieren, die oder der die Anerkennungen im Auftrag des Prüfungsausschusses vornimmt. Die oder der Prüfungsausschussvorsitzende sowie ggf. die oder der ECTS-Beauftragte ziehen in allen Zweifelsfällen den Ausschuss zu Rate. Zur Wahrnehmung einzelner Aufgaben, insbesondere für die laufende Prüfungsverwaltung, bedient sich der Ausschuss im Übrigen seiner Geschäftsstelle (Prüfungsbüro). Individualentscheidungen des Prüfungsausschusses sind den betreffenden Studierenden unverzüglich schriftlich mitzuteilen. Bescheide sind mit einer Rechtsbehelfsbelehrung zu versehen.",
+      "pages": [
+        13
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "internal_references": [
+        "§ 21",
+        "§ 21 Abs. 6",
+        "§ 9"
+      ],
+      "external_references": [
+        "Allgemeine Bestimmungen"
+      ],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 558,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 20",
+      "section_title": "Prüferinnen und Prüfer sowie Beisitzerinnen und Beisitzer",
+      "content": "Es gelten die Regelungen des § 20 Allgemeine Bestimmungen.",
+      "pages": [
+        13
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [],
+      "internal_references": [
+        "§ 20 Allgemeine Bestimmungen"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 14,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 21",
+      "section_title": "Anerkennung von Studienleistungen und Prüfungsleistungen",
+      "content": "Absatz (1) regelt, dass an einer Hochschule oder staatlich anerkannten Berufsakademie erbrachte Studienleistungen und Prüfungsleistungen von der Philipps-Universität Marburg grundsätzlich anerkannt werden, wenn kein wesentlicher Unterschied zu den zu ersetzenden Leistungen besteht. Wesentliche Unterschiede liegen insbesondere dann vor, wenn sich die Leistungen in Qualifikationsziel, Umfang und Anforderungen wesentlich unterscheiden. Eine Gesamtbetrachtung und Gesamtbewertung unter besonderer Berücksichtigung der erreichten Qualifikationsziele ist vorzunehmen. Für die Anerkennung ist ein Beweislastumkehr vorgesehen. Kann die Hochschule den wesentlichen Unterschied nicht nachweisen, sind die Leistungen anzuerkennen. Die Antragstellerin bzw. der Antragsteller ist verpflichtet, zur Beurteilung ausreichende Informationen zur Verfügung zu stellen. Absatz (2) beschreibt, dass außerhalb von Hochschulen erworbene Kenntnisse und Fähigkeiten anerkannt werden können, wenn sie gleichwertig sind und die Kriterien für die Anrechnung im Rahmen der Akkreditierung erfüllen. Insgesamt dürfen nicht mehr als 50 % der im Studiengang erforderlichen Prüfungsleistungen durch die Anrechnung ersetzt werden. Absatz (3) legt fest, dass anerkannte Leistungen in Zeugnissen, im Transcript of Records und im vollständigen Leistungsnachweis als 'anerkannt' kenntlich gemacht werden. Absatz (4) besagt, dass die Abschlussmodule in besonderer Weise prägende Module sind und eine Anerkennung ausgeschlossen ist, wenn sie im Rahmen einer vorherigen vertraglichen Vereinbarung an einer anderen Hochschule absolviert wurden. Absatz (5) regelt, dass Entscheidungen über die Anerkennung von Leistungen der zuständige Prüfungsausschuss trifft. Die Antragstellerin bzw. der Antragsteller legt dem Ausschuss die erforderlichen Unterlagen vor, aus denen die Bewertung, die Leistungspunkte und die Zeitpunkte sämtlicher Prüfungsleistungen hervorgehen. Absatz (6) stellt klar, dass bei Vorliegen der Voraussetzungen ein Rechtsanspruch auf Anerkennung besteht. Absatz (7) beschreibt, dass sofern Anerkennungen vorgenommen werden, diese mit Auflagen zu nachzuholenden Studien- und Prüfungsleistungen verbunden werden können. Auflagen und Fristen sind der Antragstellerin bzw. dem Antragsteller schriftlich mitzuteilen. Absatz (8) regelt, dass Fehlversuche in Studiengängen anerkannt werden, sofern sie im Fall ihres Bestehens anerkannt worden wären.",
+      "pages": [
+        13,
+        14
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)",
+        "(7)",
+        "(8)"
+      ],
+      "internal_references": [
+        "§ 5 Abs. 2",
+        "§ 10"
+      ],
+      "external_references": [
+        "HHG"
+      ],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 605,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 22",
+      "section_title": "Modulliste, Import- und Exportmodulliste sowie Modulhandbuch",
+      "content": "Es tut mir leid, ich kann den Inhalt von § 22 nicht extrahieren, da er auf der bereitgestellten Seite nicht sichtbar ist.",
+      "pages": [
+        14
+      ],
+      "chapter": null,
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 30,
+      "extraction_confidence": 0.5,
+      "extraction_notes": "JSON parsing failed: Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 23",
+      "section_title": "Prüfungen",
+      "content": "Absatz (1) legt fest, dass Prüfungen in der Regel nur von ordentlichen Studierenden der Philipps-Universität Marburg abgelegt werden dürfen, die ihren Prüfungsanspruch nicht verloren haben. Das Modul, in dessen Rahmen die Leistung erbracht wird, muss entweder dem durch die Studien- und Prüfungsordnung geregelten Studiengang oder als Importmodul gemäß § 16 Abs. 1 einem anderen Studiengang zugeordnet sein oder von einem Fachbereich oder einer wissenschaftlichen Einrichtung der Philipps-Universität Marburg nach den Regelungen dieser Ordnung angeboten werden oder, wenn es sich um ein Modul einer anderen Hochschule handelt, im Rahmen einer hochschulischen Kooperation verträglich dem Studiengang zugeordnet sein. § 60 Abs. 5 HessHG (besonders begabte Schülerinnen und Schüler) bleibt unberührt. Absatz (2) beschreibt, dass Modulprüfungen vor studienbegleitend erbracht werden. Mit ihnen wird das jeweilige Modul abgeschlossen. Durch die Modulprüfung soll die Kandidatin oder der Kandidat nachweisen, dass sie oder er die in der Modulbeschreibung definierten Qualifikationsziele erreicht hat. Absatz (3) erklärt, dass Module in der Regel mit einer einzigen Modulprüfung abschließen. Sieht eine Studien- und Prüfungsordnung mehrere Modulteilprüfungen vor, ist für das Bestehen des Moduls i. d. R. das Bestehen sämtlicher Modulteilprüfungen notwendig. Sofern die Studien- und Prüfungsordnung einen Notenausgleich zwischen den Modulteilen zulässt, zählen im Falle der Wiederholung nicht bestandener Modulteilprüfungen die zuletzt erzielten Bewertungen. Eine Wiederholung einer Modulteilprüfung ist nicht zulässig, wenn diese bereits bestanden wurde oder durch einen anderen Modulteil ausgeglichen werden konnte und damit das Modul bestanden ist. Die Studien- und Prüfungsordnung kann im Falle des Notenausgleichs vorsehen, dass bestimmte Teilprüfungen bestanden sein müssen oder keine Teilprüfung mit 0 Punkten gemäß § 30 Abs. 2 bewertet sein darf, damit das Modul bestanden ist. In der Modulliste ist die jeweilige Gewichtung der Modulteilprüfungen zur Gesamtnote des Moduls, ausgedrückt in Leistungspunkten, anzugeben. Absatz (4) besagt, dass pro Semester gemäß exemplarischem Studienverlaufsplan nicht mehr als insgesamt sechs Modulprüfungen bzw. Modulteilprüfungen vorgesehen werden. Absatz (5) beschreibt, dass die Modulprüfungen und ggf. Modulteilprüfungen in mündlicher, schriftlicher oder anderer Form gemäß § 24 stattfinden. Die Form der Modulprüfungen und ggf. Modulteilprüfungen der einzelnen Module sind in der Modulliste (Anlage 3) oder der modulübergreifend in § 24 der Studien- und Prüfungsordnung zu regeln. Die Prüfungsform ist festzulegen. Dabei können bis zu drei Varianten genannt werden, wenn die Prüfungsformen in ihren Bedingungen gleichwertig sind, was voraussetzt, dass die Prüfungsbedingungen (beispielsweise Vorbereitungszeit und Niveau der Prüfung) auf Dauer gleichwertig sein müssen. Sind mehrere Prüfungsformen vorgesehen, wird die Prüfungsform des jeweiligen Prüfungstermins von der oder dem Prüfenden festgelegt und bekannt gegeben.",
+      "pages": [
+        14,
+        15
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)"
+      ],
+      "internal_references": [
+        "§ 16 Abs. 1",
+        "§ 30 Abs. 2",
+        "§ 24"
+      ],
+      "external_references": [
+        "HessHG"
+      ],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 765,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 24",
+      "section_title": "Prüfungsformen und -dauern, Bearbeitungszeiten, Umfänge",
+      "content": "Absatz (1) beschreibt, dass schriftliche Prüfungen in Form von Klausuren, die auch als E-Klausuren oder Multiple-Choice-Verfahren durchgeführt werden können, Praktikumsberichten, schriftlichen Ausarbeitungen und der Bachelorarbeit erfolgen. Absatz (2) erklärt, dass mündliche Prüfungen als Einzelprüfungen oder Kolloquien stattfinden. Diese können auch als elektronische Fernprüfungen gemäß der Satzung der Philipps-Universität Marburg durchgeführt werden. Absatz (3) nennt weitere Prüfungsformen wie Seminarvorträge, Präsentationen und Softwareerstellungen. Absatz (4) legt die Dauer und den Umfang der Prüfungen fest. Schriftliche Prüfungen sollen eine größere Zeitspanne zur Bearbeitung umfassen, wobei Klausuren 60-120 Minuten dauern. Mündliche Einzelprüfungen dauern 20-30 Minuten und Kolloquien 15-20 Minuten. Schriftliche Ausarbeitungen und Praktikumsberichte umfassen 10-20 Seiten mit etwa zwei Wochen Bearbeitungszeit. Präsentationen und Seminarvorträge finden in einer Veranstaltung von maximal 90 Minuten statt. Die Softwareerstellung hat eine Bearbeitungszeit von etwa vier Wochen. Der Umfang der Bachelorarbeit beträgt 25-60 Seiten. Absatz (5) besagt, dass für Importmodule die entsprechenden Regelungen der Studien- und Prüfungsordnungen gelten. Absatz (6) erklärt, dass multimedial gestützte schriftliche Prüfungen gemäß den Regelungen in den Allgemeinen Bestimmungen durchgeführt werden. Absatz (7) beschreibt, dass Prüfungen im Multiple-Choice-Verfahren ebenfalls den Regelungen der Allgemeinen Bestimmungen folgen. Absatz (8) verweist auf die Allgemeinen Bestimmungen für weitere Details.",
+      "pages": [
+        15,
+        16,
+        17
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)",
+        "(7)",
+        "(8)"
+      ],
+      "internal_references": [
+        "Anlage 6",
+        "Anlage 7"
+      ],
+      "external_references": [
+        "Allgemeine Bestimmungen"
+      ],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 401,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 25",
+      "section_title": "Bachelorarbeit",
+      "content": "Die Bachelorarbeit (Abschlussarbeit) ist obligatorischer Bestandteil des Studiums. Die Bachelorarbeit ist in deutscher oder in englischer Sprache anzufertigen; sie kann in Absprache mit dem Prüfungsausschuss auch in anderen Sprachen angefertigt werden. Die Bachelorarbeit ist eine Prüfungsarbeit, mit der die Kandidatin oder der Kandidat die Fähigkeit nachweisen soll, innerhalb einer vorgegebenen Frist ein abgegrenztes Problem aus dem Gegenstandsbereich der theoretischen oder angewandten Informatik, auf Antrag auch aus dem Bereich der Mathematik, unter Anleitung nach wissenschaftlichen Methoden zu bearbeiten. Sie zielt darauf, dass die Kandidatin oder der Kandidat die Fähigkeit vertieft, sich in beschränkter Zeit in ein zuvor unbekanntes Aufgabengebiet einzuarbeiten und die erworbenen Kenntnisse einem vorgegebenen Leserkreis zu kommunizieren. Der Umfang der Bachelorarbeit beträgt 12 Leistungspunkte. Die Bachelorarbeit kann als Einzelarbeit oder als Gruppenarbeit angefertigt werden. In diesem Falle muss der als Prüfungsleistung zu bewertende Beitrag der einzelnen Kandidatin bzw. des einzelnen Kandidaten aufgrund der Angabe von Abschnitten, Seitenzahlen oder anderen Kriterien, die eine eindeutige Abgrenzung ermöglichen, deutlich unterscheidbar und bewertbar sein. Die Zulassung zur Bachelorarbeit setzt voraus, dass die Module der Studienbereiche Informatik Basismodule, Informatik Weiterführende Module, sowie Mathematik Basis- und Weiterführende Module und insgesamt bereits mindestens 114 LP erworben wurden. Die Kandidatin bzw. der Kandidat schlägt eine Betreuerin oder einen Betreuer sowie eine prüfungsberechtigte Person als Erstgutachterin oder Erstgutachter für die Bachelorarbeit vor. Für die Zweitgutachterin bzw. den Zweitgutachter besteht ebenfalls Vorschlagsrecht für die Kandidatin bzw. den Kandidaten. Die Vorschläge begründen keinen Anspruch. Die Betreuerin bzw. der Betreuer sowie die Erstgutachterin bzw. der Erstgutachter können identische Personen sein. Die Erstgutachterin oder der Erstgutachter muss vom Prüfungsausschuss für die Begutachtung von Bachelorarbeiten bestellt werden. Das Thema der Bachelorarbeit wird von der Erstgutachterin oder dem Erstgutachter dem Prüfungsausschuss vorgelegt und vom Prüfungsausschuss vergeben. Findet die Kandidatin bzw. der Kandidat keine Betreuerin bzw. keinen Betreuer und keine Erstgutachterin bzw. keinen Erstgutachter, so bestimmt die oder der Vorsitzende des Prüfungsausschusses die Betreuerin bzw. den Betreuer und die Erstgutachterin bzw. den Erstgutachter und sorgt dafür, dass rechtzeitig ein Thema für die Bachelorarbeit ausgegeben wird. Das Thema der Abschlussarbeit muss so beschaffen sein, dass es innerhalb des vorgesehenen zeitlichen Prüfungsaufwandes von 360 h bzw. 9 Wochen vollständig abschließend bearbeitet werden kann. Der Gesamtzeitraum, der zur Bearbeitung zur Verfügung gestellt wird, umfasst eine größere Zeitspanne von 4 Monaten. Eine Verlängerung der Bearbeitungszeit um höchstens 20 % (z. B. wegen unvorhergesehener Probleme bei der Literatur- oder Datenbeschaffung) ist auf begründeten Antrag der Kandidatin oder des Kandidaten möglich; sie führt nicht zur Vergabe zusätzlicher Leistungspunkte. Die Bearbeitungszeit beginnt mit der Themenausgabe; der Ausgabezeitpunkt ist aktenkundig zu machen. Die Themenausgabe soll so rechtzeitig erfolgen, dass auch im Falle der Gewährung einer Verlängerung der Bearbeitungszeit keine Studienzeitverlängerung eintritt. Die Bachelorarbeit ist fristgemäß beim Prüfungsausschuss oder einer von ihm benannten Stelle in 3 gedruckten Exemplaren sowie in digitaler Form nach den Vorgaben des Prüfungsausschusses abzugeben. Der Zeitpunkt der Abgabe ist aktenkundig zu machen. Bei der Abgabe hat die Kandidatin bzw. der Kandidat schriftlich zu versichern, dass sie oder er die Arbeit selbstständig verfasst und keine anderen als die angegebenen Quellen und Hilfsmittel benutzt hat. Wird die Bachelorarbeit nicht fristgerecht abgegeben, gilt sie als mit „nicht ausreichend“ (0 Punkte) gemäß § 30 Abs. 2 Allgemeine Bestimmungen bewertet. Die Bachelorarbeit ist nicht bestanden, wenn die Gesamtbewertung nicht mindestens 5 Punkte (‚ausreichend‘) gemäß § 30 Abs. 2 Allgemeine Bestimmungen lautet; sie kann einmal wiederholt werden. Der Prüfungsausschuss sorgt dafür, dass die Kandidatin oder der Kandidat innerhalb von sechs Wochen nach Bekanntgabe des Nichtbestehens ein neues Thema erhält. Eine Rückgabe des Themas innerhalb der in § 25 Abs. 8 Satz 1 Allgemeine Bestimmungen genannten Frist ist nur zulässig, wenn die Kandidatin bzw. der Kandidat bei der ersten Anfertigung der Bachelorarbeit von dieser Möglichkeit keinen Gebrauch gemacht hat. Eine zweite Wiederholung der Bachelorarbeit ist ausgeschlossen. Ein Notenausgleich für eine nicht bestandene Bachelorarbeit ist nicht zulässig. Im Übrigen gelten die Regelungen des § 25 Allgemeine Bestimmungen.",
+      "pages": [
+        17,
+        18
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)",
+        "(7)",
+        "(8)",
+        "(9)",
+        "(10)"
+      ],
+      "internal_references": [
+        "§ 30 Abs. 2",
+        "§ 25 Abs. 8 Satz 1"
+      ],
+      "external_references": [
+        "Allgemeine Bestimmungen"
+      ],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 1221,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 26",
+      "section_title": "Prüfungstermine, Prüfungsanmeldung und Prüfungsabmeldung",
+      "content": "Der Prüfungsausschuss gibt die Zeiträume der Prüfungen und der Wiederholungsprüfungen bekannt. Termine für Klausuren und andere Prüfungstermine, die für alle Teilnehmenden eines Moduls gleichermaßen gültig sind, werden im Vorlesungsverzeichnis bekannt gegeben. Individuell zu vereinbarende Prüfungstermine (wie z. B. Referate) werden im Vorlesungsverzeichnis mit dem Hinweis „n. V.“ bekannt gegeben. Prüfungen finden im Rahmen der jeweiligen Modulveranstaltungen oder im unmittelbaren Anschluss daran statt. Finden Prüfungen im Anschluss an Modulveranstaltungen statt, so sollen sie in der Regel in einem zwei- bis dreiwöchigen Prüfungszeitraum zum Ende der Vorlesungszeit oder zu Beginn bzw. zum Ende der nachfolgenden vorlesungsfreien Zeit angeboten werden. Klausuren sollen in der Regel am selben Wochentag und zur selben Uhrzeit stattfinden, an denen eine entsprechende Modulveranstaltung stattfindet. Die Prüferin oder der Prüfer soll die Anfertigung von Prüfungsarbeiten, wie z. B. schriftlichen Ausarbeitungen, auch für die vorlesungsfreie Zeit vorsehen. Für die Wiederholung der Prüfungen ist der erste Wiederholungstermin so festzusetzen, dass bei erfolgreicher Teilnahme das fortlaufende Studium im folgenden Semester gewährleistet ist. Zur Teilnahme an einer Prüfung ist eine verbindliche Anmeldung erforderlich. Der Prüfungsausschuss gibt die Fristen und die Form der Anmeldung spätestens 4 Wochen vor Beginn des Anmeldezeitraums in geeigneter Weise bekannt. Die Zulassung zur Prüfung ist zu versagen, wenn die Anmeldefrist nicht eingehalten wird oder wenn Zulassungsvoraussetzungen nicht erfüllt sind. Bei der Anmeldung zu Prüfungen können Studierende eigenverantwortlich zwischen dem ersten Termin und dem Wiederholungstermin wählen. Bei der Wahl des Termins zur Wiederholungsprüfung wird im Falle des Nichtbestehens keine weitere Wiederholungsprüfung im selben Semester angeboten. In diesem Fall kann, wenn nachfolgende Module aufeinander aufbauen (konsekutive Module) und das nicht bestandene Modul voraussetzen, das fortlaufende Studium in Abweichung von § 26 Abs. 3 im folgenden Semester nicht gewährleistet werden. Eine verbindliche Prüfungsanmeldung kann ohne die Angabe von Gründen zurückgezogen werden, sofern dies innerhalb der vom Prüfungsausschuss dafür festgelegten Frist erfolgt. Diese Fristen sowie die Form der Abmeldung werden gemeinsam mit den entsprechenden Regelungen zur Anmeldung bekannt gegeben. Auf begründeten Antrag beim Prüfungsausschuss werden Ersatztermine für Prüfungen festgesetzt, an denen aufgrund religiöser Arbeitsverbote nicht teilgenommen werden kann. Die Zugehörigkeit zur entsprechenden Glaubensgemeinschaft ist mit dem Antrag nachzuweisen. Der Antrag ist spätestens vier Wochen vor dem Prüfungstermin zu stellen.",
+      "pages": [
+        18,
+        19,
+        20
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)",
+        "(6)",
+        "(7)"
+      ],
+      "internal_references": [
+        "§ 26 Abs. 3"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 691,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 27",
+      "section_title": "Zeitliche Vorgaben zur Erbringung von Leistungen",
+      "content": "In § 27, der sich mit den zeitlichen Vorgaben zur Erbringung von Leistungen befasst, wird festgelegt, dass die Studien- und Prüfungsordnung nicht vorsehen kann, dass die Studierenden bestimmte Module oder eine bestimmte Mindestnummer von Leistungspunkten innerhalb näher zu bezeichnender Fachsemestergrenzen zu erbringen haben.",
+      "pages": [
+        20,
+        21
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [
+        "Allgemeine Bestimmungen"
+      ],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 81,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 28",
+      "section_title": "Familienförderung, Nachteilsausgleich und informelles Teilzeitstudium",
+      "content": "In Veranstaltungen und Prüfungen ist Rücksicht auf Belastungen durch Schwangerschaft und die Erziehung von Kindern, durch die Betreuung von pflegebedürftigen Angehörigen sowie durch eine Behinderung oder chronische Erkrankung der Studierenden zu nehmen. Die Art und Schwere der Belastung ist durch die Studierenden rechtzeitig gegenüber der oder dem Veranstaltungsverantwortlichen bzw. der Geschäftsstelle des Prüfungsausschusses (Prüfungsbüro) mit geeigneten Unterlagen nachzuweisen. In Zweifelsfällen entscheidet der Prüfungsausschuss auf schriftlichen Antrag. Der Prüfungsausschuss kann in Krankheitsfällen ein ärztliches Attest verlangen. Die Inanspruchnahme der gesetzlichen Mutterschutzfristen und der Fristen der Elternzeit ist zu ermöglichen. Macht eine Studierende oder ein Studierender glaubhaft, dass sie oder er wegen einer Behinderung, einer chronischen Erkrankung, der Betreuung von pflegebedürftigen Angehörigen, einer Schwangerschaft oder der Erziehung von Kindern nicht in der Lage ist, die Prüfungsleistung ganz oder teilweise in der vorgesehenen Form abzulegen, gleicht der Prüfungsausschuss durch entsprechende Maßnahmen, wie zum Beispiel eine Verlängerung der Bearbeitungszeit oder eine andere Gestaltung des Prüfungsverfahrens, diesen Nachteil aus. Das Studium kann nach den geltenden gesetzlichen Regelungen auf Antrag ganz oder teilweise als informelles Teilzeitstudium durchgeführt werden. Bei einem bewilligten informellen Teilzeitstudium besteht kein Anspruch auf Bereitstellung eines besonderen Lehr- und Studienangebotes. In jedem Fall wird eine Studienberatung vor Aufnahme eines informellen Teilzeitstudiums dringend empfohlen.",
+      "pages": [
+        21
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 414,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 29",
+      "section_title": "Versäumnis, Rücktritt, Täuschung, Ordnungsverstoß",
+      "content": "Absatz (1) legt fest, dass eine Studienleistung als nicht bestanden gilt, wenn sie mit 'nicht ausreichend' (0 Punkte) bewertet wird, gemäß § 30 Abs. 2 der Allgemeinen Bestimmungen. Dies trifft zu, wenn die Kandidatin oder der Kandidat einen für sie oder ihn bindenden Prüfungstermin ohne wichtigen Grund versäumt oder wenn sie oder er von einer Studienleistung bzw. Prüfung, zu der bereits angetreten wurde, ohne wichtigen Grund zurücktritt. Dasselbe gilt, wenn eine Studien- bzw. Prüfungsleistung nicht innerhalb der vorgegebenen Bearbeitungszeit erbracht wird. Absatz (2) besagt, dass für das Versäumnis oder den Rücktritt geltend gemachte wichtige Gründe unverzüglich schriftlich angezeigt und glaubhaft gemacht werden müssen. Bei Krankheit ist eine ärztliche Bescheinigung vorzulegen. Die bereits vorliegenden Prüfungsergebnisse sind in diesem Fall anzuerkennen. Absatz (3) beschreibt, dass wenn die Kandidatin oder der Kandidat das Ergebnis von Studien- bzw. Prüfungsleistungen durch Täuschung oder nicht zugelassene Hilfsmittel zu beeinflussen versucht, die betreffende Studienleistung als nicht bestanden gilt. Die betreffende Prüfungsleistung wird als 'nicht ausreichend' (0 Punkte) gemäß § 30 Abs. 2 der Allgemeinen Bestimmungen bewertet. Eine Kandidatin oder ein Kandidat, die oder der den ordnungsgemäßen Ablauf der Erbringung einer Studienleistung bzw. einer Prüfung stört, kann von der jeweils prüfenden oder aufsichtführenden Person von der Fortsetzung der Studien- bzw. Prüfungsleistung ausgeschlossen werden; in diesem Fall gilt ebenfalls die Studienleistung als nicht bestanden bzw. die Prüfungsleistung als 'nicht ausreichend' (0 Punkte) gemäß § 30 Abs. 2 Allgemeine Bestimmungen. In schwerwiegenden Fällen kann der Prüfungsausschuss die Kandidatin oder den Kandidaten von der Erbringung weiterer Prüfungsleistungen ausschließen, so dass der Prüfungsanspruch im Studiengang erlischt. Absatz (4) bestimmt, dass Entscheidungen gemäß Abs. 1 bis 3 der Kandidatin oder dem Kandidaten unverzüglich schriftlich mitzuteilen, zu begründen und mit einer Rechtsbehelfsbelehrung zu versehen sind.",
+      "pages": [
+        21,
+        22
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)"
+      ],
+      "internal_references": [
+        "§ 30 Abs. 2"
+      ],
+      "external_references": [
+        "Allgemeine Bestimmungen"
+      ],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 525,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 30",
+      "section_title": "Leistungsbewertung und Notenbildung",
+      "content": "Absatz (1) legt fest, dass die Module Programmierpraktikum, Software-Praktikum, Fortgeschrittenenpraktikum und Praktikum zur Statistik abweichend von § 30 Abs. 2 der Allgemeinen Bestimmungen nicht mit Punkten bewertet werden. Absatz (2) beschreibt, dass die Gesamtbewertung der Bachelorprüfung in Punkten gemäß Spalte (a) der Tabelle in § 30 Abs. 6 der Allgemeinen Bestimmungen sich aus dem nach Leistungspunkten gewichteten Mittelwert der Modulbewertungen errechnet. Gleiches gilt für die Gesamtbewertung der Teilstudiengänge. Nicht mit Punkten bewertete (unbenotete) Module bleiben unberücksichtigt. Absatz (3) besagt, dass im Übrigen die Regelungen des § 30 der Allgemeinen Bestimmungen gelten. Die Tabelle aus den Allgemeinen Bestimmungen zeigt, dass die Bewertungen für die einzelnen Prüfungsleistungen von den jeweiligen Prüferinnen und Prüfern festgesetzt werden. Ein Bewertungssystem wird angewendet, das Punkte mit Noten verknüpft. Die Prüfungsleistungen sind entsprechend der folgenden Tabelle mit 0 bis 15 Punkten zu bewerten: 15 Punkte entsprechen der Note 0,7 und werden als 'sehr gut' definiert, was eine hervorragende Leistung bedeutet. 14 Punkte entsprechen der Note 1,0, ebenfalls 'sehr gut'. 13 Punkte entsprechen der Note 1,3, ebenfalls 'sehr gut'. 12 Punkte entsprechen der Note 1,7, was 'gut' bedeutet, eine Leistung, die erheblich über den durchschnittlichen Anforderungen liegt. 11 Punkte entsprechen der Note 2,0, ebenfalls 'gut'. 10 Punkte entsprechen der Note 2,3, ebenfalls 'gut'. 9 Punkte entsprechen der Note 2,7, was 'befriedigend' bedeutet, eine Leistung, die durchschnittlichen Anforderungen entspricht. 8 Punkte entsprechen der Note 3,0, ebenfalls 'befriedigend'. 7 Punkte entsprechen der Note 3,3, ebenfalls 'befriedigend'. 6 Punkte entsprechen der Note 3,7, was 'ausreichend' bedeutet, eine Leistung, die trotz ihrer Mängel noch den Anforderungen genügt. 5 Punkte entsprechen der Note 4,0, ebenfalls 'ausreichend'. 4, 3, 2 und 1 Punkt entsprechen der Note 5,0, was 'nicht ausreichend' bedeutet, eine Leistung, die wegen erheblicher Mängel den Anforderungen nicht mehr genügt. 0 Punkte entsprechen ebenfalls der Note 5,0. Absatz (3) erklärt, dass Bewertungen für Module, die gemäß § 23 Abs. 3 mehrere Teilprüfungen umfassen, sich aus den mit Leistungspunkten gewichteten Punkten der Teilleistungen errechnen. Die bei der Mittelwertbildung ermittelten Werte werden gerundet und alle Dezimalstellen gestrichen. Lautet die erste Dezimalstelle 5 oder größer, so wird auf den nächsten ganzzahligen Punktwert aufgerundet, andernfalls abgerundet; davon ausgenommen sind Werte größer oder gleich 4,5 und kleiner 5,0, die auf 4 Punkte abgerundet werden. Absatz (4) besagt, dass eine mit Punkten bewertete Prüfung als bestanden gilt, wenn mindestens 5 Punkte erreicht sind. Absatz (5) erklärt, dass abweichend von Absatz 2 externe Praxismodule in der Regel mit 'bestanden' oder 'nicht bestanden' bewertet werden. Die Studien- und Prüfungsordnung kann vorsehen, dass neben den externen Praxismodulen weitere Module nicht mit Punkten bewertet werden. Der Gesamtumfang der mit 'bestanden' oder 'nicht bestanden' bewerteten Module ist auf höchstens 25 % der im Rahmen des Bachelorstudiengangs insgesamt im Fachanteil des Studiengangs (102 LP im Hauptfach, 48 LP im Nebenfach und 150 LP bzw. 210 LP im sechs- bzw. achtsemestrigen Monobachelorstudiengang) zu erwerbenden Leistungspunkte zu beschränken. Zusätzlich sind die Studienbereiche Marburg Skills sowie Interdisziplinarität unbenotet und gehen nicht in die Bewertung ein.",
+      "pages": [
+        22
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)",
+        "(5)"
+      ],
+      "internal_references": [
+        "§ 30 Abs. 2",
+        "§ 30 Abs. 6",
+        "§ 23 Abs. 3"
+      ],
+      "external_references": [
+        "Allgemeine Bestimmungen"
+      ],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 886,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 31",
+      "section_title": "Freiversuch",
+      "content": "Ein Freiversuch ist nicht vorgesehen.",
+      "pages": [
+        22,
+        23,
+        24
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 9,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 32",
+      "section_title": "Wiederholung von Prüfungen",
+      "content": "Absatz (1) besagt, dass bestandene Prüfungen nicht wiederholt werden können. Absatz (2) regelt, dass nicht bestandene Prüfungen dreimal wiederholt werden können. Absatz (3) erlaubt den einmaligen Wechsel von bis zu drei endgültig nicht bestandenen Wahlpflichtmodulen. Absatz (4) stellt klar, dass § 25 Abs. 13 Satz 1 der Allgemeinen Bestimmungen für die Bachelorarbeit sowie § 23 Abs. 3 Satz 4 der Allgemeinen Bestimmungen für ausgeglichene Modulteilleistungen unberührt bleiben.",
+      "pages": [
+        24
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)"
+      ],
+      "internal_references": [
+        "§ 25 Abs. 13 Satz 1",
+        "§ 23 Abs. 3 Satz 4"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 119,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 33",
+      "section_title": "Verlust des Prüfungsanspruchs und endgültiges Nichtbestehen",
+      "content": "Absatz (1) beschreibt, dass der Prüfungsanspruch in dem Studiengang, für den die oder der Studierende eingeschrieben ist, insbesondere dann endgültig verloren geht, wenn eine Prüfung nach Ausschöpfen aller Wiederholungsversuche nicht bestanden ist, es sei denn, es handelt sich um eine Prüfung in einem Modul gemäß § 32 Absatz 3. Ebenso führt ein schwerwiegender Täuschungsfall gemäß § 29 Absatz 3 Satz 3 zum Verlust des Prüfungsanspruchs. Absatz (2) regelt, dass über das endgültige Nichtbestehen und den damit verbundenen Verlust des Prüfungsanspruchs ein Bescheid erteilt wird, der mit einer Rechtsbehelfsbelehrung zu versehen ist.",
+      "pages": [
+        24
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [
+        "§ 32 Abs. 3",
+        "§ 29 Abs. 3 Satz 3"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": true,
+      "token_count": 158,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 34",
+      "section_title": "Ungültigkeit von Prüfungsleistungen",
+      "content": "Absatz (1) regelt, dass wenn die Kandidatin oder der Kandidat bei einer Prüfung getäuscht hat und diese Tatsache erst nach der Aushändigung des Bachelorzeugnisses bekannt wird, die Note der Prüfung berichtigt oder die Bachelorprüfung für 'nicht bestanden' erklärt werden kann. Absatz (2) beschreibt, dass wenn die Voraussetzungen für die Abnahme einer Modulprüfung nicht erfüllt sind, ohne dass die Kandidatin oder der Kandidat hierüber täuschen wollte, und diese Tatsache erst nach der Aushändigung des Zeugnisses bekannt wird, dieser Mangel durch das Bestehen der Prüfung geheilt ist. Hat die Kandidatin oder der Kandidat die Zulassung zu einer Prüfung durch Täuschung erwirkt, so gilt die Modulprüfung als 'nicht ausreichend' (0 Punkte) gemäß § 30 Abs. 2. Absatz (3) gibt der Kandidatin oder dem Kandidaten das Recht, zu einer Entscheidung Stellung zu nehmen. Absatz (4) besagt, dass das unrichtige Zeugnis einzuziehen und gegebenenfalls ein neues zu erteilen ist. Mit dem unrichtigen Zeugnis sind auch die Urkunde, das Diploma Supplement sowie das Transcript of Records und der vollständige Leistungsausweis einzuziehen, wenn die Bachelorprüfung aufgrund einer Täuschung für 'nicht bestanden' erklärt wurde.",
+      "pages": [
+        24
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)"
+      ],
+      "internal_references": [
+        "§ 30 Abs. 2"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 302,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 35",
+      "section_title": "Zeugnis",
+      "content": "Es gelten die Regelungen des § 35 Allgemeine Bestimmungen. Über die bestandene Bachelorprüfung erhält die Kandidatin bzw. der Kandidat unverzüglich, möglichst innerhalb von vier Wochen, ein Zeugnis nach dem verbindlichen Muster der Philipps-Universität Marburg. In das Zeugnis der Bachelorprüfung sind die Module mit erzielten Punkten und Leistungspunkten, das Thema der Bachelorarbeit sowie die Note der Bachelorarbeit aufzunehmen. Das Zeugnis enthält auch die Gesamtnote der Bachelorprüfung. Auf Antrag der Kandidatin oder des Kandidaten kann das Zeugnis in englischer Sprache ausgestellt werden.",
+      "pages": [
+        24
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)"
+      ],
+      "internal_references": [
+        "§ 35 Allgemeine Bestimmungen"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 149,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 36",
+      "section_title": "Urkunde",
+      "content": "Gleichzeitig mit dem Zeugnis der Bachelorprüfung erhält die Kandidatin oder der Kandidat die Bachelorurkunde mit dem Datum des Zeugnisses. Darin wird die Verleihung des akademischen Grades beurkundet. Die Urkunde wird von der oder dem Vorsitzenden des Prüfungsausschusses und der Dekanin oder dem Dekan unterzeichnet und mit dem Siegel der Philipps-Universität Marburg versehen. In den beiden Kombinationsbachelorstudiengängen von der oder dem Vorsitzenden des Prüfungsausschusses und der Dekanin oder dem Dekan des Hauptfachteilstudiengangs. Es wird zusätzlich eine englischsprachige Übersetzung der Urkunde ausgestellt.",
+      "pages": [
+        24,
+        25
+      ],
+      "chapter": "III. Prüfungsbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [],
+      "external_references": [
+        "verbindliches Muster der Philipps-Universität Marburg"
+      ],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 155,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 37",
+      "section_title": "Diploma Supplement",
+      "content": "Mit der Urkunde und dem Zeugnis wird ein Diploma Supplement entsprechend den internationalen Vorgaben ausgestellt; dabei ist der zwischen der Hochschulrektorenkonferenz und der Kultusministerkonferenz abgestimmte Text in der jeweils geltenden Fassung zu verwenden (siehe verbindliches Muster der Philipps-Universität Marburg). Es wird zusätzlich eine englischsprachige Übersetzung ausgestellt. Als Anlage des Diploma Supplements wird eine Einstufungstabelle (\"Grading Table\") gemäß § 30 Abs. 8 ausgehändigt.",
+      "pages": [
+        25
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [],
+      "internal_references": [
+        "§ 30 Abs. 8"
+      ],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 126,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 38",
+      "section_title": "Transcript of Records und vollständiger Leistungsnachweis",
+      "content": "Absatz (1) regelt, dass der Kandidatin oder dem Kandidaten eine Bescheinigung über bestandene Prüfungen in Form einer Datenabschrift (Transcript of Records) nach dem Standard des ECTS ausgestellt wird. Dies erfolgt gemäß dem verbindlichen Muster der Philipps-Universität Marburg. Nach Abschluss des Studiums wird eine Datenabschrift zusammen mit dem Zeugnis, der Urkunde und dem Diploma Supplement ausgestellt. Es wird zusätzlich eine englischsprachige Übersetzung ausgestellt. Absatz (2) besagt, dass der Kandidatin oder dem Kandidaten auf Antrag eine vollständige Bescheinigung über alle im Rahmen des Studiengangs absolvierten Leistungen, einschließlich Fehlversuchen und Rücktritten, ausgestellt wird. Auch hier wird das verbindliche Muster der Philipps-Universität Marburg verwendet. Es wird zusätzlich eine englischsprachige Übersetzung ausgestellt.",
+      "pages": [
+        25
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)"
+      ],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 213,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 39",
+      "section_title": "Einsicht in die Prüfungsunterlagen",
+      "content": "Der Kandidatin oder dem Kandidaten wird auf Antrag zeitnah nach der Bekanntgabe von Prüfungsergebnissen Einsicht in ihre bzw. seine Prüfungsunterlagen einschließlich des Gutachtens der Bachelorarbeit sowie in die Prüfungsprotokolle gewährt. Der Prüfungsausschuss bestimmt Ort und Zeit der Einsichtnahme.",
+      "pages": [
+        25,
+        26
+      ],
+      "chapter": "IV. Schlussbestimmungen",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 75,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "paragraph",
+      "section_number": "§ 40",
+      "section_title": "Inkrafttreten und Übergangsbestimmungen",
+      "content": "Absatz (1) besagt, dass diese Ordnung am Tag nach ihrer Veröffentlichung in den Amtlichen Mitteilungen der Philipps-Universität Marburg in Kraft tritt. Gleichzeitig tritt die Prüfungsordnung für den Studiengang Informatik mit dem Abschluss 'Bachelor of Science (B.Sc.)' vom 28. Oktober 2015, veröffentlicht in den Amtlichen Mitteilungen der Philipps-Universität Nr. 5/2016, einschließlich der Fassung der ersten Änderung vom 1. Juni 2016, veröffentlicht in den Amtlichen Mitteilungen der Philipps-Universität Nr. 51/2016, und der Fassung der zweiten Änderung vom 25. Oktober 2017, veröffentlicht in den Amtlichen Mitteilungen der Philipps-Universität Nr. 75/2017, außer Kraft tritt. Absatz (2) legt fest, dass diese Studien- und Prüfungsordnung für alle Studierenden gilt, die ihr Studium ab dem Wintersemester 2023/2024 aufnehmen. Absatz (3) regelt, dass Studierende, die das Studium vor Inkrafttreten dieser Studien- und Prüfungsordnung aufgenommen haben, die Bachelorprüfung nach der Studien- und Prüfungsordnung vom 28. Oktober 2015 einschließlich ihrer Änderungsversionen vom 1. Juni 2016 und vom 25. Oktober 2017 bis spätestens zum Sommersemester 2028 ablegen können. Der Prüfungsausschuss kann für diese Übergangszeit Regelungen erlassen, die einen freiwilligen Wechsel auf diese Studien- und Prüfungsordnung begünstigen. Der Wechsel auf die vorliegende Studien- und Prüfungsordnung ist schriftlich zu beantragen und unwiderruflich.",
+      "pages": [
+        26
+      ],
+      "chapter": "IV. Schlussbestimmungen",
+      "paragraphs": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": false,
+      "has_list": false,
+      "token_count": 359,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "anlage",
+      "section_number": "Anlage 1",
+      "section_title": "Exemplarische Studienverlaufspläne",
+      "content": "Anlage 1 zeigt exemplarische Studienverlaufspläne für den Bachelorstudiengang Informatik (B.Sc.) an der Philipps-Universität Marburg. Der Studienbeginn kann entweder im Wintersemester oder im Sommersemester erfolgen. \n\nFür den Studienbeginn im Wintersemester ist der Studienverlauf wie folgt: Im 1. Semester sind die Module 'Objektorientierte Programmierung' (9 LP), 'Technische Informatik' (9 LP) und 'Grundlagen der linearen Algebra' (9 LP) vorgesehen, was insgesamt 27 Leistungspunkte ergibt. Im 2. Semester folgen 'Algorithmen und Datenstrukturen' (9 LP), 'Deklarative Programmierung' (9 LP), 'Programmierpraktikum' (6 LP) und 'Grundlagen der Analysis' (9 LP), was 33 Leistungspunkte ergibt. Das 3. Semester umfasst 'Theoretische Informatik' (9 LP), 'Logik' (9 LP), 'Softwaretechnik' (6 LP) und 'Grundlagen der Statistik' (6 LP), insgesamt 30 Leistungspunkte. Im 4. Semester sind 'Systemsoftware und Rechnerkommunikation' (9 LP), 'Datenbanksysteme' (9 LP), 'Software-Praktikum' (6 LP) und 'Praktikum zur Statistik' (3 LP) vorgesehen, was 27 Leistungspunkte ergibt. Im 5. Semester sind zwei Informatik Wahlpflichtmodule (je 9 LP) und ein Fortgeschrittenenpraktikum (6 LP) sowie 'Ausgewählte Themen der Informatik (SE)' (3 LP) vorgesehen, was 24 Leistungspunkte ergibt. Im 6. Semester sind ein Informatik Wahlpflichtmodul (9 LP) und die Bachelorarbeit (12 LP) vorgesehen, was 21 Leistungspunkte ergibt.\n\nFür den Studienbeginn im Sommersemester ist der Studienverlauf wie folgt: Im 1. Semester sind 'Systemsoftware und Rechnerkommunikation' (9 LP), 'Deklarative Programmierung' (9 LP) und 'Grundlagen der Analysis' (9 LP) vorgesehen, was 27 Leistungspunkte ergibt. Im 2. Semester folgen 'Objektorientierte Programmierung' (9 LP), 'Technische Informatik' (9 LP) und 'Grundlagen der linearen Algebra' (9 LP), was 27 Leistungspunkte ergibt. Im 3. Semester sind 'Algorithmen und Datenstrukturen' (9 LP), 'Datenbanksysteme' (9 LP) und 'Programmierpraktikum' (6 LP) vorgesehen, was 24 Leistungspunkte ergibt. Im 4. Semester umfasst der Plan 'Theoretische Informatik' (9 LP), 'Logik' (9 LP), 'Softwaretechnik' (6 LP) und 'Grundlagen der Statistik' (6 LP), insgesamt 30 Leistungspunkte. Im 5. Semester sind zwei Informatik Wahlpflichtmodule (je 9 LP) und ein Software-Praktikum (6 LP) sowie 'Praktikum zur Statistik' (3 LP) und 'Ausgewählte Themen der Informatik (SE)' (3 LP) vorgesehen, was 30 Leistungspunkte ergibt. Im 6. Semester sind ein Informatik Wahlpflichtmodul (6 LP), ein Fortgeschrittenenpraktikum (6 LP) und die Bachelorarbeit (12 LP) vorgesehen, was 24 Leistungspunkte ergibt.\n\nDie Anmerkungen weisen darauf hin, dass der dargestellte Studienverlauf der kürzest mögliche ist und sich je nach Zeitpunkt der Aufnahme des Studiums oder der zeitlichen Streckung verändern kann. Die gestrichelt skizzierten Wahlpflichtmodule stellen nur eine beispielhafte Auswahl dar, zu der Alternativen möglich sind. Der gesamte Studienumfang resultiert aus einem Monostudienfach oder einem Hauptfach mit ein bis zwei Nebenfächern sowie den Studienbereichen Marburg-Skills und Interdisziplinarität.",
+      "pages": [
+        27,
+        28
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 771,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "anlage",
+      "section_number": "Anlage 2",
+      "section_title": "Modulliste",
+      "content": "Die Anlage 2 Modulliste beginnt mit den Informatik Basismodulen. Das Modul 'Algorithmen und Datenstrukturen' (CS 210) ist ein Pflichtmodul auf Basismodul-Niveau mit 9 Leistungspunkten. Die Studierenden sollen in der Lage sein, Algorithmen und Datenstrukturen zu entwerfen, Aufwandsbeurteilung zu betreiben, Abstraktionstechniken anzuwenden und vertiefte Programmierkenntnisse zu erlangen. Voraussetzungen für die Teilnahme gibt es keine, jedoch werden Grundkenntnisse in Programmierung empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine Klausur.\n\nDas Modul 'Deklarative Programmierung' (CS 310) ist ebenfalls ein Pflichtmodul auf Basismodul-Niveau mit 9 Leistungspunkten. Die Studierenden sollen eine deklarative Programmiersprache kennen und anwenden können, verschiedene Programmierparadigmen unterscheiden und Kenntnisse in Testen und Verifikation von Programmen haben. Es gibt keine Voraussetzungen für die Teilnahme. Die Vergabe von Leistungspunkten erfolgt unter denselben Bedingungen wie im vorherigen Modul.\n\nDas Modul 'Objektorientierte Programmierung' (CS 110) ist ein weiteres Pflichtmodul auf Basismodul-Niveau mit 9 Leistungspunkten. Die Studierenden sollen eine objektorientierte Programmiersprache kennen, Techniken und Werkzeuge für die Programmierung anwenden und Kenntnisse in imperativer, objektorientierter und rekursiver Programmierung haben. Auch hier gibt es keine Teilnahmevoraussetzungen, und die Vergabe von Leistungspunkten erfolgt wie bei den anderen Modulen.\n\nDas Modul 'Systemsoftware und Rechnerkommunikation' (CS 240) ist ein Pflichtmodul auf Basismodul-Niveau mit 9 Leistungspunkten. Die Studierenden sollen grundlegende Konzepte von Systemsoftware kennen, mit Unix-Betriebssystemkommandos umgehen und die Konzepte des Internets verstehen. Es gibt keine Teilnahmevoraussetzungen, und die Vergabe von Leistungspunkten erfolgt durch das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben. Die Prüfung erfolgt durch eine Klausur.\n\nDas Modul 'Technische Informatik' (CS 140) ist ein Pflichtmodul auf Basismodul-Niveau mit 9 Leistungspunkten. Die Studierenden sollen Grundlagenwissen über Rechnerstrukturen und die Funktionsweise von mikroelektronischen Schaltungen kennen, mit den Gesetzen der booleschen Algebra umgehen und Kenntnisse im Entwurf von sequentiellen Schaltungen haben. Es gibt keine Teilnahmevoraussetzungen, und die Vergabe von Leistungspunkten erfolgt wie bei den anderen Modulen.\n\nDie Modulliste umfasst verschiedene Wahlpflichtmodule im Bereich Informatik. Das Modul 'Einführung in die Bioinformatik' (CS 541) ist ein Wahlpflichtmodul auf Aufbauniveau mit 6 Leistungspunkten. Die Studierenden lernen die wichtigsten bioinformatischen Methoden kennen, die für Berechnungen im naturwissenschaftlichen Bereich erforderlich sind. Es werden keine speziellen Voraussetzungen für die Teilnahme verlangt, jedoch werden Grundkenntnisse in Algorithmen und Datenstrukturen empfohlen. Für die Vergabe der Leistungspunkte ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und eine mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine mündliche Prüfung oder Klausur. \n\nDas Modul 'Einführung in die Kryptographie und ihre Anwendungen' (CS 550) ist ebenfalls ein Wahlpflichtmodul auf Aufbauniveau mit 6 Leistungspunkten. Die Studierenden lernen die wichtigsten Grundprinzipien und Methoden der Kryptografie kennen, die für die Bewertung kryptografischer Sicherheit und deren Anwendung in anderen Gebieten der Informatik erforderlich sind. Es sind keine speziellen Voraussetzungen für die Teilnahme erforderlich, jedoch sind Kenntnisse in den Bereichen Programmierung, Algorithmen und Netzwerke sowie in der Diskreten Mathematik und Algebra sinnvoll. Für die Vergabe der Leistungspunkte gelten die gleichen Bedingungen wie im vorherigen Modul. \n\nDas Modul 'Entwurf und Administration von Datenbanken' (CS 535) ist ein Wahlpflichtmodul auf Aufbauniveau mit 6 Leistungspunkten. Die Studierenden lernen Techniken des konzeptionellen Datenbankentwurfs und SQL kennen. Es werden keine speziellen Voraussetzungen für die Teilnahme verlangt. Für die Vergabe der Leistungspunkte ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und eine mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine mündliche Prüfung oder Klausur. \n\nDas Modul 'Grafikprogrammierung' (CS 581) ist ein Wahlpflichtmodul auf Aufbauniveau mit 9 Leistungspunkten. Die Studierenden lernen allgemeine Konzepte der Computergrafik kennen, unabhängig von der verwendeten Programmierumgebung. Es werden keine speziellen Voraussetzungen für die Teilnahme verlangt, jedoch werden Kompetenzen in den Modulen Objektorientierte Programmierung und Algorithmen und Datenstrukturen empfohlen. Für die Vergabe der Leistungspunkte gelten die gleichen Bedingungen wie in den vorherigen Modulen. \n\nDas Modul 'Großes Aufbaumodul Informatik 1' (CS 596) ist ein Wahlpflichtmodul auf Aufbauniveau mit 9 Leistungspunkten. Die Studierenden erwerben erweiterte Grundkenntnisse und Fertigkeiten in einem ausgewählten Teilbereich der Informatik. Es werden keine speziellen Voraussetzungen für die Teilnahme verlangt, jedoch werden die Kompetenzen, die in den Basismodulen vermittelt werden, empfohlen. Für die Vergabe der Leistungspunkte gelten die gleichen Bedingungen wie in den vorherigen Modulen.\n\nDie Modulliste beginnt mit dem Modul 'Kleines Aufbaumodul Informatik 2' (Small Advanced Module Computer Science 2), das als Wahlpflichtmodul im Aufbaumodul mit 6 Leistungspunkten angeboten wird. Die Studierenden sollen in diesem Modul Grundkenntnisse und Fertigkeiten in einem ausgewählten Teilbereich der Informatik erwerben. Sie sollen praxisnahe Konzepte und Anwendungen kennen und in der Lage sein, wissenschaftliche Arbeitsweisen beim eigenständigen Lösen von Problemen anzuwenden und die Lösung zu kommunizieren. Kompetenzen aus dem Bereich Theoretische Informatik werden bevorzugt erworben. Es werden keine speziellen Voraussetzungen für die Teilnahme gefordert, jedoch werden die in den Basismodulen vermittelten Kompetenzen empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine Klausur oder mündliche Prüfung. \n\nDas nächste Modul ist 'Kleines Aufbaumodul Informatik 3' (Small Advanced Module Computer Science 3), ebenfalls ein Wahlpflichtmodul im Aufbaumodul mit 6 Leistungspunkten. Die Studierenden sollen Grundkenntnisse und Fertigkeiten in einem ausgewählten Teilbereich der Informatik erwerben, praxisnahe Konzepte und Anwendungen kennen und wissenschaftliche Arbeitsweisen beim eigenständigen Lösen von Problemen anwenden und die Lösung kommunizieren. Kompetenzen aus dem Bereich Technische Informatik werden bevorzugt erworben. Es gibt keine speziellen Voraussetzungen für die Teilnahme, jedoch werden die in den Basismodulen vermittelten Kompetenzen empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine Klausur oder mündliche Prüfung. \n\nDas Modul 'Kleines Aufbaumodul Informatik 4' (Small Advanced Module Computer Science 4) ist ebenfalls ein Wahlpflichtmodul im Aufbaumodul mit 6 Leistungspunkten. Die Studierenden sollen Grundkenntnisse und Fertigkeiten in einem ausgewählten Teilbereich der Informatik erwerben, praxisnahe Konzepte und Anwendungen kennen und wissenschaftliche Arbeitsweisen beim eigenständigen Lösen von Problemen anwenden und die Lösung kommunizieren. Kompetenzen aus dem Bereich Angewandte Informatik werden bevorzugt erworben. Es gibt keine speziellen Voraussetzungen für die Teilnahme, jedoch werden die in den Basismodulen vermittelten Kompetenzen empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine Klausur oder mündliche Prüfung. \n\nDas Modul 'Kleines Aufbaumodul Informatik 5' (Small Advanced Module Computer Science 5) ist ein Wahlpflichtmodul im Aufbaumodul mit 6 Leistungspunkten. Die Studierenden sollen Grundkenntnisse und Fertigkeiten in einem ausgewählten Teilbereich der Informatik erwerben, praxisnahe Konzepte und Anwendungen kennen und wissenschaftliche Arbeitsweisen beim eigenständigen Lösen von Problemen anwenden und die Lösung kommunizieren. Kompetenzen aus dem Bereich Künstliche Intelligenz werden bevorzugt erworben. Es gibt keine speziellen Voraussetzungen für die Teilnahme, jedoch werden die in den Basismodulen vermittelten Kompetenzen empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine Klausur oder mündliche Prüfung. \n\nDas Modul 'NoSQL Datenbanksysteme' (NoSQL Database Systems) ist ein Wahlpflichtmodul im Aufbaumodul mit 6 Leistungspunkten. Die Studierenden sollen verteilte Techniken des Datenmanagements kennen und anwenden können, Basiswissen für den Umgang mit NoSQL-Systemen erwerben, diese Systeme in einem Anwendungskontext einsetzen können und Unterschiede zwischen verschiedenen NoSQL-Systemen und relationalen Systemen erkennen. Sie sollen in der Lage sein, über wissenschaftliche Inhalte frei zu sprechen, sowohl vor einem Publikum als auch in einer Diskussion. Es gibt keine speziellen Voraussetzungen für die Teilnahme, jedoch werden Kenntnisse im Umfang des Moduls Datenbanksysteme empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine Klausur oder mündliche Prüfung. \n\nDas Modul 'Rechnernetze' (Computer Networks) ist ein Wahlpflichtmodul im Aufbaumodul mit 9 Leistungspunkten. Die Studierenden sollen den Aufbau und die Funktionsweise von Rechnernetzen verstehen, das Verhalten von Netzwerken (inklusive des Internets) in groben Zügen analysieren und verstehen, insbesondere in Bezug auf Problemstellungen und Funktionalität von Netzwerksoftware. Nach zusätzlicher Einarbeitung in die jeweiligen Netzwerkumgebungen sollen sie in der Lage sein, eigene Netzwerk-Module zu entwickeln. Wissenschaftliche Arbeitsweisen beim eigenständigen Erkennen, Formulieren und Lösen von Problemen sollen angewendet werden, und sie sollen über wissenschaftliche Inhalte frei zu sprechen, sowohl vor einem Publikum als auch in einer Diskussion. Es gibt keine speziellen Voraussetzungen für die Teilnahme, jedoch werden die in den Modulen Objektorientierte Programmierung, Algorithmen und Datenstrukturen sowie Systemsoftware und Rechnerkommunikation vermittelten Kompetenzen empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine mündliche Prüfung oder Klausur. \n\nDas Modul 'Software Design und Programmiertechniken' (Software Design and Programming Techniques) ist ein Wahlpflichtmodul im Aufbaumodul mit 6 Leistungspunkten. Die Studierenden sollen in der Lage sein, zu beschreiben, welche Arten von Design- und Programmiertechniken es gibt und wie man sie benutzt, die Einsatzmöglichkeiten und der Mächtigkeit dieser Techniken zu verstehen, deren theoretische Grundlagen zu verstehen, Werkzeuge für die Programmierung und Softwareanalyse realer Programme zu vergleichen und anzuwenden. Wissenschaftliche Arbeitsweisen beim eigenständigen Erkennen, Formulieren und Lösen von Problemen sollen angewendet werden, und sie sollen über wissenschaftliche Inhalte frei zu sprechen, sowohl vor einem Publikum als auch in einer Diskussion. Es gibt keine speziellen Voraussetzungen für die Teilnahme, jedoch werden Grundkenntnisse in Objektorientierter Programmierung und Softwaretechnik empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine mündliche Prüfung oder Klausur. \n\nDas Modul 'Softwarequalität' (Software Quality) ist ein Wahlpflichtmodul im Aufbaumodul mit 9 Leistungspunkten. Die Studierenden sollen einen Überblick über mögliche Verfahren zur Qualitätsprüfung und -verbesserung von Software haben, Grundkenntnisse der vorgestellten Techniken kennen, typische Werkzeuge zur Qualitätssicherung kennen und in der Lage sein, wissenschaftliche Arbeitsweisen beim eigenständigen Erkennen, Formulieren und Lösen von Problemen anzuwenden. Sie sollen in der Lage sein, über wissenschaftliche Inhalte frei zu sprechen, sowohl vor einem Publikum als auch in einer Diskussion. Es gibt keine speziellen Voraussetzungen für die Teilnahme, jedoch werden die in den Modulen Objektorientierte Programmierung, Algorithmen und Datenstrukturen sowie Softwaretechnik vermittelten Kompetenzen empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine mündliche Prüfung oder Klausur. \n\nDas Modul 'Verteiltes Datenmanagement' (Distributed Data Management) ist ein Wahlpflichtmodul im Aufbaumodul mit 9 Leistungspunkten. Die Studierenden sollen Herausforderungen beim Bau verteilter Systeme (Distributed Systems) kennen, reaktives, verteiltes Programmieren (Actor Programming) kennen, Techniken zur digitalen Repräsentation und zum Serialisieren von Daten (Encoding) kennen, Verfahren zur Funktionsweise von Netzwerken (Communication) kennen, Standards zur Strukturierung und Anfrage von Daten (Data Models and Query Languages) kennen, Algorithmen und Datenstrukturen zum verteilten Arbeiten mit Daten (Storage and Retrieval) kennen, Techniken zur Gewährleistung von Ausfallsicherheit und Verfügbarkeit (Replication and Partitioning) kennen, Techniken zur Gewährleistung von Konsistenz und Einigkeit (Consistency and Consensus) kennen, Algorithmen für verteiltes Transaktionsmanagement (Transactions) kennen, Frameworks zur verteilten Stapelverarbeitung datenintensiver Aufgaben (Batch Processing) kennen, Frameworks zur verteilten Datenstromverarbeitung (Stream Processing) kennen, die Funktionsweise verteilter Datenbankmanagement Systeme (Distributed DBMSs) kennen, Grundlagen der verteilten Anfrageverarbeitung (Distributed Query Optimization) kennen und in der Lage sein, diese Kenntnisse praktisch in der Programmierung datenintensiver, verteilter Algorithmen anzuwenden. Wissenschaftliche Arbeitsweisen beim eigenständigen Erkennen, Formulieren und Lösen von Problemen sollen angewendet werden, und sie sollen über wissenschaftliche Inhalte frei zu sprechen, sowohl vor einem Publikum als auch in einer Diskussion. Es gibt keine speziellen Voraussetzungen für die Teilnahme, jedoch werden die in dem Modul Algorithmen und Datenstrukturen vermittelten Kompetenzen empfohlen. Für die Vergabe von Leistungspunkten ist das Erreichen von mindestens 50 Prozent der Punkte aus den wöchentlich zu bearbeitenden Übungsaufgaben und die mündliche Präsentation der Lösung von mindestens zwei der Übungsaufgaben erforderlich. Die Prüfung erfolgt durch eine Klausur oder mündliche Prüfung. \n\nDie Bachelorarbeit (Bachelor Thesis) ist ein Pflichtmodul im Abschlussmodul mit 12 Leistungspunkten. Die Studierenden sind in der Lage, eine umfangreiche Aufgabenstellung aus dem Bereich der Informatik mit wissenschaftlichen Methoden unter Anleitung zu bearbeiten und die Ergebnisse schriftlich angemessen darzustellen. Die Zulassung zur Bachelorarbeit setzt voraus, dass die Module der Studienbereiche Informatik Basismodule, Informatik Weiterführende Module, sowie Mathematik Basis- und Weiterführende Module und insgesamt bereits mindestens 114 Leistungspunkte erworben wurden. Die Prüfung erfolgt durch die Bachelorarbeit.",
+      "pages": [
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [],
+      "internal_references": [],
+      "external_references": [],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 4286,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "anlage",
+      "section_number": "Anlage 3",
+      "section_title": "Importmodulliste",
+      "content": "Die in der Anlage 3 genannten Studienangebote können während der Beschlussfassung über diese Studien- und Prüfungsordnung gewählt werden. Diese Module gelten gemäß § 16 Abs. 1 der Allgemeinen Bestimmungen, die die Angaben der Studien- und Prüfungsordnung betreffen, in deren Rahmen die Module angeboten werden, insbesondere in Bezug auf Qualifikationsziele, Voraussetzungen, Leistungspunkte sowie Prüfungsmodalitäten. Die Kombinationsmöglichkeiten der Module werden gegebenenfalls von der anbietenden Lehreinheit festgelegt. Der Katalog der wählbaren Studienangebote kann vom Prüfungsausschuss insbesondere dann geändert oder ergänzt werden, wenn sich das Angebot der Studiengänge der anbietenden Fachbereiche an der Philipps-Universität Marburg ändert. Derartige Änderungen werden vom Prüfungsausschuss auf der jeweiligen Studiengangswebseite veröffentlicht. Die Wahrnehmung der nachfolgend genannten Studienangebote kann im Einzelfall oder generell davon abhängig gemacht werden, dass zuvor eine Studienberatung wahrgenommen oder eine verbindliche Anmeldung vorgenommen wird. Im Falle von Kapazitätsbeschränkungen gelten die entsprechenden Regelungen der Studien- und Prüfungsordnung. Im Übrigen wird keine Garantie dafür übernommen, dass das unten aufgelistete Angebot tatsächlich durchgeführt wird und wahrgenommen werden kann. Auf begründeten Antrag der oder des Studierenden ist es zulässig, über das reguläre Angebot hinaus im Einzelfall weitere Importmodule zu genehmigen; dies setzt voraus, dass auch der anbietende Fachbereich bzw. die anbietende Einrichtung dem zustimmt. Das aktuelle Importangebot ist jeweils auf der Studiengangwebseite des modularbietenden Fachbereichs als Exportangebot veröffentlicht. Studierende sollen vor Aufnahme des Studienangebots die entsprechenden Informations- bzw. Beratungsangebote des modularbietenden Fachbereichs wahrnehmen. Eventuelle Teilnahmevoraussetzungen oder -empfehlungen sowie Kombinationsregelungen sind zu beachten. Sollte der Modulanbieter Kombinationsregelungen vorgegeben und Exportpakete gebildet haben, steht, je nach Umfang des eigenen Importfensters, faktisch nur ein begrenztes Modulanangebot zur Verfügung. Zum Zeitpunkt der letzten Beschlussfassung im Fachbereichsrat über die vorliegende Studien- und Prüfungsordnung lag über folgende Module eine Vereinbarung vor: Für den Studiengang Informatik Weiterführende Module im Fachbereich Mathematik und Informatik (FB 12), Studiengang BSc Wirtschaftsinformatik, ist das Modul 'Datenbanksysteme' ein Aufbaumodul mit 9 Leistungspunkten. Für den Studiengang Informatik Wahlpflichtmodule im Fachbereich Mathematik und Informatik (FB 12), Studiengang BSc Data Science, sind die Module 'Effiziente Algorithmen' und 'Maschinelles Lernen' Aufbaumodule mit jeweils 9 Leistungspunkten. Weitere Vertiefungsmodule mit 6 Leistungspunkten sind 'Data Science in Biomedicine', 'Data Integration', 'Introduction to Natural Language Processing' und 'Information Retrieval'. Für den Studiengang MSc Data Science sind die Module 'Algorithm Engineering', 'Algorithms in Bioinformatics', 'Algorithmic Network Analysis', 'Operating Systems', 'Image Synthesis', 'Compiler Construction', 'Dialog Systems', 'Ethical Hacking and Practical Cryptanalysis', 'Formal Methods in Software Engineering', 'Advanced Programming Concepts', 'Advanced Methods of System Development', 'Advanced Topics in Cryptography', 'Geo Databases', 'Large Specialization Module Computer Science 1', 'Large Specialization Module Computer Science 2', 'Large Specialization Module Computer Science 3', 'Large Specialization Module Computer Science 4', 'Large Specialization Module Computer Science 5', 'Implementation of Database Systems', 'Index and Storage Structures', 'Content-based Image and Video Analysis', 'Small Specialization Module Computer Science 1', 'Small Specialization Module Computer Science 2', 'Small Specialization Module Computer Science 3', 'Small Specialization Module Computer Science 4', 'Small Specialization Module Computer Science 5', 'Computational complexity theory', 'Artificial Intelligence', 'Model-driven Software Development', 'Modern Methods of System Development', 'Multimedia Signal Processing', 'Neural Networks', 'Parameterized Algorithms', 'Software as a Medical Device', 'Software Evolution', 'Statistical Bioinformatics', 'Distributed Systems', 'Virtual Machines', 'Visual Languages' und 'Web Technologies'. Für den Studiengang BSc Wirtschaftsinformatik sind die Module 'Agiles und klassisches Requirements-Engineering', 'Betriebliche Kernsysteme', 'Digitale Transformation', 'Entwicklung und Betrieb von Informationssystemen', 'Informationsmanagement', 'Modellbasierte Entscheidungsunterstützung, Business Intelligence & Analytics', 'Prozessmanagement', 'Wissensmanagement und kollaborative Technologien', 'Fundamentale Technologien zur IoT-Datengenerierung von physikalischen und nichtphysikalischen Größen - IoT Sensorik' und 'Operations Research' Aufbaumodule mit jeweils 6 Leistungspunkten. Für den Studiengang MSc Wirtschaftsinformatik sind die Module 'Cloud Computing' und 'Project Management for Software Development' Vertiefungsmodule mit jeweils 6 Leistungspunkten.",
+      "pages": [
+        42,
+        43,
+        44
+      ],
+      "chapter": "II. Studienbezogene Bestimmungen",
+      "paragraphs": [],
+      "internal_references": [
+        "§ 16 Abs. 1",
+        "§ 7 Abs. 9"
+      ],
+      "external_references": [],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 1294,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    },
+    {
+      "section_type": "anlage",
+      "section_number": "Anlage 4",
+      "section_title": "Exportmodulliste",
+      "content": "Anlage 4 behandelt die Exportmodulliste, die das Exportangebot zur Zeit der Beschlussfassung über die Studien- und Prüfungsordnung darstellt. Der Katalog des Exportangebots kann vom Prüfungsausschuss geändert oder ergänzt werden, wenn sich das Exportangebot ändert. Solche Änderungen werden auf der Studiengangwebseite gemäß § 7 veröffentlicht. Das aktuelle Exportangebot ist auf der Studiengangwebseite des modularen Fachbereichs als Exportangebot veröffentlicht. Eventuelle Teilnahmevoraussetzungen oder -empfehlungen sowie Kombinationsregelungen sind zu beachten. Sollte der Modulanbieter Kombinationsregelungen vorgegeben und Exportpakete gebildet haben, steht je nach Umfang des eigenen Importfensters faktisch nur ein begrenztes Modulangebot zur Verfügung. \n\n§ 1 Export curricularer Module in andere Studiengänge: Folgende Module gemäß Anlage 2 können auch im Rahmen anderer Studiengänge absolviert werden, soweit dies mit dem Fachbereich bzw. den Fachbereichen vereinbart ist, in dessen Studiengang bzw. deren Studiengängen diese Module wählbar sind. \n\nDas Modul 'Englischer Modultitel' hat die Bezeichnung CS 210. 'Algorithmen und Datenstrukturen' (Algorithms and Data Structures) ist ebenfalls als CS 210 gelistet. 'Ausgewählte Themen der Informatik (Seminar)' (Selected Topics in Computer Science (Seminar)) ist als CS 600 verfügbar. 'Deklarative Programmierung' (Declarative Programming) wird als CS 310 angeboten. 'Einführung in die Bioinformatik' (Introduction to Bioinformatics) ist als CS 541 verfügbar. 'Einführung in die Kryptographie und ihre Anwendungen' (Introduction to Cryptography and its Applications) ist als CS 550 gelistet. 'Entwurf und Administration von Datenbanken' (Design and Administration of Databases) wird als CS 535 angeboten. 'Fortgeschrittenenpraktikum' (Advanced Software Lab) ist als CS 601 verfügbar. 'Grafikprogrammierung' (Graphics Programming) ist als CS 581 gelistet. 'Großes Aufbaumodul Informatik 1' (Large Advanced Module Computer Science 1) ist als CS 596 verfügbar. 'Großes Aufbaumodul Informatik 2' (Large Advanced Module Computer Science 2) ist als CS 687 gelistet. 'Großes Aufbaumodul Informatik 3' (Large Advanced Module Computer Science 3) ist als CS 693 verfügbar. 'Großes Aufbaumodul Informatik 4' (Large Advanced Module Computer Science 4) ist als CS 548 gelistet. \n\nWeitere Module umfassen 'Großes Aufbaumodul Informatik 5' (Large Advanced Module Computer Science 5) als CS 589, 'Grundlagen der Analysis' (Basic Real Analysis) als CS 280, 'Grundlagen der linearen Algebra' (Basic Linear Algebra) als CS 180, 'Grundlagen der Statistik' (Introduction to Statistics) als CS 360, 'IT-Sicherheit' (IT-Security) als CS 515, 'Kleines Aufbaumodul Informatik 1' (Small Advanced Module Computer Science 1) als CS 582, 'Kleines Aufbaumodul Informatik 2' (Small Advanced Module Computer Science 2) als CS 583, 'Kleines Aufbaumodul Informatik 3' (Small Advanced Module Computer Science 3) als CS 683, 'Kleines Aufbaumodul Informatik 4' (Small Advanced Module Computer Science 4) als CS 684, 'Kleines Aufbaumodul Informatik 5' (Small Advanced Module Computer Science 5) als CS 595, 'Logik' (Logic) als CS 370, 'NoSQL Datenbanksysteme' (NoSQL Database Systems) als CS 536, 'Objektorientierte Programmierung' (Object-oriented Programming) als CS 110, 'Praktikum zu Statistik' (Internship Statistics) als CS 461, 'Programmierpraktikum' (Programming Lab) als CS 220, 'Rechnernetze' (Computer Networks) als CS 511, 'Software Design und Programmiertechniken' (Software Design and Programming Techniques) als CS 532, 'Software-Praktikum' (Software Lab) als CS 420, 'Softwarequalität' (Software Quality) als CS 661, 'Softwaretechnik' (Software Engineering) als CS 340, 'Systemsoftware und Rechnerkommunikation' (System Software and Computer Communication) als CS 240, 'Technische Informatik' (Technical Computer Science) als CS 140, 'Theoretische Informatik' (Theoretical Computer Science) als CS 460 und 'Verteiltes Datenmanagement' (Distributed Data Management) als CS 557. \n\n§ 2 Export curricularer Module in die Studienbereiche Marburg Skills/Interdisziplinarität: Folgende Module gemäß Anlage 2 können auch im Rahmen der Studienbereiche Marburg Skills sowie Interdisziplinarität absolviert werden. Die Modulnote findet in diesen Studienbereichen keine Berücksichtigung. \n\nModule umfassen 'Englischer Modultitel', 'Algorithmen und Datenstrukturen' (Algorithms and Data Structures) als CS 210, 'Deklarative Programmierung' (Declarative Programming) als CS 310, 'Einführung in die Bioinformatik' (Introduction to Bioinformatics) als CS 541, 'Einführung in die Kryptographie und ihre Anwendungen' (Introduction to Cryptography and its Applications) als CS 550, 'Grafikprogrammierung' (Graphics Programming) als CS 581, 'Grundlagen der Analysis' (Basic Real Analysis) als CS 280, 'Grundlagen der linearen Algebra' (Basic Linear Algebra) als CS 180, 'Logik' (Logic) als CS 370, 'Objektorientierte Programmierung' (Object-oriented Programming) als CS 110, 'Programmierpraktikum' (Programming Lab) als CS 220, 'Softwaretechnik' (Software Engineering) als CS 340, 'Systemsoftware und Rechnerkommunikation' (System Software and Computer Communication) als CS 240, 'Technische Informatik' (Technical Computer Science) als CS 140 und 'Theoretische Informatik' (Theoretical Computer Science) als CS 460.\n\nIn der Anlage 4, der Exportmodulliste, werden spezifische Module aufgeführt, die im Rahmen der Studienbereiche Marburg Skills sowie Interdisziplinarität von allen Studierenden absolviert werden können. Diese Module werden in den genannten Studienbereichen nicht berücksichtigt. Die Module umfassen: 'Anwendungen von Maschinellem Lernen' (CS 503), 'Einführung in die Informatik' (CS 010), 'Game Studio' (CS 504), 'IT Administration' (CS 527), 'Programmieren in Rust' (CS 528), 'Rechtskunde und Wirtschaftspolitik für Informatiker:innen' (CS 506), 'Softwareentwicklungswerkzeuge für datenwissenschaftliche Anwendungen' (CS 519) und 'Webdesign und Multimedia' (CS 520).",
+      "pages": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ],
+      "chapter": "Anlage 4 Exportmodulliste",
+      "paragraphs": [
+        "§ 1",
+        "§ 2"
+      ],
+      "internal_references": [
+        "§ 7",
+        "Anlage 2"
+      ],
+      "external_references": [],
+      "has_table": true,
+      "has_list": false,
+      "token_count": 1500,
+      "extraction_confidence": 1.0,
+      "extraction_notes": null
+    }
+  ],
+  "processing_time_seconds": 869.9930002689362,
+  "total_input_tokens": 164564,
+  "total_output_tokens": 27637,
+  "errors": [],
+  "warnings": [],
+  "processed_at": "2026-02-01T22:53:32.330612"
+}
