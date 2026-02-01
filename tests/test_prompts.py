@@ -162,8 +162,9 @@ class TestPromptQuality:
 
     def test_context_prompt_has_examples(self):
         """Test context prompt has example values."""
-        assert "I. Allgemeines" in CONTEXT_ANALYSIS_USER
+        assert "Teil I" in CONTEXT_ANALYSIS_USER or "Allgemeines" in CONTEXT_ANALYSIS_USER
         assert "LP" in CONTEXT_ANALYSIS_USER
+        assert "Anlage 1" in CONTEXT_ANALYSIS_USER  # Should have Anlagen examples
 
     def test_page_prompt_has_table_guidance(self):
         """Test page prompt has table conversion guidance."""
