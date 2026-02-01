@@ -3,7 +3,7 @@
 PDF Extraction Script
 
 Extracts content from PDF documents using OpenAI's Vision API (GPT-4o).
-Produces structured output ready for downstream processing (chunking, RAG, etc.).
+Uses section-based extraction (§§, Anlagen) for optimal downstream processing.
 
 Usage:
     python scripts/extract_pdf.py input.pdf -o output/
@@ -34,8 +34,9 @@ except ImportError:
 from pdf_extractor import (
     PDFExtractor,
     PDFToImages,
-    ProcessingConfig,
+    ExtractionConfig,
     estimate_api_cost,
+    NoTableOfContentsError,
 )
 
 
@@ -62,7 +63,7 @@ def progress_callback(current: int, total: int, status: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Extract content from PDF documents using OpenAI Vision API',
+        description='Extract content from PDF documents using OpenAI Vision API (Section-Based)',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -77,6 +78,9 @@ Examples:
 
   # Verbose output for debugging
   python scripts/extract_pdf.py document.pdf -o output/ -v
+
+  # More images per request (faster for small sections)
+  python scripts/extract_pdf.py document.pdf --max-images 10
         """
     )
 
@@ -90,7 +94,9 @@ Examples:
     parser.add_argument('--estimate-cost', action='store_true',
                         help='Only estimate cost, do not process')
     parser.add_argument('--max-retries', type=int, default=3,
-                        help='Maximum retries for failed pages (default: 3)')
+                        help='Maximum retries for failed sections (default: 3)')
+    parser.add_argument('--max-images', type=int, default=5,
+                        help='Maximum images per API request (default: 5, max: 20)')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Verbose output')
 
@@ -115,13 +121,14 @@ Examples:
         sys.exit(1)
 
     print(f"\n{'='*60}")
-    print(f"PDF Extractor (OpenAI GPT-4o Vision)")
+    print(f"PDF Extractor v2.0 - Section-Based Extraction")
     print(f"{'='*60}")
     print(f"Document: {pdf_path.name}")
     print(f"Pages: {page_count}")
     if doc_info.get('title'):
         print(f"Title: {doc_info['title']}")
     print(f"Model: {args.model}")
+    print(f"Max images/request: {args.max_images}")
     print(f"{'='*60}\n")
 
     # Estimate cost
@@ -148,9 +155,10 @@ Examples:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Configure processing
-    config = ProcessingConfig(
+    config = ExtractionConfig(
         model=args.model,
         max_retries=args.max_retries,
+        max_images_per_request=min(args.max_images, 20),
     )
 
     # Initialize extractor
@@ -158,7 +166,7 @@ Examples:
     extractor = PDFExtractor(config=config, api_key=api_key)
 
     # Process document
-    print("\nExtracting content...")
+    print("\nExtracting sections...")
     print("This may take a while depending on document size.\n")
 
     try:
@@ -166,6 +174,11 @@ Examples:
             pdf_path,
             progress_callback=progress_callback,
         )
+    except NoTableOfContentsError as e:
+        logger.error(f"No table of contents found: {e}")
+        print("\nERROR: This document has no table of contents.")
+        print("Section-based extraction requires a ToC to determine document structure.")
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Extraction failed: {e}")
         sys.exit(1)
@@ -185,14 +198,17 @@ Examples:
         for warning in result.warnings[:5]:
             print(f"  - {warning}")
 
-    # Get page statistics
-    stats = result.get_page_stats()
+    # Get statistics
+    stats = result.get_stats()
     print(f"\nExtraction Statistics:")
-    print(f"  Total pages: {stats['total_pages']}")
-    print(f"  Pages with tables: {stats['pages_with_tables']}")
-    print(f"  Pages with lists: {stats['pages_with_lists']}")
-    print(f"  Failed pages: {stats['failed_pages']}")
-    print(f"  Avg content length: {stats['avg_content_length']:.0f} chars")
+    print(f"  Total sections: {stats['total_sections']}")
+    print(f"  - Paragraphs (§§): {stats['paragraphs']}")
+    print(f"  - Anlagen: {stats['anlagen']}")
+    print(f"  - Has Overview: {'Yes' if stats['has_overview'] else 'No'}")
+    print(f"  Sections with tables: {stats['sections_with_tables']}")
+    print(f"  Sections with lists: {stats['sections_with_lists']}")
+    print(f"  Failed sections: {stats['failed_sections']}")
+    print(f"  Avg tokens/section: {stats['avg_tokens_per_section']:,}")
 
     # Save result
     print("\nSaving result...")

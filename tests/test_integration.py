@@ -1,5 +1,5 @@
 """
-Integration tests for the PDF Extractor.
+Integration tests for the Section-Based PDF Extractor.
 
 These tests use the real OpenAI API and require:
 1. OPENAI_API_KEY environment variable to be set
@@ -16,9 +16,11 @@ from pathlib import Path
 
 from pdf_extractor import (
     PDFExtractor,
-    ProcessingConfig,
+    ExtractionConfig,
     ExtractionResult,
     DocumentType,
+    SectionType,
+    NoTableOfContentsError,
 )
 
 
@@ -47,9 +49,10 @@ def test_pdf():
 @pytest.fixture
 def config():
     """Create test configuration with cheaper model."""
-    return ProcessingConfig(
+    return ExtractionConfig(
         model="gpt-4o-mini",  # Use cheaper model for tests
         max_retries=3,
+        max_images_per_request=5,
     )
 
 
@@ -63,7 +66,7 @@ class TestPDFExtractorIntegration:
 
         assert result.context is not None
         assert result.context.document_type in DocumentType
-        assert len(result.pages) > 0
+        assert len(result.sections) > 0
         assert result.processing_time_seconds > 0
 
     def test_context_extraction(self, api_key, test_pdf, config):
@@ -85,33 +88,51 @@ class TestPDFExtractorIntegration:
         # Should have some abbreviations
         assert len(context.abbreviations) > 0
 
-    def test_page_extraction_quality(self, api_key, test_pdf, config):
-        """Test that pages are correctly extracted."""
+    def test_section_extraction_quality(self, api_key, test_pdf, config):
+        """Test that sections are correctly extracted."""
         extractor = PDFExtractor(config=config, api_key=api_key)
         result = extractor.extract(test_pdf)
 
-        # Check first few pages
-        for page in result.pages[:3]:
+        # Check first few sections
+        for section in result.sections[:3]:
             # Should have content
-            assert len(page.content) > 0
+            assert len(section.content) > 0
 
             # Content should be in German
-            assert any(word in page.content.lower() for word in
+            assert any(word in section.content.lower() for word in
                        ["der", "die", "das", "und", "ist", "wird"])
+
+    def test_section_types(self, api_key, test_pdf, config):
+        """Test that section types are correctly identified."""
+        extractor = PDFExtractor(config=config, api_key=api_key)
+        result = extractor.extract(test_pdf)
+
+        # Should have overview
+        overview = result.get_overview()
+        assert overview is not None
+
+        # Should have paragraphs
+        paragraphs = result.get_paragraphs()
+        assert len(paragraphs) > 0
+
+        # Each paragraph should have a section number
+        for p in paragraphs:
+            assert p.section_number is not None
+            assert p.section_number.startswith("§")
 
     def test_table_conversion(self, api_key, test_pdf, config):
         """Test that tables are converted to natural language."""
         extractor = PDFExtractor(config=config, api_key=api_key)
         result = extractor.extract(test_pdf)
 
-        # Find pages with tables
-        table_pages = [p for p in result.pages if p.has_table]
+        # Find sections with tables
+        table_sections = [s for s in result.sections if s.has_table]
 
-        if table_pages:
+        if table_sections:
             # Table content should be in natural language, not structured
-            for page in table_pages[:2]:
+            for section in table_sections[:2]:
                 # Should not have pipe characters (markdown tables)
-                assert "|" not in page.content or page.content.count("|") < 5
+                assert "|" not in section.content or section.content.count("|") < 5
 
 
 class TestExtractionResultIntegration:
@@ -122,15 +143,14 @@ class TestExtractionResultIntegration:
         extractor = PDFExtractor(config=config, api_key=api_key)
         result = extractor.extract(test_pdf)
 
-        # Test get_page_stats
-        stats = result.get_page_stats()
-        assert stats["total_pages"] > 0
-        assert stats["avg_content_length"] > 0
+        # Test get_stats
+        stats = result.get_stats()
+        assert stats["total_sections"] > 0
+        assert stats["paragraphs"] > 0
 
-        # Test get_all_sections
-        sections = result.get_all_sections()
-        # Should have some sections
-        assert len(sections) >= 0
+        # Test get_section
+        section = result.get_section("§ 1")
+        assert section is not None
 
         # Test get_full_content
         full_content = result.get_full_content()
@@ -150,7 +170,7 @@ class TestExtractionResultIntegration:
 
         assert loaded.source_file == result.source_file
         assert loaded.context.title == result.context.title
-        assert len(loaded.pages) == len(result.pages)
+        assert len(loaded.sections) == len(result.sections)
 
 
 class TestEndToEnd:
@@ -165,15 +185,29 @@ class TestEndToEnd:
         # Verify result
         assert isinstance(result, ExtractionResult)
         assert result.context.document_type == DocumentType.PRUEFUNGSORDNUNG
-        assert len(result.pages) > 0
+        assert len(result.sections) > 0
 
         # Verify statistics
-        stats = result.get_page_stats()
-        assert stats["total_pages"] > 0
+        stats = result.get_stats()
+        assert stats["total_sections"] > 0
 
         print(f"\nExtraction completed successfully:")
-        print(f"  Pages processed: {len(result.pages)}")
+        print(f"  Sections extracted: {len(result.sections)}")
+        print(f"  - Overview: {'Yes' if result.get_overview() else 'No'}")
+        print(f"  - Paragraphs: {stats['paragraphs']}")
+        print(f"  - Anlagen: {stats['anlagen']}")
         print(f"  Processing time: {result.processing_time_seconds:.1f}s")
         print(f"  Input tokens: {result.total_input_tokens:,}")
         print(f"  Output tokens: {result.total_output_tokens:,}")
         print(f"  Errors: {len(result.errors)}")
+
+
+class TestExceptions:
+    """Test exception handling."""
+
+    def test_file_not_found(self, api_key, config):
+        """Test FileNotFoundError for missing PDF."""
+        extractor = PDFExtractor(config=config, api_key=api_key)
+
+        with pytest.raises(FileNotFoundError):
+            extractor.extract("nonexistent.pdf")

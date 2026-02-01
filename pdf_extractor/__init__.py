@@ -1,15 +1,17 @@
 """
-PDF Extractor - Vision-LLM based PDF Content Extraction
+PDF Extractor - Section-Based PDF Content Extraction
 
 A production-ready module for extracting structured content from PDF documents
 using OpenAI's Vision API (GPT-4o). Optimized for German academic documents
 (Prüfungsordnungen, Modulhandbücher, etc.).
 
 Features:
-- Two-phase extraction: context analysis + page-by-page extraction
+- Two-phase extraction: structure analysis + section-by-section extraction
+- Sends ALL pages of a section in ONE API call (no page-boundary issues)
+- Sliding window for large sections (> max_images_per_request)
 - High-quality content transformation to natural language
 - Robust error handling with retry mechanism
-- Structured output ready for downstream processing
+- Raises NoTableOfContentsError if no ToC found
 
 Quick Start:
     from pdf_extractor import PDFExtractor
@@ -22,7 +24,10 @@ Quick Start:
 
     # Access extracted data
     print(f"Title: {result.context.title}")
-    print(f"Pages: {len(result.pages)}")
+    print(f"Sections: {len(result.sections)}")
+
+    for section in result.sections:
+        print(f"{section.section_number}: {section.content[:100]}...")
 
     # Save result
     result.save("output.json")
@@ -33,57 +38,73 @@ Environment:
 For more information, see the README.md in this directory.
 """
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __author__ = "PDF Extractor Team"
 
 # Main extractor class
-from .extractor import PDFExtractor
+from .extractor import PDFExtractor, estimate_api_cost
 
 # Data models
 from .models import (
     # Enums
     DocumentType,
-    ContentType,
+    SectionType,
     Language,
     # Core models
     DocumentContext,
-    ExtractedPage,
+    StructureEntry,
+    ExtractedSection,
     ExtractionResult,
-    SectionMarker,
     Abbreviation,
     # Configuration
-    ProcessingConfig,
+    ExtractionConfig,
+)
+
+# Exceptions
+from .exceptions import (
+    ExtractionError,
+    NoTableOfContentsError,
+    StructureExtractionError,
+    SectionExtractionError,
+    PageRenderError,
+    APIError,
 )
 
 # PDF utilities
 from .pdf_to_images import (
     PDFToImages,
     PageImage,
-    estimate_api_cost,
 )
 
-# Convenience alias (backwards compatibility)
-VisionProcessor = PDFExtractor
+# Legacy compatibility aliases
+from .extractor import ProcessingConfig  # Alias for ExtractionConfig
 
 __all__ = [
     # Version
     "__version__",
     # Main class
     "PDFExtractor",
-    "VisionProcessor",  # backwards compatibility
+    "estimate_api_cost",
     # Enums
     "DocumentType",
-    "ContentType",
+    "SectionType",
     "Language",
     # Models
     "DocumentContext",
-    "ExtractedPage",
+    "StructureEntry",
+    "ExtractedSection",
     "ExtractionResult",
-    "SectionMarker",
     "Abbreviation",
-    "ProcessingConfig",
+    "ExtractionConfig",
+    "ProcessingConfig",  # Legacy alias
+    # Exceptions
+    "ExtractionError",
+    "NoTableOfContentsError",
+    "StructureExtractionError",
+    "SectionExtractionError",
+    "PageRenderError",
+    "APIError",
     # PDF utilities
     "PDFToImages",
     "PageImage",
-    "estimate_api_cost",
 ]

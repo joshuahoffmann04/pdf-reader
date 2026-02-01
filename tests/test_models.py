@@ -7,12 +7,12 @@ from datetime import datetime
 
 from pdf_extractor import (
     DocumentContext,
-    ExtractedPage,
+    StructureEntry,
+    ExtractedSection,
     ExtractionResult,
-    SectionMarker,
-    ProcessingConfig,
+    ExtractionConfig,
     DocumentType,
-    ContentType,
+    SectionType,
     Language,
     Abbreviation,
 )
@@ -61,43 +61,140 @@ class TestDocumentContext:
         assert isinstance(data, dict)
 
 
-class TestExtractedPage:
-    """Tests for ExtractedPage model."""
+class TestStructureEntry:
+    """Tests for StructureEntry model."""
+
+    def test_create_paragraph(self):
+        """Test creating a paragraph entry."""
+        entry = StructureEntry(
+            section_type=SectionType.PARAGRAPH,
+            section_number="§ 1",
+            section_title="Geltungsbereich",
+            start_page=3,
+            end_page=4,
+        )
+        assert entry.section_type == SectionType.PARAGRAPH
+        assert entry.section_number == "§ 1"
+        assert entry.pages == [3, 4]
+        assert entry.page_count == 2
+
+    def test_create_anlage(self):
+        """Test creating an anlage entry."""
+        entry = StructureEntry(
+            section_type=SectionType.ANLAGE,
+            section_number="Anlage 1",
+            section_title="Studienverlaufsplan",
+            start_page=50,
+            end_page=55,
+        )
+        assert entry.section_type == SectionType.ANLAGE
+        assert entry.page_count == 6
+        assert entry.identifier == "Anlage 1"
+
+    def test_create_overview(self):
+        """Test creating an overview entry."""
+        entry = StructureEntry(
+            section_type=SectionType.OVERVIEW,
+            section_number=None,
+            section_title="Inhaltsverzeichnis",
+            start_page=1,
+            end_page=2,
+        )
+        assert entry.section_type == SectionType.OVERVIEW
+        assert entry.identifier == "Übersicht"
+
+    def test_page_validation(self):
+        """Test that end_page must be >= start_page."""
+        with pytest.raises(ValueError):
+            StructureEntry(
+                section_type=SectionType.PARAGRAPH,
+                section_number="§ 1",
+                start_page=5,
+                end_page=3,  # Invalid: before start_page
+            )
+
+    def test_pages_property(self, sample_structure_entry):
+        """Test pages property."""
+        assert sample_structure_entry.pages == [3, 4]
+
+
+class TestExtractedSection:
+    """Tests for ExtractedSection model."""
 
     def test_create_minimal(self):
-        """Test creating page with minimal fields."""
-        page = ExtractedPage(
-            page_number=1,
+        """Test creating section with minimal fields."""
+        section = ExtractedSection(
+            section_type=SectionType.PARAGRAPH,
+            section_number="§ 1",
             content="Test content",
         )
-        assert page.page_number == 1
-        assert page.content == "Test content"
-        assert page.sections == []
-        assert page.has_table is False
+        assert section.section_number == "§ 1"
+        assert section.content == "Test content"
+        assert section.pages == []
+        assert section.has_table is False
 
-    def test_create_full(self, sample_page):
-        """Test creating page with all fields."""
-        assert sample_page.page_number == 5
-        assert len(sample_page.sections) == 2
-        assert sample_page.sections[0].number == "§1"
-        assert "(1)" in sample_page.paragraph_numbers
+    def test_create_full(self, sample_section):
+        """Test creating section with all fields."""
+        assert sample_section.section_number == "§ 1"
+        assert sample_section.chapter == "I. Allgemeines"
+        assert "(1)" in sample_section.paragraphs
+        assert sample_section.has_list is True
 
-    def test_page_number_validation(self):
-        """Test page number must be positive."""
-        with pytest.raises(ValueError):
-            ExtractedPage(page_number=0, content="Test")
+    def test_identifier_property(self):
+        """Test identifier property."""
+        # With number and title
+        section = ExtractedSection(
+            section_type=SectionType.PARAGRAPH,
+            section_number="§ 10",
+            section_title="Module und Leistungspunkte",
+            content="Content",
+        )
+        assert section.identifier == "§ 10 Module und Leistungspunkte"
 
-    def test_serialization(self, sample_page):
+        # With number only
+        section2 = ExtractedSection(
+            section_type=SectionType.PARAGRAPH,
+            section_number="§ 5",
+            content="Content",
+        )
+        assert section2.identifier == "§ 5"
+
+        # Overview (no number)
+        section3 = ExtractedSection(
+            section_type=SectionType.OVERVIEW,
+            content="Overview content",
+        )
+        assert section3.identifier == "Übersicht"
+
+    def test_get_source_reference(self):
+        """Test source reference generation."""
+        section = ExtractedSection(
+            section_type=SectionType.PARAGRAPH,
+            section_number="§ 10",
+            section_title="Module",
+            content="Content",
+            pages=[12, 13, 14],
+        )
+        ref = section.get_source_reference("Prüfungsordnung Informatik")
+        assert "Prüfungsordnung Informatik" in ref
+        assert "§ 10" in ref
+        assert "12-14" in ref
+
+    def test_token_count_calculation(self):
+        """Test auto-calculation of token count."""
+        content = "A" * 400  # 400 chars -> ~100 tokens
+        section = ExtractedSection(
+            section_type=SectionType.PARAGRAPH,
+            section_number="§ 1",
+            content=content,
+        )
+        assert section.token_count == 100
+
+    def test_serialization(self, sample_section):
         """Test JSON serialization."""
-        data = sample_page.model_dump()
-        assert data["page_number"] == 5
-        assert len(data["sections"]) == 2
-
-    def test_to_dict(self, sample_page):
-        """Test to_dict method."""
-        data = sample_page.to_dict()
-        assert data["page_number"] == 5
-        assert isinstance(data, dict)
+        data = sample_section.model_dump()
+        assert data["section_number"] == "§ 1"
+        assert len(data["paragraphs"]) == 2
 
 
 class TestExtractionResult:
@@ -110,50 +207,72 @@ class TestExtractionResult:
             context=sample_context,
         )
         assert result.source_file == "test.pdf"
-        assert result.pages == []
+        assert result.sections == []
         assert result.errors == []
 
     def test_create_full(self, sample_result):
         """Test creating result with all fields."""
         assert sample_result.source_file == "test.pdf"
-        assert len(sample_result.pages) == 3
+        assert len(sample_result.sections) == 4
         assert sample_result.processing_time_seconds == 10.5
 
-    def test_get_page_stats(self, sample_result):
-        """Test page statistics calculation."""
-        stats = sample_result.get_page_stats()
-        assert stats["total_pages"] == 3
-        assert stats["pages_with_tables"] == 1
-        assert stats["pages_with_lists"] == 0
-        assert stats["avg_content_length"] > 0
+    def test_get_section(self, sample_result):
+        """Test getting section by number."""
+        section = sample_result.get_section("§ 1")
+        assert section is not None
+        assert section.section_number == "§ 1"
 
-    def test_get_page_stats_empty(self, sample_context):
-        """Test stats with no pages."""
+        # Non-existent section
+        assert sample_result.get_section("§ 99") is None
+
+    def test_get_overview(self, sample_result):
+        """Test getting overview section."""
+        overview = sample_result.get_overview()
+        assert overview is not None
+        assert overview.section_type == SectionType.OVERVIEW
+
+    def test_get_paragraphs(self, sample_result):
+        """Test getting all paragraph sections."""
+        paragraphs = sample_result.get_paragraphs()
+        assert len(paragraphs) == 2
+        assert all(s.section_type == SectionType.PARAGRAPH for s in paragraphs)
+
+    def test_get_anlagen(self, sample_result):
+        """Test getting all Anlage sections."""
+        anlagen = sample_result.get_anlagen()
+        assert len(anlagen) == 1
+        assert anlagen[0].section_number == "Anlage 1"
+
+    def test_get_stats(self, sample_result):
+        """Test statistics calculation."""
+        stats = sample_result.get_stats()
+        assert stats["total_sections"] == 4
+        assert stats["paragraphs"] == 2
+        assert stats["anlagen"] == 1
+        assert stats["has_overview"] is True
+        assert stats["sections_with_tables"] == 2
+
+    def test_get_stats_empty(self, sample_context):
+        """Test stats with no sections."""
         result = ExtractionResult(
             source_file="test.pdf",
             context=sample_context,
         )
-        stats = result.get_page_stats()
-        assert stats["total_pages"] == 0
-        assert stats["avg_content_length"] == 0
-
-    def test_get_all_sections(self, sample_result):
-        """Test getting all sections."""
-        sections = sample_result.get_all_sections()
-        assert len(sections) == 3
-        assert sections[0].number == "§1"
+        stats = result.get_stats()
+        assert stats["total_sections"] == 0
+        assert stats["avg_tokens_per_section"] == 0
 
     def test_get_full_content(self, sample_result):
         """Test getting full content."""
         content = sample_result.get_full_content()
-        assert "Seite 1 Inhalt" in content
-        assert "Seite 2 Inhalt" in content
+        assert "Inhaltsverzeichnis" in content
+        assert "Geltungsbereich" in content
 
     def test_to_dict(self, sample_result):
         """Test to_dict method."""
         data = sample_result.to_dict()
         assert data["source_file"] == "test.pdf"
-        assert isinstance(data["pages"], list)
+        assert isinstance(data["sections"], list)
         assert isinstance(data["context"], dict)
 
     def test_to_json(self, sample_result):
@@ -163,49 +282,45 @@ class TestExtractionResult:
         assert "test.pdf" in json_str
 
 
-class TestProcessingConfig:
-    """Tests for ProcessingConfig model."""
+class TestExtractionConfig:
+    """Tests for ExtractionConfig model."""
 
     def test_default_values(self):
         """Test default configuration values."""
-        config = ProcessingConfig()
+        config = ExtractionConfig()
         assert config.model == "gpt-4o"
         assert config.max_retries == 3
         assert config.temperature == 0.0
+        assert config.max_images_per_request == 5
 
     def test_custom_values(self):
         """Test custom configuration."""
-        config = ProcessingConfig(
+        config = ExtractionConfig(
             model="gpt-4o-mini",
             max_retries=5,
             temperature=0.1,
+            max_images_per_request=10,
         )
         assert config.model == "gpt-4o-mini"
         assert config.max_retries == 5
-        assert config.temperature == 0.1
+        assert config.max_images_per_request == 10
 
+    def test_max_images_validation(self):
+        """Test max_images_per_request validation."""
+        # Valid range
+        config = ExtractionConfig(max_images_per_request=1)
+        assert config.max_images_per_request == 1
 
-class TestSectionMarker:
-    """Tests for SectionMarker model."""
+        config = ExtractionConfig(max_images_per_request=20)
+        assert config.max_images_per_request == 20
 
-    def test_create_minimal(self):
-        """Test creating section marker with minimal fields."""
-        section = SectionMarker(number="§1")
-        assert section.number == "§1"
-        assert section.title is None
-        assert section.level == 1
+        # Invalid (too low)
+        with pytest.raises(ValueError):
+            ExtractionConfig(max_images_per_request=0)
 
-    def test_create_full(self):
-        """Test creating section marker with all fields."""
-        section = SectionMarker(
-            number="§10",
-            title="Module und Leistungspunkte",
-            level=2,
-            starts_on_page=True,
-        )
-        assert section.number == "§10"
-        assert section.title == "Module und Leistungspunkte"
-        assert section.level == 2
+        # Invalid (too high)
+        with pytest.raises(ValueError):
+            ExtractionConfig(max_images_per_request=21)
 
 
 class TestAbbreviation:
@@ -227,11 +342,11 @@ class TestEnums:
         assert DocumentType.MODULHANDBUCH.value == "modulhandbuch"
         assert DocumentType.OTHER.value == "other"
 
-    def test_content_types(self):
-        """Test all content types are accessible."""
-        assert ContentType.SECTION.value == "section"
-        assert ContentType.TABLE.value == "table"
-        assert ContentType.DEFINITION.value == "definition"
+    def test_section_types(self):
+        """Test all section types are accessible."""
+        assert SectionType.OVERVIEW.value == "overview"
+        assert SectionType.PARAGRAPH.value == "paragraph"
+        assert SectionType.ANLAGE.value == "anlage"
 
     def test_language(self):
         """Test language enum."""

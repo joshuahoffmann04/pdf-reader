@@ -1,20 +1,24 @@
 """
-Tests for PDFExtractor with mocked OpenAI API.
+Unit tests for PDFExtractor class.
 """
 
 import pytest
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
 from pdf_extractor import (
     PDFExtractor,
-    ProcessingConfig,
+    ExtractionConfig,
     DocumentContext,
-    ExtractedPage,
+    StructureEntry,
+    ExtractedSection,
     ExtractionResult,
     DocumentType,
+    SectionType,
+    NoTableOfContentsError,
 )
+from pdf_extractor.extractor import estimate_api_cost
 
 
 class TestPDFExtractorInit:
@@ -41,208 +45,370 @@ class TestPDFExtractorInit:
 
     def test_init_with_custom_config(self):
         """Test initialization with custom config."""
-        config = ProcessingConfig(model="gpt-4o-mini")
+        config = ExtractionConfig(model="gpt-4o-mini", max_images_per_request=10)
         with patch('pdf_extractor.extractor.OpenAI'):
             extractor = PDFExtractor(config=config, api_key="test-key")
             assert extractor.config.model == "gpt-4o-mini"
+            assert extractor.config.max_images_per_request == 10
 
 
-class TestPDFExtractorMocked:
-    """Tests for PDFExtractor with mocked API calls."""
+class TestSlidingWindow:
+    """Tests for sliding window logic."""
 
-    @pytest.fixture
-    def mock_openai(self):
-        """Create a mocked OpenAI client."""
-        with patch('pdf_extractor.extractor.OpenAI') as mock:
-            yield mock
+    def test_single_window(self):
+        """Test that single window is returned for small sections."""
+        config = ExtractionConfig(max_images_per_request=5)
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(config=config, api_key="test-key")
 
-    @pytest.fixture
-    def mock_pdf_converter(self):
-        """Create a mocked PDF converter."""
-        with patch('pdf_extractor.extractor.PDFToImages') as mock:
-            converter = Mock()
-            converter.get_document_info.return_value = {"page_count": 3}
-            converter.get_page_count.return_value = 3
+            pages = [1, 2, 3]
+            windows = extractor._create_sliding_windows(pages, 5)
 
-            # Mock image rendering
-            mock_image = Mock()
-            mock_image.image_base64 = "base64data"
-            mock_image.mime_type = "image/png"
+            assert len(windows) == 1
+            assert windows[0] == [1, 2, 3]
 
-            converter.render_page.return_value = mock_image
-            converter.render_pages_batch.return_value = [mock_image]
+    def test_exact_fit(self):
+        """Test that exact fit returns single window."""
+        config = ExtractionConfig(max_images_per_request=5)
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(config=config, api_key="test-key")
 
-            mock.return_value = converter
-            yield mock
+            pages = [1, 2, 3, 4, 5]
+            windows = extractor._create_sliding_windows(pages, 5)
 
-    @pytest.fixture
-    def extractor(self, mock_openai, mock_pdf_converter, mock_context_response, mock_openai_response):
-        """Create a PDFExtractor with mocked dependencies."""
-        # Setup mock responses
-        mock_client = Mock()
+            assert len(windows) == 1
+            assert windows[0] == [1, 2, 3, 4, 5]
 
-        # Create mock response objects
-        context_response = Mock()
-        context_response.choices = [Mock()]
-        context_response.choices[0].message.content = json.dumps(mock_context_response)
-        context_response.usage = Mock(prompt_tokens=100, completion_tokens=50)
+    def test_two_windows_with_overlap(self):
+        """Test that two windows overlap by 1 page."""
+        config = ExtractionConfig(max_images_per_request=5)
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(config=config, api_key="test-key")
 
-        page_response = Mock()
-        page_response.choices = [Mock()]
-        page_response.choices[0].message.content = json.dumps(mock_openai_response)
-        page_response.usage = Mock(prompt_tokens=200, completion_tokens=100)
+            pages = [1, 2, 3, 4, 5, 6, 7]
+            windows = extractor._create_sliding_windows(pages, 5)
 
-        # Return different responses for context vs page extraction
-        mock_client.chat.completions.create.side_effect = [
-            context_response,  # Context analysis
-            page_response,     # Page 1
-            page_response,     # Page 2
-            page_response,     # Page 3
-        ]
+            assert len(windows) == 2
+            assert windows[0] == [1, 2, 3, 4, 5]
+            assert windows[1] == [5, 6, 7]
+            # Check overlap
+            assert windows[0][-1] == windows[1][0]
 
-        mock_openai.return_value = mock_client
+    def test_three_windows_with_overlap(self):
+        """Test that three windows each overlap by 1 page."""
+        config = ExtractionConfig(max_images_per_request=5)
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(config=config, api_key="test-key")
 
-        return PDFExtractor(api_key="test-key")
+            pages = list(range(1, 13))  # 1-12
+            windows = extractor._create_sliding_windows(pages, 5)
 
-    def test_extract(self, extractor, pdf_path):
-        """Test full document extraction."""
-        if pdf_path is None:
-            pytest.skip("Test PDF not available")
+            assert len(windows) == 3
+            assert windows[0] == [1, 2, 3, 4, 5]
+            assert windows[1] == [5, 6, 7, 8, 9]
+            assert windows[2] == [9, 10, 11, 12]
+            # Check overlaps
+            assert windows[0][-1] == windows[1][0]
+            assert windows[1][-1] == windows[2][0]
 
-        result = extractor.extract(pdf_path)
+    def test_all_pages_covered(self):
+        """Test that all pages are covered by at least one window."""
+        config = ExtractionConfig(max_images_per_request=3)
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(config=config, api_key="test-key")
 
-        assert isinstance(result, ExtractionResult)
-        assert result.context is not None
-        assert len(result.pages) == 3  # Mocked page count
+            pages = list(range(1, 11))  # 1-10
+            windows = extractor._create_sliding_windows(pages, 3)
 
-    def test_extract_with_callback(self, extractor, pdf_path):
-        """Test extraction with progress callback."""
-        if pdf_path is None:
-            pytest.skip("Test PDF not available")
+            # Flatten windows and check all pages present
+            covered = set()
+            for window in windows:
+                covered.update(window)
 
-        callback_calls = []
+            assert covered == set(pages)
 
-        def callback(current, total, status):
-            callback_calls.append((current, total, status))
 
-        result = extractor.extract(pdf_path, progress_callback=callback)
+class TestJSONExtraction:
+    """Tests for JSON extraction from responses."""
 
-        # Should have been called for context + each page
-        assert len(callback_calls) >= 3
+    def test_extract_json_code_block(self):
+        """Test extracting JSON from code block."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
 
-    def test_parse_context_response(self, extractor, mock_context_response):
-        """Test context response parsing."""
-        response_json = json.dumps(mock_context_response)
-        context = extractor._parse_context_response(response_json, 10)
+            response = '''Here is the result:
+```json
+{"key": "value", "number": 42}
+```
+That's all.'''
 
-        assert isinstance(context, DocumentContext)
-        assert context.document_type == DocumentType.PRUEFUNGSORDNUNG
-        assert context.title == mock_context_response["title"]
-        assert len(context.abbreviations) == 2
+            result = extractor._extract_json(response)
+            data = json.loads(result)
+            assert data["key"] == "value"
+            assert data["number"] == 42
 
-    def test_parse_context_response_invalid(self, extractor):
-        """Test handling of invalid context response."""
-        context = extractor._parse_context_response("invalid json", 10)
+    def test_extract_json_raw(self):
+        """Test extracting raw JSON."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
 
-        assert context.document_type == DocumentType.OTHER
-        assert context.title == "Unknown"
+            response = '{"key": "value"}'
+            result = extractor._extract_json(response)
+            data = json.loads(result)
+            assert data["key"] == "value"
 
-    def test_parse_page_response(self, extractor, mock_openai_response):
-        """Test page response parsing."""
-        response_json = json.dumps(mock_openai_response)
-        page = extractor._parse_page_response(response_json, 1)
+    def test_extract_nested_json(self):
+        """Test extracting nested JSON."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
 
-        assert isinstance(page, ExtractedPage)
-        assert page.page_number == 1
-        assert page.content == mock_openai_response["content"]
-        assert len(page.sections) == 1
+            response = '''```json
+{"outer": {"inner": {"deep": "value"}}, "list": [1, 2, 3]}
+```'''
 
-    def test_parse_page_response_with_json_block(self, extractor, mock_openai_response):
-        """Test parsing response with markdown code block."""
-        response = f"Here is the JSON:\n```json\n{json.dumps(mock_openai_response)}\n```"
-        page = extractor._parse_page_response(response, 1)
-
-        assert page.content == mock_openai_response["content"]
-
-    def test_parse_page_response_invalid(self, extractor):
-        """Test handling of invalid page response."""
-        page = extractor._parse_page_response("invalid response", 1)
-
-        assert page.page_number == 1
-        assert page.extraction_confidence == 0.5
-        assert "invalid response" in page.content
-
-    def test_extract_json_from_code_block(self, extractor):
-        """Test JSON extraction from code blocks."""
-        text = 'Some text\n```json\n{"key": "value"}\n```\nMore text'
-        result = extractor._extract_json(text)
-
-        assert result == '{"key": "value"}'
-
-    def test_extract_json_raw(self, extractor):
-        """Test JSON extraction from raw text."""
-        text = 'Before {"key": "value"} after'
-        result = extractor._extract_json(text)
-
-        assert result == '{"key": "value"}'
-
-    def test_extract_json_nested(self, extractor):
-        """Test JSON extraction with nested objects."""
-        text = '{"outer": {"inner": "value"}}'
-        result = extractor._extract_json(text)
-
-        assert '"inner"' in result
-        assert json.loads(result)["outer"]["inner"] == "value"
-
-    def test_token_tracking(self, extractor, pdf_path):
-        """Test token usage tracking."""
-        if pdf_path is None:
-            pytest.skip("Test PDF not available")
-
-        result = extractor.extract(pdf_path)
-
-        assert result.total_input_tokens > 0
-        assert result.total_output_tokens > 0
-
-    def test_error_handling(self, mock_openai, mock_pdf_converter):
-        """Test error handling during extraction."""
-        mock_client = Mock()
-        mock_client.chat.completions.create.side_effect = Exception("API Error")
-        mock_openai.return_value = mock_client
-
-        extractor = PDFExtractor(api_key="test-key")
-
-        # Use a mock path
-        with patch.object(Path, 'exists', return_value=True):
-            mock_path = Path("test.pdf")
-            result = extractor.extract(mock_path)
-
-            # Should have errors but not crash
-            assert len(result.errors) > 0
+            result = extractor._extract_json(response)
+            data = json.loads(result)
+            assert data["outer"]["inner"]["deep"] == "value"
+            assert data["list"] == [1, 2, 3]
 
 
 class TestRefusalDetection:
     """Tests for API refusal detection."""
 
-    def test_is_refusal_detects_sorry(self, mocker):
-        """Test refusal detection for 'sorry' messages."""
-        mocker.patch('pdf_extractor.extractor.OpenAI')
-        mocker.patch('pdf_extractor.extractor.PDFToImages')
+    def test_detects_refusal(self):
+        """Test that refusals are detected."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
 
-        extractor = PDFExtractor(api_key="test-key")
+            refusal_messages = [
+                "I'm sorry, I can't assist with that request.",
+                "I cannot assist with this.",
+                "I'm not able to process this document.",
+                "I am unable to help with this.",
+            ]
 
-        assert extractor._is_refusal("I'm sorry, I can't assist with that.")
-        assert extractor._is_refusal("I cannot assist with this request.")
-        assert extractor._is_refusal("I'm not able to process this image.")
-        assert extractor._is_refusal("I am unable to help with that.")
+            for msg in refusal_messages:
+                assert extractor._is_refusal(msg), f"Should detect refusal: {msg}"
 
-    def test_is_refusal_allows_normal_content(self, mocker):
+    def test_not_refusal(self):
         """Test that normal content is not flagged as refusal."""
-        mocker.patch('pdf_extractor.extractor.OpenAI')
-        mocker.patch('pdf_extractor.extractor.PDFToImages')
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
 
-        extractor = PDFExtractor(api_key="test-key")
+            normal_messages = [
+                '{"content": "This is a valid response"}',
+                "The document contains regulations about...",
+                "§ 1 Geltungsbereich: Diese Ordnung regelt...",
+            ]
 
-        assert not extractor._is_refusal("Das Modul Analysis I hat 9 LP.")
-        assert not extractor._is_refusal("§10 regelt die Prüfungsformen.")
-        assert not extractor._is_refusal("Die Bachelorarbeit umfasst 12 Leistungspunkte.")
+            for msg in normal_messages:
+                assert not extractor._is_refusal(msg), f"Should not flag: {msg}"
+
+
+class TestEstimateAPICost:
+    """Tests for API cost estimation."""
+
+    def test_estimate_gpt4o(self):
+        """Test cost estimation for gpt-4o."""
+        estimate = estimate_api_cost(50, "gpt-4o")
+
+        assert "estimated_input_tokens" in estimate
+        assert "estimated_output_tokens" in estimate
+        assert "estimated_cost_usd" in estimate
+        assert estimate["model"] == "gpt-4o"
+        assert estimate["page_count"] == 50
+
+    def test_estimate_gpt4o_mini(self):
+        """Test cost estimation for gpt-4o-mini."""
+        estimate = estimate_api_cost(50, "gpt-4o-mini")
+
+        assert estimate["model"] == "gpt-4o-mini"
+        # Mini should be cheaper
+        gpt4o_cost = estimate_api_cost(50, "gpt-4o")["estimated_cost_usd"]
+        assert estimate["estimated_cost_usd"] < gpt4o_cost
+
+    def test_estimate_unknown_model(self):
+        """Test cost estimation for unknown model."""
+        estimate = estimate_api_cost(50, "unknown-model")
+        assert "error" in estimate
+
+
+class TestParseStructureResponse:
+    """Tests for structure response parsing."""
+
+    def test_parse_valid_response(self, mock_structure_response):
+        """Test parsing a valid structure response."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            json_str = json.dumps(mock_structure_response)
+            context, structure = extractor._parse_structure_response(
+                json_str, total_pages=56, document_path="test.pdf"
+            )
+
+            assert context.document_type == DocumentType.PRUEFUNGSORDNUNG
+            assert len(structure) == 3
+            assert structure[0].section_type == SectionType.OVERVIEW
+            assert structure[1].section_number == "§ 1"
+
+    def test_parse_no_toc_response(self):
+        """Test parsing response with no ToC."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            response = json.dumps({
+                "has_toc": False,
+                "context": None,
+                "structure": None
+            })
+
+            with pytest.raises(NoTableOfContentsError):
+                extractor._parse_structure_response(
+                    response, total_pages=56, document_path="test.pdf"
+                )
+
+
+class TestParseSectionResponse:
+    """Tests for section response parsing."""
+
+    def test_parse_valid_response(self, mock_section_response):
+        """Test parsing a valid section response."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            entry = StructureEntry(
+                section_type=SectionType.PARAGRAPH,
+                section_number="§ 1",
+                section_title="Geltungsbereich",
+                start_page=3,
+                end_page=3,
+            )
+
+            json_str = json.dumps(mock_section_response)
+            section = extractor._parse_section_response(
+                json_str, entry, pages=[3]
+            )
+
+            assert section.section_number == "§ 1"
+            assert "Geltungsbereich" in section.content
+            assert section.extraction_confidence == 1.0
+
+    def test_parse_invalid_json(self):
+        """Test parsing invalid JSON returns fallback."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            entry = StructureEntry(
+                section_type=SectionType.PARAGRAPH,
+                section_number="§ 1",
+                start_page=3,
+                end_page=3,
+            )
+
+            section = extractor._parse_section_response(
+                "Not valid JSON", entry, pages=[3]
+            )
+
+            assert section.section_number == "§ 1"
+            assert section.extraction_confidence == 0.5
+            assert "JSON parsing failed" in section.extraction_notes
+
+
+class TestCreateFailedSection:
+    """Tests for failed section placeholder creation."""
+
+    def test_create_failed_section(self):
+        """Test creating a failed section placeholder."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            entry = StructureEntry(
+                section_type=SectionType.PARAGRAPH,
+                section_number="§ 5",
+                section_title="Test Section",
+                start_page=10,
+                end_page=12,
+            )
+
+            section = extractor._create_failed_section(entry, "API error")
+
+            assert section.section_number == "§ 5"
+            assert section.extraction_confidence == 0.0
+            assert "API error" in section.extraction_notes
+            assert section.pages == [10, 11, 12]
+
+
+class TestParseContext:
+    """Tests for context parsing."""
+
+    def test_parse_context_with_abbreviations(self):
+        """Test parsing context with abbreviations."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            data = {
+                "document_type": "pruefungsordnung",
+                "title": "Test PO",
+                "institution": "Test Uni",
+                "abbreviations": [
+                    {"short": "LP", "long": "Leistungspunkte"},
+                    {"short": "ECTS", "long": "European Credit Transfer System"},
+                ],
+            }
+
+            context = extractor._parse_context(data, total_pages=50)
+
+            assert context.document_type == DocumentType.PRUEFUNGSORDNUNG
+            assert len(context.abbreviations) == 2
+            assert context.abbreviations[0].short == "LP"
+
+    def test_parse_context_with_unknown_type(self):
+        """Test parsing context with unknown document type."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            data = {
+                "document_type": "unknown_type",
+                "title": "Test Doc",
+                "institution": "Test Uni",
+            }
+
+            context = extractor._parse_context(data, total_pages=50)
+
+            assert context.document_type == DocumentType.OTHER
+
+
+class TestParseStructureEntries:
+    """Tests for structure entry parsing."""
+
+    def test_parse_entries_sorted(self):
+        """Test that entries are sorted by start page."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            data = [
+                {"section_type": "paragraph", "section_number": "§ 2", "start_page": 5, "end_page": 6},
+                {"section_type": "overview", "section_number": None, "start_page": 1, "end_page": 2},
+                {"section_type": "paragraph", "section_number": "§ 1", "start_page": 3, "end_page": 4},
+            ]
+
+            entries = extractor._parse_structure_entries(data, total_pages=50)
+
+            assert len(entries) == 3
+            assert entries[0].start_page == 1
+            assert entries[1].start_page == 3
+            assert entries[2].start_page == 5
+
+    def test_parse_entries_page_clamping(self):
+        """Test that invalid pages are clamped."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            data = [
+                {"section_type": "paragraph", "section_number": "§ 1", "start_page": 0, "end_page": 100},
+            ]
+
+            entries = extractor._parse_structure_entries(data, total_pages=50)
+
+            assert entries[0].start_page == 1
+            assert entries[0].end_page == 50
