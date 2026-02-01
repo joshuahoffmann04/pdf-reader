@@ -204,6 +204,15 @@ class TestRefusalDetection:
             for msg in normal_messages:
                 assert not extractor._is_refusal(msg), f"Should not flag: {msg}"
 
+    def test_empty_not_refusal(self):
+        """Test that empty/None content is not flagged as refusal."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            # Empty and None should not be flagged as refusal
+            assert not extractor._is_refusal("")
+            assert not extractor._is_refusal(None)
+
 
 class TestEstimateAPICost:
     """Tests for API cost estimation."""

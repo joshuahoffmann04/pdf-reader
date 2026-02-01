@@ -680,20 +680,36 @@ class PDFExtractor:
             self.total_input_tokens += response.usage.prompt_tokens
             self.total_output_tokens += response.usage.completion_tokens
 
-        return response.choices[0].message.content
+        # Handle None or empty response
+        result = response.choices[0].message.content
+        if result is None:
+            logger.warning("API returned None content")
+            return ""
+        return result
 
     def _call_api_with_retry(
         self,
         system_prompt: str,
         content: list,
     ) -> str:
-        """Call API with retry logic for failures and refusals."""
+        """Call API with retry logic for failures, refusals, and empty responses."""
         last_error = None
         last_response = None
 
         for attempt in range(self.config.max_retries):
             try:
                 response = self._call_api(system_prompt, content)
+
+                # Check for empty response
+                if not response or not response.strip():
+                    logger.warning(f"Empty API response on attempt {attempt + 1}")
+                    last_response = response
+
+                    if attempt < self.config.max_retries - 1:
+                        wait_time = 2 ** (attempt + 1)
+                        logger.info(f"Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
 
                 # Check for refusal
                 if self._is_refusal(response):
@@ -718,13 +734,16 @@ class PDFExtractor:
                     time.sleep(wait_time)
 
         # All retries failed
-        if last_response:
+        if last_response is not None:
             return last_response
 
         raise APIError(f"API call failed after {self.config.max_retries} attempts: {last_error}")
 
     def _is_refusal(self, content: str) -> bool:
         """Check if the API response is a refusal."""
+        if not content:
+            return False
+
         refusal_phrases = [
             "I'm sorry, I can't assist",
             "I cannot assist",
