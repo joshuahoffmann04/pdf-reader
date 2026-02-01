@@ -201,14 +201,30 @@ class VisionProcessor:
         """
         Phase 1: Analyze document context using sample pages.
 
-        Uses first page, a middle page, and last page for context.
+        Uses pages 1-3 (for title page and table of contents),
+        optionally a middle page, and the last page.
         """
         # Select sample pages for context
+        # IMPORTANT: Include pages 2-3 for table of contents!
         sample_pages = [1]
-        if total_pages > 2:
-            sample_pages.append(total_pages // 2)
-        if total_pages > 1:
+
+        # Add pages 2 and 3 for table of contents
+        if total_pages >= 2:
+            sample_pages.append(2)
+        if total_pages >= 3:
+            sample_pages.append(3)
+
+        # Add a middle page for longer documents
+        if total_pages > 10:
+            middle = total_pages // 2
+            if middle not in sample_pages:
+                sample_pages.append(middle)
+
+        # Add last page
+        if total_pages > 3 and total_pages not in sample_pages:
             sample_pages.append(total_pages)
+
+        logger.info(f"Context analysis using pages: {sample_pages}")
 
         # Render sample pages
         images = self.pdf_converter.render_pages_batch(pdf_path, sample_pages)
@@ -330,12 +346,25 @@ class VisionProcessor:
             }
             doc_type = doc_type_map.get(doc_type_str, DocumentType.OTHER)
 
-            # Parse abbreviations
-            abbrevs_raw = data.get("abbreviations", {})
-            abbreviations = [
-                Abbreviation(short=k, long=v)
-                for k, v in abbrevs_raw.items()
-            ] if isinstance(abbrevs_raw, dict) else []
+            # Parse abbreviations (handles both list and dict format)
+            abbrevs_raw = data.get("abbreviations", [])
+            abbreviations = []
+
+            if isinstance(abbrevs_raw, list):
+                # New format: [{"short": "LP", "long": "Leistungspunkte"}, ...]
+                for item in abbrevs_raw:
+                    if isinstance(item, dict):
+                        short = item.get("short", item.get("abbr", ""))
+                        long = item.get("long", item.get("full", ""))
+                        if short and long:
+                            abbreviations.append(Abbreviation(short=short, long=long))
+            elif isinstance(abbrevs_raw, dict):
+                # Legacy format: {"LP": "Leistungspunkte", ...}
+                abbreviations = [
+                    Abbreviation(short=k, long=v)
+                    for k, v in abbrevs_raw.items()
+                    if k and v
+                ]
 
             return DocumentContext(
                 document_type=doc_type,
