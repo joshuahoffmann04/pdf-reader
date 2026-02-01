@@ -1,16 +1,13 @@
 # PDF Extractor
 
-Ein produktionsreifes Modul zur **sektionsbasierten** Extraktion strukturierter Inhalte aus PDF-Dokumenten mittels OpenAI's Vision API (GPT-4o). Optimiert für deutsche akademische Dokumente (Prüfungsordnungen, Modulhandbücher, etc.).
+Ein produktionsreifes Modul zur Extraktion strukturierter Inhalte aus PDF-Dokumenten mittels OpenAI's Vision API (GPT-4o). Optimiert für deutsche akademische Dokumente (Prüfungsordnungen, Modulhandbücher, etc.).
 
 ## Features
 
-- **Zwei-Phasen-Extraktion**: Strukturanalyse (ToC) + sektionsweise Extraktion
-- **Sektionsbasiert**: Extrahiert nach §§ und Anlagen statt nach Seiten
-- **Alle Seiten einer Sektion in EINEM API-Call**: Keine Seitenübergangs-Probleme
-- **Sliding Window**: Für Sektionen > max_images_per_request Seiten
+- **Zwei-Phasen-Extraktion**: Kontextanalyse + seitenweise Extraktion
 - **Hochwertige Inhaltstransformation**: Tabellen und Listen werden in natürliche Sprache umgewandelt
 - **Robuste Fehlerbehandlung**: Retry-Mechanismus mit exponentiellem Backoff
-- **NoTableOfContentsError**: Wirft Fehler wenn kein Inhaltsverzeichnis gefunden
+- **Strukturierte Ausgabe**: Bereit für Downstream-Verarbeitung (Chunking, RAG, etc.)
 
 ## Architektur
 
@@ -20,7 +17,6 @@ pdf_extractor/
 ├── extractor.py         # Hauptextraktor (PDFExtractor)
 ├── models.py            # Pydantic-Datenmodelle
 ├── prompts.py           # LLM-Prompts für Extraktion
-├── exceptions.py        # Custom Exceptions
 ├── pdf_to_images.py     # PDF zu Bild Konvertierung
 └── README.md            # Diese Dokumentation
 ```
@@ -50,19 +46,19 @@ OPENAI_API_KEY=your-api-key
 
 ```python
 from pdf_extractor import PDFExtractor
+from dotenv import load_dotenv
 
+#.env laden
+load_dotenv()
 # Extractor initialisieren
 extractor = PDFExtractor()
 
 # PDF verarbeiten
-result = extractor.extract("dokument.pdf")
+result = extractor.extract("pdfs/stpo_bsc-informatik_25-01-23_lese.pdf")
 
 # Ergebnisse nutzen
 print(f"Titel: {result.context.title}")
-print(f"Sektionen: {len(result.sections)}")
-
-for section in result.sections:
-    print(f"{section.section_number}: {section.content[:100]}...")
+print(f"Seiten: {len(result.pages)}")
 
 # In Datei speichern
 result.save("output.json")
@@ -72,7 +68,7 @@ result.save("output.json")
 
 ```python
 def progress(current, total, status):
-    print(f"Sektion {current}/{total}: {status}")
+    print(f"Seite {current}/{total}: {status}")
 
 result = extractor.extract("dokument.pdf", progress_callback=progress)
 ```
@@ -80,32 +76,16 @@ result = extractor.extract("dokument.pdf", progress_callback=progress)
 ### Mit Konfiguration
 
 ```python
-from pdf_extractor import PDFExtractor, ExtractionConfig
+from pdf_extractor import PDFExtractor, ProcessingConfig
 
-config = ExtractionConfig(
-    model="gpt-4o-mini",       # Günstigeres Modell
-    max_retries=5,             # Mehr Wiederholungsversuche
-    max_images_per_request=10, # Mehr Bilder pro Request
-    temperature=0.0,           # Deterministisch
+config = ProcessingConfig(
+    model="gpt-4o-mini",    # Günstigeres Modell
+    max_retries=5,          # Mehr Wiederholungsversuche
+    temperature=0.0,        # Deterministisch
 )
 
 extractor = PDFExtractor(config=config)
 result = extractor.extract("dokument.pdf")
-```
-
-### Fehlerbehandlung
-
-```python
-from pdf_extractor import PDFExtractor, NoTableOfContentsError
-
-extractor = PDFExtractor()
-
-try:
-    result = extractor.extract("dokument.pdf")
-except NoTableOfContentsError as e:
-    print(f"Dokument hat kein Inhaltsverzeichnis: {e}")
-except FileNotFoundError as e:
-    print(f"PDF nicht gefunden: {e}")
 ```
 
 ### Kommandozeile
@@ -131,12 +111,12 @@ Die Hauptklasse für die PDF-Extraktion.
 class PDFExtractor:
     def __init__(
         self,
-        config: Optional[ExtractionConfig] = None,
+        config: Optional[ProcessingConfig] = None,
         api_key: Optional[str] = None,
     ):
         """
         Args:
-            config: Extraktionskonfiguration
+            config: Verarbeitungskonfiguration
             api_key: OpenAI API-Key (oder OPENAI_API_KEY Umgebungsvariable)
         """
 
@@ -153,11 +133,7 @@ class PDFExtractor:
             progress_callback: Optionaler Callback für Fortschritt
 
         Returns:
-            ExtractionResult mit Kontext und allen Sektionen
-
-        Raises:
-            NoTableOfContentsError: Wenn kein Inhaltsverzeichnis gefunden
-            FileNotFoundError: Wenn PDF-Datei nicht existiert
+            ExtractionResult mit Kontext und allen Seiteninhalten
         """
 ```
 
@@ -167,9 +143,9 @@ Enthält die vollständigen Extraktionsergebnisse.
 
 ```python
 class ExtractionResult:
-    source_file: str                      # Pfad zur Quelldatei
-    context: DocumentContext              # Dokumentenkontext
-    sections: list[ExtractedSection]      # Extrahierte Sektionen
+    source_file: str              # Pfad zur Quelldatei
+    context: DocumentContext      # Dokumentenkontext
+    pages: list[ExtractedPage]    # Extrahierte Seiten
     processing_time_seconds: float
     total_input_tokens: int
     total_output_tokens: int
@@ -177,51 +153,19 @@ class ExtractionResult:
     warnings: list[str]
 
     # Methoden
-    def get_section(self, number: str) -> Optional[ExtractedSection]
-    def get_overview(self) -> Optional[ExtractedSection]
-    def get_paragraphs(self) -> list[ExtractedSection]
-    def get_anlagen(self) -> list[ExtractedSection]
-    def get_stats(self) -> dict
-    def get_full_content(self) -> str
-    def to_dict(self) -> dict
-    def to_json(self) -> str
-    def save(self, path: str) -> None
+    def get_page_stats(self) -> dict         # Statistiken
+    def get_all_sections(self) -> list       # Alle Abschnitte
+    def get_full_content(self) -> str        # Gesamter Inhalt
+    def to_dict(self) -> dict                # Als Dictionary
+    def to_json(self) -> str                 # Als JSON
+    def save(self, path: str) -> None        # In Datei speichern
     @classmethod
-    def load(cls, path: str) -> ExtractionResult
-```
-
-### ExtractedSection
-
-Eine extrahierte Sektion (§, Anlage oder Übersicht).
-
-```python
-class ExtractedSection:
-    section_type: SectionType             # overview | paragraph | anlage
-    section_number: Optional[str]         # z.B. "§ 10", "Anlage 2"
-    section_title: Optional[str]          # z.B. "Module und Leistungspunkte"
-    content: str                          # Vollständiger Inhalt in natürlicher Sprache
-    pages: list[int]                      # Seitenzahlen (1-indiziert)
-    chapter: Optional[str]                # Übergeordnetes Kapitel
-    paragraphs: list[str]                 # Absatznummern (1), (2) etc.
-    internal_references: list[str]        # z.B. ["§ 5 Abs. 2", "Anlage 1"]
-    external_references: list[str]        # z.B. ["Allgemeine Bestimmungen"]
-    has_table: bool
-    has_list: bool
-    token_count: int                      # Geschätzte Tokens
-    extraction_confidence: float          # 0.0 - 1.0
-    extraction_notes: Optional[str]
-
-    # Properties
-    @property
-    def identifier(self) -> str           # z.B. "§ 10 Module und Leistungspunkte"
-
-    # Methoden
-    def get_source_reference(self, doc_title: str = "") -> str
+    def load(cls, path: str) -> ExtractionResult  # Aus Datei laden
 ```
 
 ### DocumentContext
 
-Dokument-Metadaten aus der Strukturanalyse.
+Dokument-Metadaten aus der Kontextanalyse.
 
 ```python
 class DocumentContext:
@@ -234,37 +178,54 @@ class DocumentContext:
     faculty: Optional[str]        # Fachbereich
     total_pages: int              # Seitenzahl
     chapters: list[str]           # Kapitel/Gliederung
-    abbreviations: list[Abbreviation]
-    key_terms: list[str]
+    main_topics: list[str]        # Hauptthemen
+    abbreviations: list[Abbreviation]  # Abkürzungen
+    key_terms: list[str]          # Fachbegriffe
     referenced_documents: list[str]
     legal_basis: Optional[str]
     language: Language
 ```
 
-### ExtractionConfig
+### ExtractedPage
+
+Inhalt einer einzelnen Seite.
+
+```python
+class ExtractedPage:
+    page_number: int              # Seitennummer (1-indiziert)
+    content: str                  # Inhalt in natürlicher Sprache
+    sections: list[SectionMarker] # Abschnitte (§§, Anlagen)
+    paragraph_numbers: list[str]  # Absatznummern (1), (2), etc.
+    content_types: list[ContentType]
+    has_table: bool
+    has_list: bool
+    has_figure: bool
+    internal_references: list[str]   # z.B. "§ 5 Abs. 2"
+    external_references: list[str]   # z.B. "Allgemeine Bestimmungen"
+    continues_from_previous: bool
+    continues_to_next: bool
+    extraction_confidence: float     # 0.0 - 1.0
+    extraction_notes: Optional[str]
+```
+
+### ProcessingConfig
 
 Konfiguration für die Extraktion.
 
 ```python
-class ExtractionConfig:
+class ProcessingConfig:
     model: str = "gpt-4o"                # OpenAI-Modell
     max_tokens_per_request: int = 4096   # Max Tokens pro Request
     temperature: float = 0.0             # Sampling-Temperatur
-    max_images_per_request: int = 5      # Max Bilder pro Request (1-20)
     max_retries: int = 3                 # Wiederholungsversuche
+    expand_abbreviations: bool = True
+    include_page_context: bool = True
+    merge_cross_page_content: bool = True
+    output_format: str = "json"
     language: Language = Language.DE
 ```
 
 ## Datenmodelle
-
-### SectionType (Enum)
-
-```python
-class SectionType(str, Enum):
-    OVERVIEW = "overview"      # Übersicht (vor erstem §)
-    PARAGRAPH = "paragraph"    # § mit Nummer
-    ANLAGE = "anlage"          # Anlage 1, 2, etc.
-```
 
 ### DocumentType (Enum)
 
@@ -282,37 +243,47 @@ class DocumentType(str, Enum):
     OTHER = "other"
 ```
 
+### ContentType (Enum)
+
+```python
+class ContentType(str, Enum):
+    SECTION = "section"           # Paragraph (§)
+    SUBSECTION = "subsection"     # Absatz
+    ARTICLE = "article"
+    DEFINITION = "definition"
+    REGULATION = "regulation"
+    PROCEDURE = "procedure"
+    DEADLINE = "deadline"
+    REQUIREMENT = "requirement"
+    TABLE = "table"
+    LIST = "list"
+    GRADE_SCALE = "grade_scale"
+    METADATA = "metadata"
+    REFERENCE = "reference"
+    OVERVIEW = "overview"
+```
+
 ## Extraktionsprozess
 
-### Phase 1: Strukturanalyse
+### Phase 1: Kontextanalyse
 
-1. **Erste 5 Seiten**: Titelseite und Inhaltsverzeichnis
-2. **Analyse**: Dokumenttyp, Titel, Institution, Abkürzungen
-3. **Strukturkarte**: Alle §§ und Anlagen mit Seitenzahlen
-4. **Output**: `DocumentContext` + Liste von `StructureEntry`
+1. **Stichprobenseiten**: Seiten 1-3 (Titelseite, Inhaltsverzeichnis), Mitte und Ende
+2. **Analyse**: Dokumenttyp, Titel, Institution, Kapitelstruktur, Abkürzungen
+3. **Output**: `DocumentContext` mit allen Metadaten
 
-### Phase 2: Sektionsweise Extraktion
+### Phase 2: Seitenweise Extraktion
 
-Für JEDE Sektion (§, Anlage, Übersicht):
-
-1. **Alle Seiten der Sektion rendern**
-2. **Wenn <= max_images_per_request**: Ein API-Call
-3. **Wenn > max_images_per_request**: Sliding Window mit 1-Seiten-Overlap
-4. **Inhaltstransformation**:
+1. **Für jede Seite**:
+   - Seite als Bild rendern (150 DPI)
+   - Mit Kontextinformationen an GPT-4o senden
+   - Antwort parsen und validieren
+2. **Inhaltstransformation**:
    - Tabellen → Natürliche Sprache
    - Listen → Fließtext
-   - Verweise erhalten
-5. **Output**: `ExtractedSection` mit vollständigem Inhalt
-
-### Sliding Window
-
-Für lange Sektionen (z.B. Anlage mit 15 Seiten bei max_images=5):
-- Window 1: Seiten 1-5
-- Window 2: Seiten 5-9 (Overlap: Seite 5)
-- Window 3: Seiten 9-13 (Overlap: Seite 9)
-- Window 4: Seiten 13-15 (Overlap: Seite 13)
-
-Die LLM-Antworten werden zusammengeführt, Duplikate entfernt.
+   - Strukturmarker erhalten (§§, Anlagen)
+3. **Fehlerbehandlung**:
+   - Retry bei API-Verweigerung
+   - Exponentielles Backoff (2s, 4s, 8s)
 
 ## Output-Format
 
@@ -327,36 +298,18 @@ Die LLM-Antworten werden zusammengeführt, Duplikate entfernt.
     "institution": "Philipps-Universität Marburg",
     "faculty": "Fachbereich Mathematik und Informatik",
     "degree_program": "Informatik B.Sc.",
-    "chapters": ["I. Allgemeines", "II. Prüfungen", "Anlage 1: ..."],
-    "abbreviations": [{"short": "LP", "long": "Leistungspunkte"}]
+    "chapters": ["Teil I - Allgemeines", "Teil II - ...", "Anlage 1: ..."],
+    "abbreviations": [{"short": "LP", "long": "Leistungspunkte"}],
+    "...": "..."
   },
-  "sections": [
+  "pages": [
     {
-      "section_type": "overview",
-      "section_number": null,
-      "section_title": "Übersicht",
-      "content": "Inhaltsverzeichnis und Präambel...",
-      "pages": [1, 2],
-      "has_table": false
-    },
-    {
-      "section_type": "paragraph",
-      "section_number": "§ 1",
-      "section_title": "Geltungsbereich",
-      "content": "Diese Prüfungsordnung regelt...",
-      "pages": [3],
-      "chapter": "I. Allgemeines",
-      "paragraphs": ["(1)", "(2)"],
-      "internal_references": ["§ 5 Abs. 2"],
-      "has_table": false
-    },
-    {
-      "section_type": "anlage",
-      "section_number": "Anlage 1",
-      "section_title": "Studienverlaufsplan",
-      "content": "Im ersten Semester sind die Module...",
-      "pages": [25, 26, 27, 28],
-      "has_table": true
+      "page_number": 1,
+      "content": "Die Prüfungsordnung regelt...",
+      "sections": [{"number": "§ 1", "title": "Geltungsbereich"}],
+      "has_table": false,
+      "continues_to_next": true,
+      "...": "..."
     }
   ],
   "processing_time_seconds": 120.5,
@@ -367,79 +320,24 @@ Die LLM-Antworten werden zusammengeführt, Duplikate entfernt.
 }
 ```
 
-## Weiterverarbeitung
-
-Das Output ist für nachgelagerte Verarbeitung optimiert:
-
-### Für RAG-Systeme
-
-```python
-result = ExtractionResult.load("output.json")
-
-for section in result.sections:
-    # Jede Sektion ist ein eigenständiges Chunk
-    chunk = {
-        "content": section.content,
-        "metadata": {
-            "section_number": section.section_number,
-            "section_title": section.section_title,
-            "pages": section.pages,
-            "source_ref": section.get_source_reference(result.context.title)
-        }
-    }
-    # In Vector DB speichern...
-```
-
-### Zugriff auf spezifische Sektionen
-
-```python
-# § 10 abrufen
-section_10 = result.get_section("§ 10")
-
-# Alle Anlagen
-anlagen = result.get_anlagen()
-
-# Statistiken
-stats = result.get_stats()
-print(f"Paragraphen: {stats['paragraphs']}")
-print(f"Anlagen: {stats['anlagen']}")
-```
-
-## Exceptions
-
-```python
-from pdf_extractor import (
-    ExtractionError,           # Basis-Exception
-    NoTableOfContentsError,    # Kein Inhaltsverzeichnis
-    StructureExtractionError,  # Strukturanalyse fehlgeschlagen
-    SectionExtractionError,    # Sektion konnte nicht extrahiert werden
-    PageRenderError,           # Seite konnte nicht gerendert werden
-    APIError,                  # API-Fehler
-)
-```
-
 ## Kosten
 
 ### Geschätzte Kosten (GPT-4o)
 
-| Seitenzahl | Sektionen | Kosten (USD) |
-|------------|-----------|--------------|
-| 10         | ~5        | ~0.15        |
-| 50         | ~25       | ~0.70        |
-| 100        | ~50       | ~1.40        |
+| Seitenzahl | Input Tokens | Output Tokens | Kosten (USD) |
+|------------|--------------|---------------|--------------|
+| 10         | ~17.500      | ~8.500        | ~0.13        |
+| 50         | ~77.500      | ~40.500       | ~0.60        |
+| 100        | ~152.500     | ~80.500       | ~1.19        |
 
 ### Kosten reduzieren
 
 ```python
 # GPT-4o-mini ist ~15x günstiger
-config = ExtractionConfig(model="gpt-4o-mini")
+config = ProcessingConfig(model="gpt-4o-mini")
 ```
 
 ## Fehlerbehandlung
-
-### NoTableOfContentsError
-
-Wird geworfen wenn kein Inhaltsverzeichnis gefunden wird. Es gibt KEIN Fallback - das Dokument muss ein Inhaltsverzeichnis haben.
 
 ### Retry-Mechanismus
 
@@ -447,19 +345,20 @@ Bei API-Verweigerungen (z.B. "I'm sorry, I can't assist..."):
 1. Erster Retry nach 2 Sekunden
 2. Zweiter Retry nach 4 Sekunden
 3. Dritter Retry nach 8 Sekunden
-4. Bei Fehlschlag: Sektion mit `extraction_confidence=0.0` markiert
+4. Bei Fehlschlag: Seite mit `extraction_confidence=0.0` markiert
 
-## Changelog
+### Erkannte Verweigerungsphrasen
 
-### v2.0.0
+- "I'm sorry, I can't assist"
+- "I cannot assist"
+- "I'm not able to"
+- "I cannot help"
+- "I'm unable to"
+- etc.
 
-- **BREAKING**: Sektionsbasierte Extraktion statt seitenbasiert
-- Neue Modelle: `ExtractedSection`, `StructureEntry`, `SectionType`
-- Entfernt: `ExtractedPage`, `SectionMarker`, `ContentType`
-- Neue Exception: `NoTableOfContentsError`
-- Neuer Parameter: `max_images_per_request`
-- Sliding Window für lange Sektionen
+## Best Practices
 
-### v1.0.0
-
-- Initiale Version mit seitenbasierter Extraktion
+1. **Vorher Kosten schätzen**: `--estimate-cost` verwenden
+2. **Ergebnis prüfen**: `result.errors` und `result.warnings` checken
+3. **Fehlgeschlagene Seiten**: `extraction_confidence < 1.0` filtern
+4. **Caching**: Ergebnisse speichern, nicht mehrfach extrahieren

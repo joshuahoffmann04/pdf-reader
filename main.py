@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 
 #.env laden
 load_dotenv()
-
 # Extractor initialisieren
 extractor = PDFExtractor()
 
