@@ -220,6 +220,33 @@ class TestVisionProcessorMocked:
             assert len(result.errors) > 0
 
 
+class TestRefusalDetection:
+    """Tests for API refusal detection."""
+
+    def test_is_refusal_detects_sorry(self, mocker):
+        """Test refusal detection for 'sorry' messages."""
+        mocker.patch('src.llm_processor.vision_processor.OpenAI')
+        mocker.patch('src.llm_processor.vision_processor.PDFToImages')
+
+        processor = VisionProcessor(api_key="test-key")
+
+        assert processor._is_refusal("I'm sorry, I can't assist with that.")
+        assert processor._is_refusal("I cannot assist with this request.")
+        assert processor._is_refusal("I'm not able to process this image.")
+        assert processor._is_refusal("I am unable to help with that.")
+
+    def test_is_refusal_allows_normal_content(self, mocker):
+        """Test that normal content is not flagged as refusal."""
+        mocker.patch('src.llm_processor.vision_processor.OpenAI')
+        mocker.patch('src.llm_processor.vision_processor.PDFToImages')
+
+        processor = VisionProcessor(api_key="test-key")
+
+        assert not processor._is_refusal("Das Modul Analysis I hat 9 LP.")
+        assert not processor._is_refusal("§10 regelt die Prüfungsformen.")
+        assert not processor._is_refusal("Die Bachelorarbeit umfasst 12 Leistungspunkte.")
+
+
 class TestVisionProcessorResult:
     """Tests for VisionProcessorResult class."""
 

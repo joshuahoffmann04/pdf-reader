@@ -154,32 +154,33 @@ class VisionProcessor:
 
         # Phase 2: Page-by-Page Extraction
         pages: list[ExtractedPage] = []
+        failed_pages: list[int] = []
+
         for page_num in range(1, total_pages + 1):
             if progress_callback:
                 progress_callback(page_num, total_pages, f"Processing page {page_num}...")
 
-            try:
-                page_content = self._extract_page(
-                    pdf_path,
-                    page_num,
-                    total_pages,
-                    context,
-                )
-                pages.append(page_content)
-                logger.debug(f"Page {page_num} extracted successfully")
-            except Exception as e:
-                logger.error(f"Page {page_num} extraction failed: {e}")
-                errors.append(f"Page {page_num} error: {str(e)}")
-                # Create placeholder
-                pages.append(ExtractedPage(
-                    page_number=page_num,
-                    content=f"[Extraction failed: {str(e)}]",
-                    extraction_confidence=0.0,
-                    extraction_notes=str(e),
-                ))
+            page_content = self._extract_page_with_retry(
+                pdf_path,
+                page_num,
+                total_pages,
+                context,
+                max_retries=3,
+            )
+
+            # Check if extraction failed (refusal or error)
+            if page_content.extraction_confidence < 1.0 or self._is_refusal(page_content.content):
+                failed_pages.append(page_num)
+                errors.append(f"Page {page_num}: extraction failed or refused")
+
+            pages.append(page_content)
 
             # Rate limiting (avoid hitting API limits)
             time.sleep(0.5)
+
+        # Log summary of failed pages
+        if failed_pages:
+            logger.warning(f"Failed pages: {failed_pages}")
 
         processing_time = time.time() - start_time
         logger.info(f"Processing complete in {processing_time:.1f}s")
@@ -300,6 +301,102 @@ class VisionProcessor:
 
         # Parse response
         return self._parse_page_response(response, page_number)
+
+    def _extract_page_with_retry(
+        self,
+        pdf_path: Path,
+        page_number: int,
+        total_pages: int,
+        context: DocumentContext,
+        max_retries: int = 3,
+    ) -> ExtractedPage:
+        """
+        Extract page content with retry logic for refusals and errors.
+
+        Uses exponential backoff between retries.
+        """
+        last_error = None
+        last_result = None
+
+        for attempt in range(max_retries):
+            try:
+                result = self._extract_page(
+                    pdf_path,
+                    page_number,
+                    total_pages,
+                    context,
+                )
+
+                # Check for refusal
+                if self._is_refusal(result.content):
+                    logger.warning(
+                        f"Page {page_number}: API refusal on attempt {attempt + 1}/{max_retries}"
+                    )
+                    last_result = result
+
+                    if attempt < max_retries - 1:
+                        # Exponential backoff: 2s, 4s, 8s
+                        wait_time = 2 ** (attempt + 1)
+                        logger.info(f"Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+
+                # Check for low confidence (JSON parsing failed)
+                if result.extraction_confidence < 1.0:
+                    logger.warning(
+                        f"Page {page_number}: Low confidence ({result.extraction_confidence}) "
+                        f"on attempt {attempt + 1}/{max_retries}"
+                    )
+                    last_result = result
+
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** (attempt + 1)
+                        logger.info(f"Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+
+                # Success!
+                if attempt > 0:
+                    logger.info(f"Page {page_number}: Succeeded on attempt {attempt + 1}")
+
+                return result
+
+            except Exception as e:
+                logger.error(f"Page {page_number}: Error on attempt {attempt + 1}/{max_retries}: {e}")
+                last_error = e
+
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** (attempt + 1)
+                    logger.info(f"Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+
+        # All retries failed - return best result or error placeholder
+        if last_result is not None:
+            return last_result
+
+        # Create error placeholder
+        return ExtractedPage(
+            page_number=page_number,
+            content=f"[Extraction failed after {max_retries} attempts: {last_error}]",
+            extraction_confidence=0.0,
+            extraction_notes=f"Failed after {max_retries} retries: {last_error}",
+        )
+
+    def _is_refusal(self, content: str) -> bool:
+        """Check if the API response is a refusal."""
+        refusal_phrases = [
+            "I'm sorry, I can't assist",
+            "I cannot assist",
+            "I'm not able to",
+            "I am not able to",
+            "I cannot help",
+            "I'm unable to",
+            "I am unable to",
+            "cannot process this",
+            "can't process this",
+        ]
+        content_lower = content.lower()
+        return any(phrase.lower() in content_lower for phrase in refusal_phrases)
 
     def _call_api(
         self,
