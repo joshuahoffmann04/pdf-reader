@@ -1,15 +1,22 @@
 from pdf_extractor import PDFExtractor, NoTableOfContentsError
 from dotenv import load_dotenv
+import logging
 
 # .env laden
 load_dotenv()
+
+# Logging aktivieren um Retries zu sehen
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(levelname)s: %(message)s'
+)
 
 # Extractor initialisieren
 extractor = PDFExtractor()
 
 # PDF verarbeiten
 def progress(current, total, status):
-    print(f"Sektion {current}/{total}: {status}")
+    print(f"Sektion {current}/{total}: {status}", flush=True)
 
 try:
     result = extractor.extract(
