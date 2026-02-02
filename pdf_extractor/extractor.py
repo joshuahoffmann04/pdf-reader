@@ -493,7 +493,7 @@ class PDFExtractor:
         preliminary.sort(key=sort_key)
 
         # Step 2: Apply sequential inference to fix page ranges
-        locations = self._apply_sequential_inference(preliminary, total_pages)
+        locations = self._apply_sequential_inference(preliminary, total_pages, scan_results)
 
         # Post-validation: Log suspicious patterns
         self._validate_structure(locations, total_pages)
@@ -517,19 +517,19 @@ class PDFExtractor:
         self,
         locations: list[SectionLocation],
         total_pages: int,
+        scan_results: list[PageScanResult],
     ) -> list[SectionLocation]:
         """
         Apply sequential inference to fix page ranges.
 
         Key insight: In German academic documents, sections appear sequentially.
-        § 1 cannot extend past where § 2 starts (with 1 page overlap allowed).
-
-        This fixes ToC misinterpretation where sections appear on many pages
-        because they're listed in the Table of Contents.
+        § 1 comes before § 2, etc. We use this KNOWN ORDER plus ToC detection
+        to find correct page ranges, even when ToC causes false positives.
 
         Args:
-            locations: Preliminary section locations (sorted by first appearance)
+            locations: Preliminary section locations
             total_pages: Total pages in document
+            scan_results: Raw scan results for ToC detection
 
         Returns:
             Corrected section locations
@@ -537,25 +537,34 @@ class PDFExtractor:
         if not locations:
             return locations
 
+        # Step 1: Identify likely ToC pages (pages with many sections)
+        toc_pages = self._identify_toc_pages(scan_results)
+        logger.debug(f"Identified ToC pages: {toc_pages}")
+
         # Separate by type for sequential processing
         preambles = [loc for loc in locations if loc.section_type == SectionType.PREAMBLE]
         paragraphs = [loc for loc in locations if loc.section_type == SectionType.PARAGRAPH]
         anlagen = [loc for loc in locations if loc.section_type == SectionType.ANLAGE]
 
+        # Sort paragraphs by § number (known order!)
+        paragraphs.sort(key=lambda loc: self._extract_section_number(loc.identifier))
+
+        # Sort anlagen by number
+        anlagen.sort(key=lambda loc: self._extract_section_number(loc.identifier))
+
         # Process paragraphs with sequential inference
-        corrected_paragraphs = self._infer_sequential_ranges(paragraphs, total_pages)
+        corrected_paragraphs = self._infer_sequential_ranges(paragraphs, total_pages, toc_pages)
 
-        # Process anlagen with sequential inference
-        corrected_anlagen = self._infer_sequential_ranges(anlagen, total_pages)
+        # Process anlagen with sequential inference (after paragraphs)
+        anlagen_start = corrected_paragraphs[-1].end_page if corrected_paragraphs else 1
+        corrected_anlagen = self._infer_sequential_ranges(anlagen, total_pages, toc_pages, min_start=anlagen_start)
 
-        # Preamble: should end before first paragraph starts
+        # Preamble: should end before first paragraph starts (but can share page)
         corrected_preambles = []
         first_para_start = corrected_paragraphs[0].start_page if corrected_paragraphs else total_pages
         for preamble in preambles:
-            # Preamble pages should be before first paragraph
-            corrected_pages = [p for p in preamble.pages if p < first_para_start]
-            if not corrected_pages:
-                corrected_pages = [1]  # At minimum, page 1
+            # Preamble pages: from 1 to first_para_start (inclusive for shared page)
+            corrected_pages = [p for p in range(1, first_para_start + 1)]
             corrected_preambles.append(SectionLocation(
                 section_type=preamble.section_type,
                 identifier=preamble.identifier,
@@ -566,20 +575,58 @@ class PDFExtractor:
         # Combine and return
         return corrected_preambles + corrected_paragraphs + corrected_anlagen
 
+    def _identify_toc_pages(self, scan_results: list[PageScanResult]) -> set[int]:
+        """
+        Identify pages that are likely Table of Contents.
+
+        ToC pages typically have MANY sections listed (5+), while content pages
+        have 1-3 sections at most.
+
+        Args:
+            scan_results: Raw scan results
+
+        Returns:
+            Set of page numbers that are likely ToC
+        """
+        toc_pages = set()
+
+        for result in scan_results:
+            # Count paragraphs on this page
+            paragraph_count = sum(
+                1 for s in result.sections
+                if s.section_type == SectionType.PARAGRAPH
+            )
+
+            # If many paragraphs on one page, it's likely ToC
+            if paragraph_count >= 5:
+                toc_pages.add(result.page_number)
+                logger.debug(
+                    f"Page {result.page_number} identified as ToC "
+                    f"({paragraph_count} paragraphs)"
+                )
+
+        return toc_pages
+
     def _infer_sequential_ranges(
         self,
         locations: list[SectionLocation],
         total_pages: int,
+        toc_pages: set[int],
+        min_start: int = 1,
     ) -> list[SectionLocation]:
         """
         Infer page ranges for sequentially ordered sections.
 
-        For each section, its range is from its start until the next section
-        starts (with 1 page overlap allowed for shared pages).
+        For each section:
+        1. Find its REAL start page (skipping ToC pages)
+        2. Its range extends to where the next section starts
+        3. Adjacent sections CAN share a boundary page
 
         Args:
-            locations: Sections in sequential order
+            locations: Sections sorted by their known order (§ number)
             total_pages: Total pages in document
+            toc_pages: Pages identified as ToC (to skip)
+            min_start: Minimum start page (for Anlagen after Paragraphs)
 
         Returns:
             Sections with corrected page ranges
@@ -588,32 +635,45 @@ class PDFExtractor:
             return locations
 
         corrected: list[SectionLocation] = []
+        prev_end = min_start - 1  # Track where previous section ended
 
         for i, loc in enumerate(locations):
+            # Find REAL start page (skip ToC pages, respect sequence)
+            real_start = self._find_real_start(loc.pages, toc_pages, prev_end)
+
             # Determine the end boundary
             if i + 1 < len(locations):
-                # Next section exists - this section ends at or just after next starts
-                next_start = locations[i + 1].start_page
-                # Allow 1 page overlap (sections can share a page)
-                max_end = next_start
+                # Next section exists - find its real start
+                next_real_start = self._find_real_start(
+                    locations[i + 1].pages, toc_pages, real_start
+                )
+                # This section can extend TO the next section's start (shared page)
+                max_end = next_real_start
             else:
                 # Last section - can extend to end of document
                 max_end = total_pages
 
-            # Filter pages to be within [start, max_end]
-            start_page = loc.start_page
-            valid_pages = [p for p in loc.pages if start_page <= p <= max_end]
+            # Build the page range: from real_start to max_end
+            # Filter to pages where section was actually detected (in content area)
+            content_pages = [p for p in loc.pages if p not in toc_pages]
 
-            # If no valid pages (rare), use just the start page
+            # Get pages in valid range
+            valid_pages = [p for p in content_pages if real_start <= p <= max_end]
+
+            # If no valid pages from detection, use computed range
             if not valid_pages:
-                valid_pages = [start_page]
+                valid_pages = list(range(real_start, max_end + 1))
 
-            # Further refinement: find contiguous range from start
-            # This handles cases where ToC on page 2-3 causes false positives
-            final_pages = self._get_contiguous_from_start(valid_pages, start_page)
+            # Find contiguous range from real_start
+            final_pages = self._get_contiguous_from_start(valid_pages, real_start)
+
+            # Ensure we have at least the start page
+            if not final_pages:
+                final_pages = [real_start]
 
             logger.debug(
-                f"{loc.identifier}: original {loc.pages} -> inferred {final_pages}"
+                f"{loc.identifier}: detected {loc.pages} -> "
+                f"content {content_pages} -> final {final_pages}"
             )
 
             corrected.append(SectionLocation(
@@ -623,7 +683,38 @@ class PDFExtractor:
                 pages=final_pages,
             ))
 
+            prev_end = final_pages[-1]  # Track for next iteration
+
         return corrected
+
+    def _find_real_start(
+        self,
+        pages: list[int],
+        toc_pages: set[int],
+        min_page: int,
+    ) -> int:
+        """
+        Find the real start page for a section, skipping ToC pages.
+
+        Args:
+            pages: All pages where section was detected
+            toc_pages: Pages identified as ToC
+            min_page: Minimum valid page (must be >= prev section)
+
+        Returns:
+            The real start page
+        """
+        # Filter out ToC pages and get pages >= min_page
+        content_pages = sorted([
+            p for p in pages
+            if p not in toc_pages and p > min_page
+        ])
+
+        if content_pages:
+            return content_pages[0]
+
+        # Fallback: if all pages are ToC, use min_page + 1
+        return min_page + 1
 
     def _get_contiguous_from_start(
         self,
