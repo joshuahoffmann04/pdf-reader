@@ -1,55 +1,107 @@
 """
-Section-Based PDF Extractor
+PDF Section Extractor with Page-by-Page Scanning.
 
-Extracts content from PDF documents using OpenAI's Vision API (GPT-4o).
-Two-phase approach:
-1. Structure Analysis: Read ToC and create section map with PDF page numbers
-2. Section Extraction: Extract each section's content
+This module implements a four-phase extraction pipeline:
 
-Key design: The LLM calculates the offset between printed page numbers
-(in the ToC) and PDF page numbers during structure analysis.
+1. PAGE SCAN: Scan each page individually to detect which sections appear on it
+2. STRUCTURE: Aggregate scan results to calculate accurate page ranges
+3. CONTEXT: Extract document metadata from representative pages
+4. EXTRACTION: Extract full content for each section using correct page ranges
+
+Key Innovation:
+    Unlike ToC-based approaches, this scanner detects sections on EVERY page.
+    This handles cases where sections share pages (e.g., § 4 ends and § 5 starts
+    on the same page) - both sections will include that page in their range.
+
+Usage:
+    from pdf_extractor import PDFExtractor
+
+    extractor = PDFExtractor()
+    result = extractor.extract("pruefungsordnung.pdf")
+
+    for section in result.sections:
+        print(f"{section.identifier}: {section.content[:100]}...")
 """
 
-import json
+from __future__ import annotations
+
 import logging
-import os
 import time
+from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Callable, Optional, Union
 
-from openai import OpenAI
-
-from .pdf_to_images import PDFToImages
+from .api_client import VisionAPIClient
+from .exceptions import (
+    PDFNotFoundError,
+    PageScanError,
+    StructureAggregationError,
+    ContextExtractionError,
+    SectionExtractionError,
+)
 from .models import (
+    # Phase 1
+    DetectedSection,
+    PageScanResult,
+    # Phase 2
+    SectionLocation,
+    DocumentStructure,
+    # Phase 3
     DocumentContext,
-    StructureEntry,
-    ExtractedSection,
-    ExtractionResult,
-    ExtractionConfig,
-    SectionType,
     DocumentType,
     Abbreviation,
+    Language,
+    # Phase 4
+    ExtractedSection,
+    # Config & Result
+    ExtractionConfig,
+    ExtractionResult,
+    SectionType,
 )
-from .prompts import get_structure_prompt, get_section_prompt
-from .exceptions import (
-    NoTableOfContentsError,
-    StructureExtractionError,
-    APIError,
+from .pdf_utils import PDFRenderer, PageImage
+from .prompts import (
+    format_page_scan_prompt,
+    format_context_prompt,
+    format_section_extract_prompt,
+    format_preamble_extract_prompt,
 )
+
 
 logger = logging.getLogger(__name__)
 
 
+# =============================================================================
+# MAIN EXTRACTOR CLASS
+# =============================================================================
+
+
 class PDFExtractor:
     """
-    Section-based PDF content extractor using OpenAI GPT-4o Vision API.
+    PDF Section Extractor using page-by-page scanning.
+
+    This extractor scans every page of a PDF to detect which sections appear
+    on each page, then aggregates the results to build accurate page ranges.
+    This approach handles cases where sections share pages correctly.
 
     Usage:
+        # Basic usage
         extractor = PDFExtractor()
         result = extractor.extract("document.pdf")
 
-        for section in result.sections:
-            print(f"{section.section_number}: {section.content[:100]}...")
+        # With progress callback
+        def progress(current, total, message):
+            print(f"[{current}/{total}] {message}")
+
+        result = extractor.extract("document.pdf", progress_callback=progress)
+
+        # With custom config
+        config = ExtractionConfig(model="gpt-4o-mini", max_retries=5)
+        extractor = PDFExtractor(config=config)
+
+    Attributes:
+        config: Extraction configuration
+        api_client: OpenAI Vision API client
+        renderer: PDF page renderer
     """
 
     def __init__(
@@ -57,170 +109,413 @@ class PDFExtractor:
         config: Optional[ExtractionConfig] = None,
         api_key: Optional[str] = None,
     ):
+        """
+        Initialize the PDF extractor.
+
+        Args:
+            config: Extraction configuration (uses defaults if not provided)
+            api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
+        """
         self.config = config or ExtractionConfig()
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
 
-        if not self.api_key:
-            raise ValueError(
-                "OpenAI API key required. Set OPENAI_API_KEY or pass api_key parameter."
-            )
+        self.api_client = VisionAPIClient(
+            api_key=api_key,
+            model=self.config.model,
+            max_tokens=self.config.max_tokens,
+            temperature=self.config.temperature,
+            max_retries=self.config.max_retries,
+            retry_delay=self.config.retry_delay,
+        )
 
-        self.client = OpenAI(api_key=self.api_key)
-        self.pdf_converter = PDFToImages(dpi=150)
-        self.total_input_tokens = 0
-        self.total_output_tokens = 0
+        self.renderer = PDFRenderer(dpi=150)
 
     def extract(
         self,
-        pdf_path: str | Path,
+        pdf_path: Union[str, Path],
         progress_callback: Optional[Callable[[int, int, str], None]] = None,
     ) -> ExtractionResult:
         """
-        Extract content from a PDF document.
+        Extract all sections from a PDF document.
+
+        This is the main entry point. It runs the full four-phase pipeline:
+        1. Scan all pages to detect sections
+        2. Aggregate results into document structure
+        3. Extract document context/metadata
+        4. Extract content for each section
 
         Args:
             pdf_path: Path to the PDF file
-            progress_callback: Optional callback(current, total, status)
+            progress_callback: Optional callback(current, total, message)
+                Called to report progress during extraction.
 
         Returns:
-            ExtractionResult with context and all sections
+            ExtractionResult containing all extracted sections and metadata
 
         Raises:
-            NoTableOfContentsError: If no table of contents found
-            FileNotFoundError: If PDF file not found
+            PDFNotFoundError: If the PDF file doesn't exist
+            StructureAggregationError: If no sections could be detected
         """
         pdf_path = Path(pdf_path)
-        if not pdf_path.exists():
-            raise FileNotFoundError(f"PDF not found: {pdf_path}")
-
         start_time = time.time()
         errors: list[str] = []
+        warnings: list[str] = []
 
-        # Get document info
-        doc_info = self.pdf_converter.get_document_info(pdf_path)
-        total_pages = doc_info["page_count"]
-        logger.info(f"Processing {pdf_path}: {total_pages} pages")
+        # Validate PDF
+        if not pdf_path.exists():
+            raise PDFNotFoundError(str(pdf_path))
 
-        # Phase 1: Structure Analysis
+        info = self.renderer.get_info(pdf_path)
+        total_pages = info.page_count
+        logger.info(f"Processing {pdf_path.name}: {total_pages} pages")
+
+        # =====================================================================
+        # PHASE 1: Page Scanning
+        # =====================================================================
         if progress_callback:
-            progress_callback(0, total_pages, "Analyzing structure...")
+            progress_callback(0, total_pages, "Scanning pages...")
 
-        context, structure = self._analyze_structure(pdf_path, total_pages)
-        logger.info(f"Found {len(structure)} sections")
-
-        # Phase 2: Section Extraction
-        sections: list[ExtractedSection] = []
-
-        for idx, entry in enumerate(structure):
-            if progress_callback:
-                progress_callback(idx + 1, len(structure), f"Extracting {entry.identifier}...")
-
-            try:
-                section = self._extract_section(pdf_path, entry, context)
-                sections.append(section)
-                logger.info(f"Extracted {entry.identifier}: {len(section.content)} chars")
-            except Exception as e:
-                logger.error(f"Failed {entry.identifier}: {e}")
-                errors.append(f"{entry.identifier}: {e}")
-                sections.append(self._create_failed_section(entry, str(e)))
-
-            time.sleep(0.5)  # Rate limiting
-
-        return ExtractionResult(
-            source_file=str(pdf_path),
-            context=context,
-            sections=sections,
-            processing_time_seconds=time.time() - start_time,
-            total_input_tokens=self.total_input_tokens,
-            total_output_tokens=self.total_output_tokens,
-            errors=errors,
+        scan_results = self._phase1_scan_pages(
+            pdf_path,
+            total_pages,
+            progress_callback,
         )
 
+        # =====================================================================
+        # PHASE 2: Structure Aggregation
+        # =====================================================================
+        if progress_callback:
+            progress_callback(total_pages, total_pages, "Building structure...")
+
+        structure = self._phase2_aggregate_structure(scan_results, total_pages)
+
+        logger.info(f"Found {len(structure.sections)} sections")
+        for section in structure.sections:
+            logger.info(f"  {section.display_name}: pages {section.pages}")
+
+        # =====================================================================
+        # PHASE 3: Context Extraction
+        # =====================================================================
+        if progress_callback:
+            progress_callback(0, 1, "Extracting document context...")
+
+        try:
+            context = self._phase3_extract_context(pdf_path, structure)
+        except Exception as e:
+            logger.warning(f"Context extraction failed: {e}")
+            errors.append(f"Context extraction: {e}")
+            context = self._create_fallback_context(pdf_path, total_pages)
+
+        # =====================================================================
+        # PHASE 4: Section Extraction
+        # =====================================================================
+        sections: list[ExtractedSection] = []
+        total_sections = len(structure.sections)
+
+        for idx, location in enumerate(structure.sections):
+            section_name = location.display_name
+            if progress_callback:
+                progress_callback(idx + 1, total_sections, f"Extracting {section_name}...")
+
+            try:
+                section = self._phase4_extract_section(pdf_path, location)
+                sections.append(section)
+                logger.info(f"Extracted {section_name}: {len(section.content)} chars")
+
+            except Exception as e:
+                logger.error(f"Failed to extract {section_name}: {e}")
+                errors.append(f"{section_name}: {e}")
+                sections.append(self._create_failed_section(location, str(e)))
+
+            # Rate limiting
+            time.sleep(0.3)
+
+        # =====================================================================
+        # Build Result
+        # =====================================================================
+        processing_time = time.time() - start_time
+        usage = self.api_client.get_usage_summary()
+
+        # Optionally include scan results for debugging
+        if not self.config.include_scan_results:
+            structure = DocumentStructure(
+                sections=structure.sections,
+                total_pages=structure.total_pages,
+                has_preamble=structure.has_preamble,
+                scan_results=[],  # Clear for smaller output
+            )
+
+        result = ExtractionResult(
+            source_file=str(pdf_path),
+            context=context,
+            structure=structure,
+            sections=sections,
+            processing_time_seconds=processing_time,
+            total_input_tokens=usage["input_tokens"],
+            total_output_tokens=usage["output_tokens"],
+            errors=errors,
+            warnings=warnings,
+        )
+
+        logger.info(
+            f"Extraction complete: {len(sections)} sections, "
+            f"{processing_time:.1f}s, "
+            f"{usage['total_tokens']} tokens (~${usage['estimated_cost_usd']:.4f})"
+        )
+
+        return result
+
     # =========================================================================
-    # Phase 1: Structure Analysis
+    # PHASE 1: Page Scanning
     # =========================================================================
 
-    def _analyze_structure(
+    def _phase1_scan_pages(
         self,
         pdf_path: Path,
         total_pages: int,
-    ) -> tuple[DocumentContext, list[StructureEntry]]:
-        """Analyze document structure from table of contents."""
+        progress_callback: Optional[Callable[[int, int, str], None]] = None,
+    ) -> list[PageScanResult]:
+        """
+        Scan each page individually to detect sections.
 
-        # Render first 5 pages (usually contains ToC)
-        sample_pages = list(range(1, min(6, total_pages + 1)))
-        images = self.pdf_converter.render_pages_batch(pdf_path, sample_pages)
+        Args:
+            pdf_path: Path to PDF
+            total_pages: Total number of pages
+            progress_callback: Optional progress callback
 
-        # Build content with labeled PDF page numbers
-        content = []
-        for i, img in enumerate(images):
-            page_num = sample_pages[i]
-            # Label each image with its PDF page number
-            content.append({
-                "type": "text",
-                "text": f"--- PDF-Seite {page_num} ---"
-            })
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:{img.mime_type};base64,{img.image_base64}"}
-            })
+        Returns:
+            List of PageScanResult, one per page
+        """
+        results: list[PageScanResult] = []
 
-        # Get prompts and add user prompt
-        system_prompt, user_prompt = get_structure_prompt(total_pages)
-        content.append({"type": "text", "text": user_prompt})
+        for page_num in range(1, total_pages + 1):
+            if progress_callback:
+                progress_callback(page_num, total_pages, f"Scanning page {page_num}...")
+
+            try:
+                result = self._scan_single_page(pdf_path, page_num, total_pages)
+                results.append(result)
+
+                # Log what we found
+                if result.sections:
+                    section_ids = [s.identifier or "preamble" for s in result.sections]
+                    logger.debug(f"Page {page_num}: {section_ids}")
+                else:
+                    logger.debug(f"Page {page_num}: empty")
+
+            except Exception as e:
+                logger.warning(f"Scan failed for page {page_num}: {e}")
+                # Create empty result for failed page
+                results.append(PageScanResult(
+                    page_number=page_num,
+                    sections=[],
+                    is_empty=True,
+                    scan_notes=f"Scan failed: {e}",
+                ))
+
+            # Small delay between pages
+            time.sleep(0.1)
+
+        return results
+
+    def _scan_single_page(
+        self,
+        pdf_path: Path,
+        page_number: int,
+        total_pages: int,
+    ) -> PageScanResult:
+        """
+        Scan a single page to detect which sections appear on it.
+
+        Args:
+            pdf_path: Path to PDF
+            page_number: Page to scan (1-indexed)
+            total_pages: Total pages in document
+
+        Returns:
+            PageScanResult with detected sections
+        """
+        # Render the page
+        image = self.renderer.render_page(pdf_path, page_number)
+
+        # Get prompts
+        system_prompt, user_prompt = format_page_scan_prompt(page_number, total_pages)
 
         # Call API
-        response = self._call_api(system_prompt, content)
+        response = self.api_client.call(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            images=[image],
+            max_tokens=500,  # Small response expected
+        )
 
         # Parse response
-        return self._parse_structure_response(response, total_pages, str(pdf_path))
+        data = response.content
+        if not isinstance(data, dict):
+            raise PageScanError(page_number, "Invalid response format")
 
-    def _parse_structure_response(
+        # Parse sections
+        sections: list[DetectedSection] = []
+        for s in data.get("sections", []):
+            section_type_str = s.get("section_type", "").lower()
+
+            if section_type_str == "paragraph":
+                section_type = SectionType.PARAGRAPH
+            elif section_type_str == "anlage":
+                section_type = SectionType.ANLAGE
+            elif section_type_str == "preamble":
+                section_type = SectionType.PREAMBLE
+            else:
+                continue  # Skip unknown types
+
+            sections.append(DetectedSection(
+                section_type=section_type,
+                identifier=s.get("identifier"),
+                title=s.get("title"),
+            ))
+
+        return PageScanResult(
+            page_number=data.get("page_number", page_number),
+            sections=sections,
+            is_empty=data.get("is_empty", False),
+            scan_notes=data.get("scan_notes"),
+        )
+
+    # =========================================================================
+    # PHASE 2: Structure Aggregation
+    # =========================================================================
+
+    def _phase2_aggregate_structure(
         self,
-        response: str,
+        scan_results: list[PageScanResult],
         total_pages: int,
-        document_path: str,
-    ) -> tuple[DocumentContext, list[StructureEntry]]:
-        """Parse structure analysis response."""
-        try:
-            data = json.loads(self._extract_json(response))
+    ) -> DocumentStructure:
+        """
+        Aggregate page scan results into document structure.
 
-            if not data.get("has_toc", False):
-                raise NoTableOfContentsError(document_path=document_path)
+        This builds accurate page ranges by finding all pages where
+        each section appears.
 
-            ctx_data = data.get("context", {})
-            if not ctx_data:
-                raise NoTableOfContentsError(document_path=document_path)
+        Args:
+            scan_results: Results from phase 1
+            total_pages: Total pages in document
 
-            # Log the offset for debugging
-            page_offset = data.get("page_offset", 0)
-            logger.info(f"Page offset: {page_offset}")
+        Returns:
+            DocumentStructure with section locations
+        """
+        # Build map: section key -> list of pages where it appears
+        section_pages: dict[tuple, list[int]] = defaultdict(list)
+        section_titles: dict[tuple, str] = {}
 
-            # Parse context
-            context = self._parse_context(ctx_data, total_pages)
+        has_preamble = False
 
-            # Parse structure entries
-            structure_data = data.get("structure", [])
-            if not structure_data:
-                raise NoTableOfContentsError(
-                    message="ToC found but no structure extracted.",
-                    document_path=document_path
-                )
+        for result in scan_results:
+            for section in result.sections:
+                key = (section.section_type, section.identifier)
+                section_pages[key].append(result.page_number)
 
-            structure = self._parse_structure_entries(structure_data, total_pages)
+                # Keep track of titles (prefer non-None)
+                if section.title and key not in section_titles:
+                    section_titles[key] = section.title
 
-            # Log extracted structure for debugging (WARNING level so always visible)
-            logger.warning("Extracted structure from ToC:")
-            for entry in structure:
-                logger.warning(f"  {entry.identifier}: pages {entry.start_page}-{entry.end_page}")
+                if section.section_type == SectionType.PREAMBLE:
+                    has_preamble = True
 
-            return context, structure
+        if not section_pages:
+            raise StructureAggregationError(
+                "No sections detected in any page",
+                "The document may not contain recognizable § or Anlage sections.",
+            )
 
-        except json.JSONDecodeError as e:
-            raise StructureExtractionError(f"JSON parse error: {e}")
+        # Build SectionLocation objects
+        locations: list[SectionLocation] = []
 
-    def _parse_context(self, data: dict, total_pages: int) -> DocumentContext:
-        """Parse context data into DocumentContext."""
+        for (section_type, identifier), pages in section_pages.items():
+            # Sort and deduplicate pages
+            pages = sorted(set(pages))
+
+            locations.append(SectionLocation(
+                section_type=section_type,
+                identifier=identifier,
+                title=section_titles.get((section_type, identifier)),
+                pages=pages,
+            ))
+
+        # Sort by first page, then by identifier
+        def sort_key(loc: SectionLocation) -> tuple:
+            # Preamble first, then by start page, then by identifier
+            type_order = {
+                SectionType.PREAMBLE: 0,
+                SectionType.PARAGRAPH: 1,
+                SectionType.ANLAGE: 2,
+            }
+            return (
+                type_order.get(loc.section_type, 1),
+                loc.start_page,
+                loc.identifier or "",
+            )
+
+        locations.sort(key=sort_key)
+
+        return DocumentStructure(
+            sections=locations,
+            total_pages=total_pages,
+            has_preamble=has_preamble,
+            scan_results=scan_results,
+        )
+
+    # =========================================================================
+    # PHASE 3: Context Extraction
+    # =========================================================================
+
+    def _phase3_extract_context(
+        self,
+        pdf_path: Path,
+        structure: DocumentStructure,
+    ) -> DocumentContext:
+        """
+        Extract document metadata from representative pages.
+
+        Uses the first few pages (typically cover, ToC, preamble).
+
+        Args:
+            pdf_path: Path to PDF
+            structure: Document structure from phase 2
+
+        Returns:
+            DocumentContext with metadata
+        """
+        # Determine which pages to use for context
+        # Usually first 3-5 pages contain title, ToC, preamble
+        context_pages = list(range(1, min(5, structure.total_pages) + 1))
+
+        # Render pages
+        images = self.renderer.render_batch(pdf_path, context_pages)
+
+        # Get prompts
+        system_prompt, user_prompt = format_context_prompt()
+
+        # Call API
+        response = self.api_client.call(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            images=images,
+            max_tokens=1500,
+        )
+
+        # Parse response
+        data = response.content
+        if not isinstance(data, dict):
+            raise ContextExtractionError("Invalid response format")
+
+        return self._parse_context_data(data, structure.total_pages)
+
+    def _parse_context_data(
+        self,
+        data: dict,
+        total_pages: int,
+    ) -> DocumentContext:
+        """Parse context data into DocumentContext model."""
+        # Map document type
         doc_type_map = {
             "pruefungsordnung": DocumentType.PRUEFUNGSORDNUNG,
             "modulhandbuch": DocumentType.MODULHANDBUCH,
@@ -231,413 +526,180 @@ class PDFExtractor:
             "satzung": DocumentType.SATZUNG,
         }
         doc_type = doc_type_map.get(
-            data.get("document_type", "").lower(),
-            DocumentType.OTHER
+            str(data.get("document_type", "")).lower(),
+            DocumentType.OTHER,
         )
 
         # Parse abbreviations
         abbreviations = []
         for item in data.get("abbreviations", []):
             if isinstance(item, dict) and item.get("short") and item.get("long"):
-                abbreviations.append(Abbreviation(short=item["short"], long=item["long"]))
+                abbreviations.append(Abbreviation(
+                    short=item["short"],
+                    long=item["long"],
+                ))
+
+        # Parse language
+        lang_str = str(data.get("language", "de")).lower()
+        language = Language.EN if lang_str == "en" else Language.DE
 
         return DocumentContext(
             document_type=doc_type,
-            title=data.get("title", "Unknown"),
-            institution=data.get("institution", "Unknown"),
+            title=data.get("title", "Unbekanntes Dokument"),
+            institution=data.get("institution", "Unbekannt"),
             version_date=data.get("version_date"),
             version_info=data.get("version_info"),
-            faculty=data.get("faculty"),
             degree_program=data.get("degree_program"),
+            faculty=data.get("faculty"),
             total_pages=total_pages,
             chapters=data.get("chapters", []),
             abbreviations=abbreviations,
             key_terms=data.get("key_terms", []),
             referenced_documents=data.get("referenced_documents", []),
             legal_basis=data.get("legal_basis"),
+            language=language,
         )
 
-    def _parse_structure_entries(
+    def _create_fallback_context(
         self,
-        structure_data: list,
+        pdf_path: Path,
         total_pages: int,
-    ) -> list[StructureEntry]:
-        """
-        Parse structure data into StructureEntry list.
-
-        The LLM only provides start_page. We calculate end_page automatically:
-        end_page = next section's start_page - 1 (or total_pages for last section)
-        """
-        type_map = {
-            "overview": SectionType.OVERVIEW,
-            "paragraph": SectionType.PARAGRAPH,
-            "anlage": SectionType.ANLAGE,
-        }
-
-        # First pass: collect all entries with start_page only
-        raw_entries = []
-        for item in structure_data:
-            section_type = type_map.get(
-                item.get("section_type", "").lower(),
-                SectionType.PARAGRAPH
-            )
-            start_page = max(1, min(item.get("start_page", 1), total_pages))
-
-            raw_entries.append({
-                "section_type": section_type,
-                "section_number": item.get("section_number"),
-                "section_title": item.get("section_title"),
-                "start_page": start_page,
-            })
-
-        # Sort by start_page
-        raw_entries.sort(key=lambda e: (e["start_page"], e["section_number"] or ""))
-
-        # Second pass: calculate end_page for each entry
-        entries = []
-        for i, item in enumerate(raw_entries):
-            # end_page = next section's start_page - 1, or total_pages for last
-            if i < len(raw_entries) - 1:
-                end_page = raw_entries[i + 1]["start_page"] - 1
-                # Ensure end_page >= start_page
-                end_page = max(item["start_page"], end_page)
-            else:
-                end_page = total_pages
-
-            entries.append(StructureEntry(
-                section_type=item["section_type"],
-                section_number=item["section_number"],
-                section_title=item["section_title"],
-                start_page=item["start_page"],
-                end_page=end_page,
-            ))
-
-        return entries
+    ) -> DocumentContext:
+        """Create minimal context when extraction fails."""
+        return DocumentContext(
+            document_type=DocumentType.OTHER,
+            title=pdf_path.stem,
+            institution="Unbekannt",
+            total_pages=total_pages,
+            language=Language.DE,
+        )
 
     # =========================================================================
-    # Phase 2: Section Extraction
+    # PHASE 4: Section Extraction
     # =========================================================================
 
-    def _extract_section(
+    def _phase4_extract_section(
         self,
         pdf_path: Path,
-        entry: StructureEntry,
-        context: DocumentContext,
+        location: SectionLocation,
     ) -> ExtractedSection:
-        """Extract content from a single section."""
-        pages = entry.pages
-        max_images = self.config.max_images_per_request
+        """
+        Extract the full content of a single section.
 
-        # Log which pages we're sending (WARNING level so it's always visible)
-        logger.warning(f"Extracting {entry.identifier}: sending PDF pages {pages}")
+        Args:
+            pdf_path: Path to PDF
+            location: Section location from structure
 
-        if len(pages) <= max_images:
-            return self._extract_section_single(pdf_path, entry, context, pages)
-        else:
-            return self._extract_section_windowed(pdf_path, entry, context, pages, max_images)
+        Returns:
+            ExtractedSection with full content
+        """
+        # Handle preamble specially
+        if location.section_type == SectionType.PREAMBLE:
+            return self._extract_preamble(pdf_path, location)
 
-    def _extract_section_single(
+        # Render all pages for this section
+        images = self.renderer.render_batch(pdf_path, location.pages)
+
+        # Build identifier string
+        identifier = location.identifier or "Unbekannt"
+        if location.title:
+            identifier = f"{identifier} {location.title}"
+
+        # Get prompts
+        system_prompt, user_prompt = format_section_extract_prompt(
+            section_identifier=identifier,
+            start_page=location.start_page,
+            end_page=location.end_page,
+        )
+
+        # Call API
+        response = self.api_client.call(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            images=images,
+            max_tokens=self.config.max_tokens,
+        )
+
+        # Parse response
+        return self._parse_section_data(response.content, location)
+
+    def _extract_preamble(
         self,
         pdf_path: Path,
-        entry: StructureEntry,
-        context: DocumentContext,
-        pages: list[int],
+        location: SectionLocation,
     ) -> ExtractedSection:
-        """Extract section that fits in one API call."""
-        images = self.pdf_converter.render_pages_batch(pdf_path, pages)
+        """Extract preamble section (before first §)."""
+        images = self.renderer.render_batch(pdf_path, location.pages)
 
-        # Build content with labeled pages
-        content = []
-        for i, img in enumerate(images):
-            content.append({
-                "type": "text",
-                "text": f"--- PDF-Seite {pages[i]} ---"
-            })
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:{img.mime_type};base64,{img.image_base64}"}
-            })
+        system_prompt, user_prompt = format_preamble_extract_prompt(location.end_page)
 
-        system, user = get_section_prompt(context, entry, pages)
-        content.append({"type": "text", "text": user})
+        response = self.api_client.call(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            images=images,
+            max_tokens=self.config.max_tokens,
+        )
 
-        response = self._call_api_with_retry(system, content)
-        return self._parse_section_response(response, entry, pages)
+        return self._parse_section_data(response.content, location)
 
-    def _extract_section_windowed(
+    def _parse_section_data(
         self,
-        pdf_path: Path,
-        entry: StructureEntry,
-        context: DocumentContext,
-        all_pages: list[int],
-        max_images: int,
+        data: Union[dict, list],
+        location: SectionLocation,
     ) -> ExtractedSection:
-        """Extract large section using sliding window."""
-        windows = self._create_windows(all_pages, max_images)
-        content_parts = []
-        combined = {
-            "paragraphs": [],
-            "has_table": False,
-            "has_list": False,
-            "internal_references": [],
-            "external_references": [],
-            "chapter": None,
-            "confidence": 1.0,
-        }
-
-        logger.info(f"Using {len(windows)} windows for {entry.identifier}")
-
-        for i, window in enumerate(windows):
-            is_first = (i == 0)
-            is_last = (i == len(windows) - 1)
-            overlap = window[0] if not is_first else None
-
-            images = self.pdf_converter.render_pages_batch(pdf_path, window)
-
-            content = []
-            for j, img in enumerate(images):
-                content.append({"type": "text", "text": f"--- PDF-Seite {window[j]} ---"})
-                content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{img.mime_type};base64,{img.image_base64}"}
-                })
-
-            system, user = get_section_prompt(
-                context, entry, window,
-                is_continuation=not is_first,
-                is_last=is_last,
-                overlap_page=overlap,
+        """Parse section extraction response into ExtractedSection."""
+        if not isinstance(data, dict):
+            # If we got a list or something else, create minimal section
+            return ExtractedSection(
+                section_type=location.section_type,
+                section_number=location.identifier,
+                section_title=location.title,
+                content=str(data),
+                pages=location.pages,
+                extraction_confidence=0.5,
+                extraction_notes="Unexpected response format",
             )
-            content.append({"type": "text", "text": user})
-
-            response = self._call_api_with_retry(system, content)
-
-            try:
-                data = json.loads(self._extract_json(response))
-                content_parts.append(data.get("content", ""))
-
-                # Accumulate metadata
-                combined["paragraphs"].extend(data.get("paragraphs", []))
-                combined["has_table"] = combined["has_table"] or data.get("has_table", False)
-                combined["has_list"] = combined["has_list"] or data.get("has_list", False)
-                combined["internal_references"].extend(data.get("internal_references", []))
-                combined["external_references"].extend(data.get("external_references", []))
-                if data.get("chapter") and not combined["chapter"]:
-                    combined["chapter"] = data["chapter"]
-                if data.get("extraction_confidence", 1.0) < combined["confidence"]:
-                    combined["confidence"] = data["extraction_confidence"]
-
-            except json.JSONDecodeError:
-                content_parts.append(response)
-                combined["confidence"] = min(combined["confidence"], 0.5)
-
-            if not is_last:
-                time.sleep(0.5)
 
         return ExtractedSection(
-            section_type=entry.section_type,
-            section_number=entry.section_number,
-            section_title=entry.section_title,
-            content="\n\n".join(filter(None, content_parts)),
-            pages=all_pages,
-            chapter=combined["chapter"],
-            paragraphs=list(dict.fromkeys(combined["paragraphs"])),
-            internal_references=list(dict.fromkeys(combined["internal_references"])),
-            external_references=list(dict.fromkeys(combined["external_references"])),
-            has_table=combined["has_table"],
-            has_list=combined["has_list"],
-            extraction_confidence=combined["confidence"],
+            section_type=location.section_type,
+            section_number=location.identifier,
+            section_title=data.get("section_title") or location.title,
+            content=data.get("content", ""),
+            pages=location.pages,
+            chapter=data.get("chapter"),
+            subsections=data.get("subsections", []),
+            internal_references=data.get("internal_references", []),
+            external_references=data.get("external_references", []),
+            has_table=data.get("has_table", False),
+            has_list=data.get("has_list", False),
+            extraction_confidence=data.get("extraction_confidence", 1.0),
+            extraction_notes=data.get("extraction_notes"),
         )
 
-    def _create_windows(self, pages: list[int], max_size: int) -> list[list[int]]:
-        """Create sliding windows with 1-page overlap."""
-        if len(pages) <= max_size:
-            return [pages]
-
-        windows = []
-        start = 0
-        while start < len(pages):
-            end = min(start + max_size, len(pages))
-            windows.append(pages[start:end])
-            if end >= len(pages):
-                break
-            start = end - 1  # 1-page overlap
-
-        return windows
-
-    def _parse_section_response(
+    def _create_failed_section(
         self,
-        response: str,
-        entry: StructureEntry,
-        pages: list[int],
+        location: SectionLocation,
+        error: str,
     ) -> ExtractedSection:
-        """Parse section extraction response."""
-        try:
-            data = json.loads(self._extract_json(response))
-            return ExtractedSection(
-                section_type=entry.section_type,
-                section_number=entry.section_number,
-                section_title=entry.section_title,
-                content=data.get("content", ""),
-                pages=pages,
-                chapter=data.get("chapter"),
-                paragraphs=data.get("paragraphs", []),
-                internal_references=data.get("internal_references", []),
-                external_references=data.get("external_references", []),
-                has_table=data.get("has_table", False),
-                has_list=data.get("has_list", False),
-                extraction_confidence=data.get("extraction_confidence", 1.0),
-                extraction_notes=data.get("extraction_notes"),
-            )
-        except json.JSONDecodeError as e:
-            logger.warning(f"JSON parse failed for {entry.identifier}: {e}")
-            return ExtractedSection(
-                section_type=entry.section_type,
-                section_number=entry.section_number,
-                section_title=entry.section_title,
-                content=response,
-                pages=pages,
-                extraction_confidence=0.5,
-                extraction_notes=f"JSON parse failed: {e}",
-            )
-
-    def _create_failed_section(self, entry: StructureEntry, error: str) -> ExtractedSection:
         """Create placeholder for failed extraction."""
         return ExtractedSection(
-            section_type=entry.section_type,
-            section_number=entry.section_number,
-            section_title=entry.section_title,
+            section_type=location.section_type,
+            section_number=location.identifier,
+            section_title=location.title,
             content=f"[Extraction failed: {error}]",
-            pages=entry.pages,
+            pages=location.pages,
             extraction_confidence=0.0,
             extraction_notes=error,
         )
 
     # =========================================================================
-    # API Helpers
+    # Utility Methods
     # =========================================================================
 
-    def _call_api(self, system_prompt: str, content: list) -> str:
-        """Make API call to OpenAI."""
-        response = self.client.chat.completions.create(
-            model=self.config.model,
-            max_tokens=self.config.max_tokens_per_request,
-            temperature=self.config.temperature,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": content},
-            ],
-        )
+    def get_usage(self) -> dict:
+        """Get API usage statistics."""
+        return self.api_client.get_usage_summary()
 
-        if response.usage:
-            self.total_input_tokens += response.usage.prompt_tokens
-            self.total_output_tokens += response.usage.completion_tokens
-
-        return response.choices[0].message.content or ""
-
-    def _call_api_with_retry(self, system_prompt: str, content: list) -> str:
-        """Call API with retry logic."""
-        last_response = None
-
-        for attempt in range(self.config.max_retries):
-            try:
-                response = self._call_api(system_prompt, content)
-
-                # Check for problems
-                if not response.strip():
-                    logger.warning(f"Empty response (attempt {attempt + 1})")
-                    last_response = response
-                elif self._is_refusal(response):
-                    logger.warning(f"API refusal (attempt {attempt + 1}): {response[:100]}")
-                    last_response = response
-                elif "{" not in response:
-                    logger.warning(f"No JSON in response (attempt {attempt + 1})")
-                    last_response = response
-                else:
-                    return response
-
-                # Wait before retry
-                if attempt < self.config.max_retries - 1:
-                    wait = 2 ** (attempt + 1)
-                    logger.info(f"Retrying in {wait}s...")
-                    time.sleep(wait)
-
-            except Exception as e:
-                logger.error(f"API error (attempt {attempt + 1}): {e}")
-                if attempt < self.config.max_retries - 1:
-                    time.sleep(2 ** (attempt + 1))
-                else:
-                    raise APIError(str(e))
-
-        return last_response or ""
-
-    def _is_refusal(self, text: str) -> bool:
-        """Check if response is a refusal."""
-        if not text:
-            return False
-        refusals = [
-            "i'm sorry", "i cannot", "i can't", "i am unable",
-            "i'm unable", "i'm not able", "i am not able",
-            "cannot assist", "can't assist",
-        ]
-        text_lower = text.lower()
-        return any(r in text_lower for r in refusals)
-
-    def _extract_json(self, text: str) -> str:
-        """Extract JSON from response (handles markdown code blocks)."""
-        # Try code block
-        if "```json" in text:
-            start = text.find("```json") + 7
-            end = text.find("```", start)
-            if end > start:
-                return text[start:end].strip()
-
-        if "```" in text:
-            start = text.find("```") + 3
-            end = text.find("```", start)
-            if end > start:
-                return text[start:end].strip()
-
-        # Try raw JSON
-        if "{" in text:
-            start = text.find("{")
-            depth = 0
-            for i, c in enumerate(text[start:], start):
-                if c == "{":
-                    depth += 1
-                elif c == "}":
-                    depth -= 1
-                    if depth == 0:
-                        return text[start:i + 1]
-
-        return text
-
-
-def estimate_api_cost(page_count: int, model: str = "gpt-4o") -> dict:
-    """Estimate API cost for document extraction."""
-    costs = {
-        "gpt-4o": (0.005, 0.015, 1500, 800),
-        "gpt-4o-mini": (0.00015, 0.0006, 1500, 800),
-    }
-
-    if model not in costs:
-        return {"error": f"Unknown model: {model}"}
-
-    input_cost, output_cost, tokens_per_img, output_per_section = costs[model]
-
-    # Estimate: structure (5 images) + sections (~1.5x pages due to overlap)
-    total_images = 5 + int(page_count * 1.5)
-    sections = max(10, page_count // 2)
-
-    input_tokens = total_images * tokens_per_img
-    output_tokens = sections * output_per_section
-
-    return {
-        "estimated_input_tokens": input_tokens,
-        "estimated_output_tokens": output_tokens,
-        "estimated_cost_usd": round(
-            (input_tokens / 1000) * input_cost + (output_tokens / 1000) * output_cost, 4
-        ),
-        "model": model,
-        "page_count": page_count,
-    }
+    def reset_usage(self) -> None:
+        """Reset API usage counters."""
+        self.api_client.reset_usage()

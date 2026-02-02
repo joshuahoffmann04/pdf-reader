@@ -1,79 +1,181 @@
 """
-PDF Extractor - Section-Based PDF Content Extraction
+PDF Extractor - Page-by-Page Section Extraction for German Academic Documents.
 
-Extracts structured content from PDF documents using OpenAI's Vision API.
-Optimized for German academic documents (Prüfungsordnungen, etc.).
+This package extracts structured content from PDF documents using OpenAI's Vision API.
+It uses a four-phase pipeline:
+
+1. PAGE SCAN: Scan each page individually to detect sections
+2. STRUCTURE: Aggregate results to calculate accurate page ranges
+3. CONTEXT: Extract document metadata
+4. EXTRACTION: Extract full content for each section
 
 Quick Start:
     from pdf_extractor import PDFExtractor
 
     extractor = PDFExtractor()
-    result = extractor.extract("document.pdf")
+    result = extractor.extract("pruefungsordnung.pdf")
 
     for section in result.sections:
-        print(f"{section.section_number}: {section.content[:100]}...")
+        print(f"{section.identifier}: {section.content[:100]}...")
 
     result.save("output.json")
 
 Environment:
     OPENAI_API_KEY: Your OpenAI API key (required)
+
+Documentation:
+    See README.md for full documentation.
 """
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
 
-# Main extractor
-from .extractor import PDFExtractor, estimate_api_cost
+# =============================================================================
+# Main Extractor
+# =============================================================================
 
-# Data models
+from .extractor import PDFExtractor
+
+# =============================================================================
+# Configuration
+# =============================================================================
+
+from .models import ExtractionConfig
+
+# =============================================================================
+# Result Models
+# =============================================================================
+
 from .models import (
-    DocumentType,
-    SectionType,
-    Language,
-    DocumentContext,
-    StructureEntry,
-    ExtractedSection,
+    # Final result
     ExtractionResult,
+    ExtractedSection,
+    # Document info
+    DocumentContext,
+    DocumentStructure,
+    # Section location
+    SectionLocation,
+    # Scan results (for debugging)
+    PageScanResult,
+    DetectedSection,
+    # Legacy compatibility
+    StructureEntry,
+    # Metadata
     Abbreviation,
-    ExtractionConfig,
 )
 
+# =============================================================================
+# Enums
+# =============================================================================
+
+from .models import (
+    SectionType,
+    DocumentType,
+    Language,
+)
+
+# =============================================================================
 # Exceptions
+# =============================================================================
+
 from .exceptions import (
+    # Base
     ExtractionError,
-    NoTableOfContentsError,
-    StructureExtractionError,
-    SectionExtractionError,
+    # PDF errors
+    PDFError,
+    PDFNotFoundError,
+    PDFCorruptedError,
     PageRenderError,
+    # Scan errors
+    ScanError,
+    PageScanError,
+    StructureAggregationError,
+    # Content extraction errors
+    ContentExtractionError,
+    ContextExtractionError,
+    SectionExtractionError,
+    # API errors
     APIError,
+    APIConnectionError,
+    APIRateLimitError,
+    APIResponseError,
+    # Utilities
+    is_retryable,
+    format_error_chain,
 )
 
-# PDF utilities
-from .pdf_to_images import PDFToImages, PageImage
+# =============================================================================
+# PDF Utilities
+# =============================================================================
+
+from .pdf_utils import (
+    PDFRenderer,
+    PageImage,
+    PDFInfo,
+    validate_pdf,
+    estimate_api_cost,
+)
+
+# =============================================================================
+# API Client (for advanced usage)
+# =============================================================================
+
+from .api_client import (
+    VisionAPIClient,
+    APIResponse,
+    TokenUsage,
+)
+
+# =============================================================================
+# Public API
+# =============================================================================
 
 __all__ = [
+    # Version
     "__version__",
-    # Main
+    # Main extractor
     "PDFExtractor",
-    "estimate_api_cost",
-    # Enums
-    "DocumentType",
-    "SectionType",
-    "Language",
-    # Models
-    "DocumentContext",
-    "StructureEntry",
-    "ExtractedSection",
-    "ExtractionResult",
-    "Abbreviation",
+    # Configuration
     "ExtractionConfig",
+    # Result models
+    "ExtractionResult",
+    "ExtractedSection",
+    "DocumentContext",
+    "DocumentStructure",
+    "SectionLocation",
+    "PageScanResult",
+    "DetectedSection",
+    "StructureEntry",  # Legacy
+    "Abbreviation",
+    # Enums
+    "SectionType",
+    "DocumentType",
+    "Language",
     # Exceptions
     "ExtractionError",
-    "NoTableOfContentsError",
-    "StructureExtractionError",
-    "SectionExtractionError",
+    "PDFError",
+    "PDFNotFoundError",
+    "PDFCorruptedError",
     "PageRenderError",
+    "ScanError",
+    "PageScanError",
+    "StructureAggregationError",
+    "ContentExtractionError",
+    "ContextExtractionError",
+    "SectionExtractionError",
     "APIError",
-    # PDF
-    "PDFToImages",
+    "APIConnectionError",
+    "APIRateLimitError",
+    "APIResponseError",
+    "is_retryable",
+    "format_error_chain",
+    # PDF utilities
+    "PDFRenderer",
     "PageImage",
+    "PDFInfo",
+    "validate_pdf",
+    "estimate_api_cost",
+    # API client
+    "VisionAPIClient",
+    "APIResponse",
+    "TokenUsage",
 ]
