@@ -1,57 +1,76 @@
 """
-Data Models for Section-Based PDF Extraction Pipeline.
+Data Models for PDF Section Extraction.
 
-This module defines the core data structures for:
-1. Document context (metadata extracted from the document)
-2. Document structure (sections, their types, and page ranges)
-3. Extracted sections (complete content of each section)
-4. Processing configuration
+This module defines the core data structures for the page-by-page scanning
+extraction pipeline. The pipeline works in four phases:
+
+1. PAGE SCAN: Each page is analyzed individually to detect which sections appear on it
+2. STRUCTURE: Section locations are aggregated from scan results to build page ranges
+3. CONTEXT: Document metadata is extracted from representative pages
+4. EXTRACTION: Full content is extracted for each section using accurate page ranges
+
+Architecture:
+    PDF → [Page Scan] → PageScanResult[]
+                            ↓
+        [Aggregate] → SectionLocation[]
+                            ↓
+        [Context]   → DocumentContext
+                            ↓
+        [Extract]   → ExtractedSection[]
+                            ↓
+                    ExtractionResult
 
 Design Principles:
-- Pydantic v2 for validation, serialization, and JSON Schema generation
-- Section-based extraction (§§, Anlagen) instead of page-based
-- Optimized for downstream processing (chunking, RAG)
-- Clear source references for each section
+    - Pydantic v2 for validation, serialization, and JSON Schema generation
+    - Immutable models where possible (frozen=True for value objects)
+    - Clear separation between internal processing models and output models
+    - German academic documents focus (Prüfungsordnungen, Modulhandbücher)
 
 Usage:
     from pdf_extractor import PDFExtractor, ExtractionConfig
 
-    config = ExtractionConfig(max_images_per_request=5)
-    extractor = PDFExtractor(config=config)
-    result = extractor.extract("document.pdf")
+    extractor = PDFExtractor()
+    result = extractor.extract("pruefungsordnung.pdf")
 
     for section in result.sections:
-        print(f"{section.section_number}: {section.section_title}")
-        print(f"  Pages: {section.pages}")
-        print(f"  Content: {section.content[:100]}...")
+        print(f"{section.identifier}: {section.content[:100]}...")
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
-from pydantic import BaseModel, Field, model_validator
+
+from pydantic import BaseModel, Field, model_validator, computed_field
 
 
 # =============================================================================
 # ENUMS
 # =============================================================================
 
+
 class SectionType(str, Enum):
     """
-    Type of extracted section.
+    Classification of structural elements in German academic documents.
 
-    Used to distinguish between different structural elements in the document.
+    PREAMBLE: Content before the first numbered section (title page, ToC, preface)
+    PARAGRAPH: Numbered sections (§ 1, § 2, ... § 40)
+    ANLAGE: Appendices (Anlage 1, Anlage 2, ...)
     """
-    OVERVIEW = "overview"      # Präambel, Inhaltsverzeichnis, Einleitung (before first §)
-    PARAGRAPH = "paragraph"    # § with number (§ 1, § 2, ... § 40)
-    ANLAGE = "anlage"          # Anlage 1, Anlage 2, ...
+
+    PREAMBLE = "preamble"
+    PARAGRAPH = "paragraph"
+    ANLAGE = "anlage"
 
 
 class DocumentType(str, Enum):
     """
-    Classification of document types.
-    Used for retrieval filtering and context-aware generation.
+    Classification of German academic document types.
+
+    Used for retrieval filtering and context-aware processing.
     """
+
     PRUEFUNGSORDNUNG = "pruefungsordnung"
     MODULHANDBUCH = "modulhandbuch"
     STUDIENORDNUNG = "studienordnung"
@@ -59,53 +78,258 @@ class DocumentType(str, Enum):
     PRAKTIKUMSORDNUNG = "praktikumsordnung"
     ZULASSUNGSORDNUNG = "zulassungsordnung"
     SATZUNG = "satzung"
-    WEBSITE = "website"
-    FAQ = "faq"
     OTHER = "other"
 
 
 class Language(str, Enum):
-    """Supported languages."""
+    """Supported document languages."""
+
     DE = "de"
     EN = "en"
 
 
 # =============================================================================
-# STRUCTURE MODELS (Internal use for structure mapping)
+# PHASE 1: PAGE SCAN MODELS
 # =============================================================================
+
+
+class DetectedSection(BaseModel):
+    """
+    A section detected on a single page during the scan phase.
+
+    This model represents what the LLM found on ONE page. Multiple pages
+    may contain the same section, which is later aggregated into SectionLocation.
+
+    Examples:
+        - {"section_type": "paragraph", "identifier": "§ 5", "title": "Regelstudienzeit"}
+        - {"section_type": "anlage", "identifier": "Anlage 1", "title": "Modulübersicht"}
+    """
+
+    section_type: SectionType = Field(
+        ...,
+        description="Type of section (paragraph, anlage, preamble)"
+    )
+    identifier: Optional[str] = Field(
+        None,
+        description="Section identifier (e.g., '§ 5', 'Anlage 1'). None for preamble."
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Section title if visible on this page"
+    )
+
+    model_config = {"frozen": True}
+
+    def __hash__(self) -> int:
+        """Allow use in sets for deduplication."""
+        return hash((self.section_type, self.identifier))
+
+    def __eq__(self, other: object) -> bool:
+        """Equality based on type and identifier."""
+        if not isinstance(other, DetectedSection):
+            return False
+        return self.section_type == other.section_type and self.identifier == other.identifier
+
+
+class PageScanResult(BaseModel):
+    """
+    Result of scanning a single page for sections.
+
+    Each page is scanned individually to determine which sections appear on it.
+    This allows accurate page range calculation even when sections share pages.
+
+    Example:
+        Page 5 might contain the end of § 4 and the beginning of § 5:
+        {"page_number": 5, "sections": [
+            {"section_type": "paragraph", "identifier": "§ 4", "title": null},
+            {"section_type": "paragraph", "identifier": "§ 5", "title": "Regelstudienzeit"}
+        ]}
+    """
+
+    page_number: int = Field(
+        ...,
+        ge=1,
+        description="Page number (1-indexed, matches PDF page number)"
+    )
+    sections: list[DetectedSection] = Field(
+        default_factory=list,
+        description="Sections detected on this page"
+    )
+    is_empty: bool = Field(
+        False,
+        description="True if page contains no relevant content"
+    )
+    scan_notes: Optional[str] = Field(
+        None,
+        description="Optional notes about the page (e.g., 'Deckblatt', 'leere Seite')"
+    )
+
+    model_config = {"frozen": True}
+
+
+# =============================================================================
+# PHASE 2: STRUCTURE MODELS
+# =============================================================================
+
+
+class SectionLocation(BaseModel):
+    """
+    Aggregated location of a section across all pages.
+
+    Built from PageScanResult data by finding all pages where a section appears.
+    This gives us accurate page ranges even for sections that span partial pages.
+
+    Example:
+        § 5 appears on pages [5, 6, 7]:
+        - Starts in the middle of page 5 (after § 4 ends)
+        - Continues through page 6
+        - Ends in the first half of page 7 (before § 6 starts)
+    """
+
+    section_type: SectionType = Field(
+        ...,
+        description="Type of section"
+    )
+    identifier: Optional[str] = Field(
+        None,
+        description="Section identifier (e.g., '§ 5', 'Anlage 1')"
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Section title (from the page where it was most clearly visible)"
+    )
+    pages: list[int] = Field(
+        ...,
+        min_length=1,
+        description="All pages where this section appears (1-indexed, sorted)"
+    )
+
+    @computed_field
+    @property
+    def start_page(self) -> int:
+        """First page of this section."""
+        return self.pages[0]
+
+    @computed_field
+    @property
+    def end_page(self) -> int:
+        """Last page of this section."""
+        return self.pages[-1]
+
+    @computed_field
+    @property
+    def page_count(self) -> int:
+        """Number of pages this section spans."""
+        return len(self.pages)
+
+    @computed_field
+    @property
+    def display_name(self) -> str:
+        """Human-readable name for this section."""
+        if self.identifier and self.title:
+            return f"{self.identifier} {self.title}"
+        if self.identifier:
+            return self.identifier
+        if self.title:
+            return self.title
+        return "Präambel"
+
+    def to_structure_entry(self) -> "StructureEntry":
+        """Convert to StructureEntry for backward compatibility."""
+        return StructureEntry(
+            section_type=self.section_type,
+            section_number=self.identifier,
+            section_title=self.title,
+            start_page=self.start_page,
+            end_page=self.end_page,
+        )
+
+
+class DocumentStructure(BaseModel):
+    """
+    Complete structure of a document derived from page scanning.
+
+    Contains all sections with their accurate page ranges, ready for extraction.
+    """
+
+    sections: list[SectionLocation] = Field(
+        default_factory=list,
+        description="All sections in document order"
+    )
+    total_pages: int = Field(
+        ...,
+        ge=1,
+        description="Total number of pages in the document"
+    )
+    has_preamble: bool = Field(
+        False,
+        description="Whether the document has content before the first numbered section"
+    )
+    scan_results: list[PageScanResult] = Field(
+        default_factory=list,
+        description="Raw scan results for debugging/verification"
+    )
+
+    def get_section(self, identifier: str) -> Optional[SectionLocation]:
+        """Find a section by its identifier."""
+        for section in self.sections:
+            if section.identifier == identifier:
+                return section
+        return None
+
+    def get_paragraphs(self) -> list[SectionLocation]:
+        """Get all § sections."""
+        return [s for s in self.sections if s.section_type == SectionType.PARAGRAPH]
+
+    def get_anlagen(self) -> list[SectionLocation]:
+        """Get all Anlage sections."""
+        return [s for s in self.sections if s.section_type == SectionType.ANLAGE]
+
+    def get_preamble(self) -> Optional[SectionLocation]:
+        """Get the preamble section if it exists."""
+        for s in self.sections:
+            if s.section_type == SectionType.PREAMBLE:
+                return s
+        return None
+
+
+# =============================================================================
+# BACKWARD COMPATIBILITY: StructureEntry
+# =============================================================================
+
 
 class StructureEntry(BaseModel):
     """
-    An entry in the document structure map.
+    Legacy structure entry for backward compatibility.
 
-    Created during Phase 1 (structure analysis) from the table of contents.
-    Used to determine which pages to send for each section extraction.
+    Prefer using SectionLocation for new code.
     """
+
     section_type: SectionType = Field(
         ...,
-        description="Type of section (overview, paragraph, anlage)"
+        description="Type of section"
     )
     section_number: Optional[str] = Field(
         None,
-        description="Section identifier (e.g., '§ 10', 'Anlage 2', None for overview)"
+        description="Section identifier"
     )
     section_title: Optional[str] = Field(
         None,
-        description="Section title (e.g., 'Module und Leistungspunkte')"
+        description="Section title"
     )
     start_page: int = Field(
         ...,
         ge=1,
-        description="First page of the section (1-indexed)"
+        description="First page (1-indexed)"
     )
     end_page: int = Field(
         ...,
         ge=1,
-        description="Last page of the section (1-indexed, inclusive)"
+        description="Last page (1-indexed, inclusive)"
     )
 
-    @model_validator(mode='after')
-    def validate_pages(self) -> 'StructureEntry':
+    @model_validator(mode="after")
+    def validate_page_range(self) -> "StructureEntry":
         """Ensure end_page >= start_page."""
         if self.end_page < self.start_page:
             raise ValueError(
@@ -115,180 +339,37 @@ class StructureEntry(BaseModel):
 
     @property
     def pages(self) -> list[int]:
-        """Get list of all pages in this section."""
+        """All pages in this section."""
         return list(range(self.start_page, self.end_page + 1))
 
     @property
-    def page_count(self) -> int:
-        """Get number of pages in this section."""
-        return self.end_page - self.start_page + 1
-
-    @property
     def identifier(self) -> str:
-        """Get human-readable identifier for this section."""
+        """Human-readable identifier."""
         if self.section_number:
             return self.section_number
-        return "Übersicht"
+        return "Präambel"
 
 
 # =============================================================================
-# EXTRACTED SECTION (Main output model)
+# PHASE 3: DOCUMENT CONTEXT
 # =============================================================================
 
-class ExtractedSection(BaseModel):
-    """
-    A fully extracted section from the document.
-
-    This is the main output model containing the complete content
-    of a section (§, Anlage, or Overview) ready for downstream processing.
-    """
-
-    # Identification
-    section_type: SectionType = Field(
-        ...,
-        description="Type of section"
-    )
-    section_number: Optional[str] = Field(
-        None,
-        description="Section identifier (e.g., '§ 10', 'Anlage 2')"
-    )
-    section_title: Optional[str] = Field(
-        None,
-        description="Section title"
-    )
-
-    # Content
-    content: str = Field(
-        ...,
-        description="Complete text content of the section in natural language"
-    )
-
-    # Position in document
-    pages: list[int] = Field(
-        default_factory=list,
-        description="Page numbers where this section appears (1-indexed)"
-    )
-    chapter: Optional[str] = Field(
-        None,
-        description="Parent chapter (e.g., 'II. Studienbezogene Bestimmungen')"
-    )
-
-    # Internal structure
-    paragraphs: list[str] = Field(
-        default_factory=list,
-        description="Paragraph numbers found in section (e.g., ['(1)', '(2)', '(3)'])"
-    )
-
-    # References
-    internal_references: list[str] = Field(
-        default_factory=list,
-        description="References to other sections (e.g., ['§ 5 Abs. 2', 'Anlage 1'])"
-    )
-    external_references: list[str] = Field(
-        default_factory=list,
-        description="References to external documents (e.g., ['Allgemeine Bestimmungen'])"
-    )
-
-    # Content properties
-    has_table: bool = Field(
-        False,
-        description="Section contains tabular data (converted to text)"
-    )
-    has_list: bool = Field(
-        False,
-        description="Section contains lists (converted to text)"
-    )
-
-    # Metadata
-    token_count: int = Field(
-        0,
-        description="Estimated token count (len(content) // 4)"
-    )
-    extraction_confidence: float = Field(
-        1.0,
-        ge=0.0,
-        le=1.0,
-        description="Confidence in extraction quality"
-    )
-    extraction_notes: Optional[str] = Field(
-        None,
-        description="Notes about extraction issues"
-    )
-
-    @model_validator(mode='after')
-    def calculate_token_count(self) -> 'ExtractedSection':
-        """Auto-calculate token count if not set."""
-        if self.token_count == 0 and self.content:
-            # Rough estimate: ~4 characters per token for German text
-            self.token_count = len(self.content) // 4
-        return self
-
-    @property
-    def identifier(self) -> str:
-        """Get human-readable identifier."""
-        if self.section_number:
-            if self.section_title:
-                return f"{self.section_number} {self.section_title}"
-            return self.section_number
-        return "Übersicht"
-
-    def get_source_reference(self, doc_title: str = "") -> str:
-        """
-        Generate a source reference string for RAG citations.
-
-        Args:
-            doc_title: Document title to include in reference
-
-        Returns:
-            Formatted source reference string
-
-        Example:
-            >>> section.get_source_reference("Prüfungsordnung Informatik")
-            "Prüfungsordnung Informatik, § 10 Module und Leistungspunkte, S. 12-14"
-        """
-        page_str = self._format_pages()
-
-        if self.section_type == SectionType.OVERVIEW:
-            if doc_title:
-                return f"{doc_title}, Übersicht, S. {page_str}"
-            return f"Übersicht, S. {page_str}"
-
-        section_str = self.section_number or ""
-        if self.section_title:
-            section_str = f"{section_str} {self.section_title}".strip()
-
-        if doc_title:
-            return f"{doc_title}, {section_str}, S. {page_str}"
-        return f"{section_str}, S. {page_str}"
-
-    def _format_pages(self) -> str:
-        """Format page numbers for display."""
-        if not self.pages:
-            return "?"
-        if len(self.pages) == 1:
-            return str(self.pages[0])
-        return f"{self.pages[0]}-{self.pages[-1]}"
-
-    def to_dict(self) -> dict[str, Any]:
-        """Export as dictionary."""
-        return self.model_dump()
-
-
-# =============================================================================
-# DOCUMENT CONTEXT
-# =============================================================================
 
 class Abbreviation(BaseModel):
-    """An abbreviation and its expansion."""
-    short: str = Field(..., description="The abbreviation (e.g., 'LP', 'ECTS')")
-    long: str = Field(..., description="The full form (e.g., 'Leistungspunkte')")
+    """An abbreviation and its full form."""
+
+    short: str = Field(..., description="Abbreviation (e.g., 'LP', 'ECTS')")
+    long: str = Field(..., description="Full form (e.g., 'Leistungspunkte')")
+
+    model_config = {"frozen": True}
 
 
 class DocumentContext(BaseModel):
     """
-    Document-level context extracted during structure analysis.
+    Document-level metadata extracted from representative pages.
 
-    Contains metadata about the document that enriches all extracted sections.
+    Contains information about the document that applies to all sections
+    and enriches the extraction results.
     """
 
     # Required identification
@@ -303,7 +384,7 @@ class DocumentContext(BaseModel):
     )
     institution: str = Field(
         ...,
-        description="Issuing institution"
+        description="Issuing institution (university, faculty)"
     )
 
     # Version information
@@ -319,14 +400,14 @@ class DocumentContext(BaseModel):
     # Scope
     degree_program: Optional[str] = Field(
         None,
-        description="Degree program if applicable"
+        description="Degree program (e.g., 'Bachelor of Science Informatik')"
     )
     faculty: Optional[str] = Field(
         None,
         description="Faculty or department"
     )
 
-    # Structure
+    # Structure info
     total_pages: int = Field(
         0,
         ge=0,
@@ -334,7 +415,7 @@ class DocumentContext(BaseModel):
     )
     chapters: list[str] = Field(
         default_factory=list,
-        description="Main chapters (e.g., ['I. Allgemeines', 'II. Prüfungen'])"
+        description="Main chapter headings (e.g., 'I. Allgemeines', 'II. Prüfungen')"
     )
 
     # Terminology
@@ -357,56 +438,173 @@ class DocumentContext(BaseModel):
         description="Legal basis for the document"
     )
 
-    # Metadata
+    # Language
     language: Language = Field(
         Language.DE,
         description="Primary language"
     )
 
     def get_abbreviation_dict(self) -> dict[str, str]:
-        """Get abbreviations as a simple dictionary."""
+        """Get abbreviations as a lookup dictionary."""
         return {a.short: a.long for a in self.abbreviations}
 
-    def to_dict(self) -> dict[str, Any]:
-        """Export as dictionary."""
-        return self.model_dump()
+
+# =============================================================================
+# PHASE 4: EXTRACTION OUTPUT
+# =============================================================================
+
+
+class ExtractedSection(BaseModel):
+    """
+    A fully extracted section from the document.
+
+    This is the main output model containing the complete content
+    of a section ready for downstream processing (chunking, RAG indexing).
+    """
+
+    # Identification
+    section_type: SectionType = Field(
+        ...,
+        description="Type of section"
+    )
+    section_number: Optional[str] = Field(
+        None,
+        description="Section identifier (e.g., '§ 10', 'Anlage 2')"
+    )
+    section_title: Optional[str] = Field(
+        None,
+        description="Section title"
+    )
+
+    # Content
+    content: str = Field(
+        ...,
+        description="Complete text content in natural language"
+    )
+
+    # Position
+    pages: list[int] = Field(
+        default_factory=list,
+        description="Page numbers where this section appears (1-indexed)"
+    )
+    chapter: Optional[str] = Field(
+        None,
+        description="Parent chapter (e.g., 'II. Studienbezogene Bestimmungen')"
+    )
+
+    # Internal structure
+    subsections: list[str] = Field(
+        default_factory=list,
+        description="Numbered subsections found (e.g., ['(1)', '(2)', '(3)'])"
+    )
+
+    # References
+    internal_references: list[str] = Field(
+        default_factory=list,
+        description="References to other sections (e.g., ['§ 5 Abs. 2', 'Anlage 1'])"
+    )
+    external_references: list[str] = Field(
+        default_factory=list,
+        description="References to external documents"
+    )
+
+    # Content properties
+    has_table: bool = Field(
+        False,
+        description="Contains tabular data"
+    )
+    has_list: bool = Field(
+        False,
+        description="Contains enumerated lists"
+    )
+
+    # Metadata
+    extraction_confidence: float = Field(
+        1.0,
+        ge=0.0,
+        le=1.0,
+        description="Confidence in extraction quality (1.0 = perfect)"
+    )
+    extraction_notes: Optional[str] = Field(
+        None,
+        description="Notes about extraction issues"
+    )
+
+    @computed_field
+    @property
+    def token_estimate(self) -> int:
+        """Estimated token count (~4 chars per token for German)."""
+        return len(self.content) // 4
+
+    @computed_field
+    @property
+    def identifier(self) -> str:
+        """Human-readable identifier."""
+        if self.section_number and self.section_title:
+            return f"{self.section_number} {self.section_title}"
+        if self.section_number:
+            return self.section_number
+        if self.section_title:
+            return self.section_title
+        return "Präambel"
+
+    def format_source_reference(self, doc_title: str = "") -> str:
+        """
+        Generate a source reference for RAG citations.
+
+        Args:
+            doc_title: Document title to include
+
+        Returns:
+            Formatted reference (e.g., "Prüfungsordnung, § 10, S. 12-14")
+        """
+        page_str = self._format_pages()
+        section_str = self.section_number or "Präambel"
+
+        if self.section_title and self.section_number:
+            section_str = f"{self.section_number} {self.section_title}"
+
+        if doc_title:
+            return f"{doc_title}, {section_str}, S. {page_str}"
+        return f"{section_str}, S. {page_str}"
+
+    def _format_pages(self) -> str:
+        """Format page numbers for display."""
+        if not self.pages:
+            return "?"
+        if len(self.pages) == 1:
+            return str(self.pages[0])
+        return f"{self.pages[0]}-{self.pages[-1]}"
 
 
 # =============================================================================
-# EXTRACTION CONFIGURATION
+# CONFIGURATION
 # =============================================================================
+
 
 class ExtractionConfig(BaseModel):
     """
-    Configuration for the section-based PDF extraction pipeline.
+    Configuration for the PDF extraction pipeline.
 
-    Controls API settings, image handling, and retry behavior.
+    Controls API settings, processing behavior, and output options.
     """
 
     # API Configuration
     model: str = Field(
         "gpt-4o",
-        description="OpenAI model to use"
+        description="OpenAI model to use for extraction"
     )
-    max_tokens_per_request: int = Field(
+    max_tokens: int = Field(
         4096,
         ge=100,
-        le=100000,
-        description="Maximum tokens per API request"
+        le=128000,
+        description="Maximum tokens per API response"
     )
     temperature: float = Field(
         0.0,
         ge=0.0,
         le=2.0,
-        description="Sampling temperature (0 for deterministic)"
-    )
-
-    # Image handling
-    max_images_per_request: int = Field(
-        5,
-        ge=1,
-        le=20,
-        description="Maximum images per API request (for sliding window)"
+        description="Sampling temperature (0 = deterministic)"
     )
 
     # Retry configuration
@@ -414,42 +612,65 @@ class ExtractionConfig(BaseModel):
         3,
         ge=1,
         le=10,
-        description="Maximum retry attempts for failed extractions"
+        description="Maximum retry attempts for failed API calls"
+    )
+    retry_delay: float = Field(
+        1.0,
+        ge=0.1,
+        le=30.0,
+        description="Initial delay between retries (seconds)"
     )
 
-    # Language
+    # Processing options
+    extract_preamble: bool = Field(
+        True,
+        description="Extract content before the first numbered section"
+    )
+    include_scan_results: bool = Field(
+        False,
+        description="Include raw page scan results in output (for debugging)"
+    )
+
+    # Output language
     language: Language = Field(
         Language.DE,
-        description="Output language"
+        description="Output language for extracted content"
     )
 
 
 # =============================================================================
-# EXTRACTION RESULT
+# FINAL RESULT
 # =============================================================================
+
 
 class ExtractionResult(BaseModel):
     """
-    Complete result of section-based PDF extraction.
+    Complete result of PDF section extraction.
 
-    Contains all extracted sections and processing metadata.
-    Ready for downstream processing (chunking, RAG indexing).
+    Contains all extracted sections, document metadata, and processing statistics.
+    Ready for downstream processing (chunking, embedding, RAG indexing).
     """
 
-    # Document information
+    # Source
     source_file: str = Field(
         ...,
-        description="Path to source PDF"
-    )
-    context: DocumentContext = Field(
-        ...,
-        description="Document-level context"
+        description="Path to source PDF file"
     )
 
-    # Extracted content (SECTIONS instead of pages)
+    # Document information
+    context: DocumentContext = Field(
+        ...,
+        description="Document-level metadata"
+    )
+    structure: DocumentStructure = Field(
+        ...,
+        description="Document structure with page ranges"
+    )
+
+    # Extracted content
     sections: list[ExtractedSection] = Field(
         default_factory=list,
-        description="Extracted sections (§§, Anlagen, Overview)"
+        description="All extracted sections"
     )
 
     # Processing statistics
@@ -459,7 +680,7 @@ class ExtractionResult(BaseModel):
     )
     total_input_tokens: int = Field(
         0,
-        description="Total input tokens used"
+        description="Total input tokens consumed"
     )
     total_output_tokens: int = Field(
         0,
@@ -476,33 +697,25 @@ class ExtractionResult(BaseModel):
         description="Warnings generated during processing"
     )
 
-    # Timestamps
-    processed_at: datetime = Field(
+    # Timestamp
+    extracted_at: datetime = Field(
         default_factory=datetime.utcnow,
-        description="When processing completed"
+        description="Extraction timestamp"
     )
 
-    # --- Query methods ---
+    # --- Query Methods ---
 
-    def get_section(self, number: str) -> Optional[ExtractedSection]:
-        """
-        Get a section by its number.
-
-        Args:
-            number: Section identifier (e.g., "§ 10", "Anlage 2")
-
-        Returns:
-            ExtractedSection if found, None otherwise
-        """
+    def get_section(self, identifier: str) -> Optional[ExtractedSection]:
+        """Get a section by its identifier (e.g., '§ 10', 'Anlage 2')."""
         for section in self.sections:
-            if section.section_number == number:
+            if section.section_number == identifier:
                 return section
         return None
 
-    def get_overview(self) -> Optional[ExtractedSection]:
-        """Get the overview section (Präambel/Inhaltsverzeichnis)."""
+    def get_preamble(self) -> Optional[ExtractedSection]:
+        """Get the preamble section if it exists."""
         for section in self.sections:
-            if section.section_type == SectionType.OVERVIEW:
+            if section.section_type == SectionType.PREAMBLE:
                 return section
         return None
 
@@ -516,38 +729,47 @@ class ExtractionResult(BaseModel):
 
     # --- Statistics ---
 
-    def get_stats(self) -> dict[str, Any]:
-        """Get extraction statistics."""
-        paragraphs = self.get_paragraphs()
-        anlagen = self.get_anlagen()
+    @computed_field
+    @property
+    def total_sections(self) -> int:
+        """Total number of extracted sections."""
+        return len(self.sections)
 
-        total_tokens = sum(s.token_count for s in self.sections)
-        avg_tokens = total_tokens // len(self.sections) if self.sections else 0
+    @computed_field
+    @property
+    def total_tokens(self) -> int:
+        """Total estimated tokens in extracted content."""
+        return sum(s.token_estimate for s in self.sections)
 
+    def get_statistics(self) -> dict[str, Any]:
+        """Get comprehensive extraction statistics."""
         return {
-            "total_sections": len(self.sections),
-            "paragraphs": len(paragraphs),
-            "anlagen": len(anlagen),
-            "has_overview": self.get_overview() is not None,
-            "total_tokens": total_tokens,
-            "avg_tokens_per_section": avg_tokens,
+            "total_sections": self.total_sections,
+            "paragraphs": len(self.get_paragraphs()),
+            "anlagen": len(self.get_anlagen()),
+            "has_preamble": self.get_preamble() is not None,
+            "total_pages": self.context.total_pages,
+            "total_content_tokens": self.total_tokens,
+            "avg_tokens_per_section": self.total_tokens // max(1, self.total_sections),
             "sections_with_tables": sum(1 for s in self.sections if s.has_table),
             "sections_with_lists": sum(1 for s in self.sections if s.has_list),
-            "failed_sections": sum(1 for s in self.sections if s.extraction_confidence < 1.0),
+            "low_confidence_sections": sum(
+                1 for s in self.sections if s.extraction_confidence < 1.0
+            ),
+            "api_tokens_used": self.total_input_tokens + self.total_output_tokens,
+            "processing_time_seconds": self.processing_time_seconds,
+            "errors": len(self.errors),
+            "warnings": len(self.warnings),
         }
 
-    def get_full_content(self, separator: str = "\n\n") -> str:
-        """Get full document content as a single string."""
-        return separator.join(s.content for s in self.sections)
-
-    # --- Export methods ---
+    # --- Export Methods ---
 
     def to_dict(self) -> dict[str, Any]:
         """Export as dictionary for serialization."""
         return self.model_dump(mode="json")
 
     def to_json(self, indent: int = 2) -> str:
-        """Export as JSON string."""
+        """Export as formatted JSON string."""
         import json
         return json.dumps(self.to_dict(), ensure_ascii=False, indent=indent)
 
@@ -563,3 +785,7 @@ class ExtractionResult(BaseModel):
         from pathlib import Path
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         return cls.model_validate(data)
+
+    def get_full_text(self, separator: str = "\n\n---\n\n") -> str:
+        """Concatenate all section contents into a single string."""
+        return separator.join(s.content for s in self.sections)
