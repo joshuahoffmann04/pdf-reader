@@ -1,93 +1,84 @@
 """
-Prompt templates for Section-Based PDF Extraction.
+Prompts for Section-Based PDF Extraction.
 
-These prompts are designed for a two-phase extraction:
+Two-phase extraction:
 1. Structure Analysis: Extract document structure from table of contents
-2. Section Extraction: Extract complete section content from page images
+2. Section Extraction: Extract content of each section
 
-Optimized for German academic documents (Prüfungsordnungen, Modulhandbücher).
+Key principle: All page numbers must be PDF page numbers (1 = first page of PDF),
+NOT the printed page numbers in the document.
 """
 
-from typing import Optional
-from .models import DocumentContext, StructureEntry, SectionType
+from .models import DocumentContext, StructureEntry
+
 
 # =============================================================================
-# PHASE 1: Structure Analysis (Table of Contents)
+# PHASE 1: Structure Analysis
 # =============================================================================
 
-STRUCTURE_ANALYSIS_SYSTEM = """Du bist ein Experte für die Analyse akademischer Dokumente deutscher Universitäten.
+STRUCTURE_SYSTEM = """Du bist ein Experte für die Analyse akademischer Dokumente.
 
-DEINE AUFGABE:
-Analysiere das Inhaltsverzeichnis und die Dokumentstruktur, um eine vollständige Strukturkarte zu erstellen.
+DEINE AUFGABE: Erstelle eine Strukturkarte des Dokuments basierend auf dem Inhaltsverzeichnis.
 
-KRITISCHE REGELN:
-1. Du MUSST das Inhaltsverzeichnis finden und analysieren
-2. Extrahiere JEDEN Paragraphen (§) mit Titel und Seitenzahl
-3. Extrahiere JEDE Anlage mit Titel und Seitenzahl
-4. Wenn KEIN Inhaltsverzeichnis vorhanden ist, setze "has_toc" auf false
+KRITISCH - SEITENZAHLEN:
+Die Bilder sind nummeriert als "PDF-Seite 1", "PDF-Seite 2", etc.
+Das Inhaltsverzeichnis zeigt GEDRUCKTE Seitenzahlen (z.B. "§ 5 ... Seite 10").
+Diese sind NICHT identisch!
+
+DU MUSST:
+1. Den OFFSET berechnen: Wenn auf PDF-Seite 2 die gedruckte "Seite 1" steht, ist der Offset = 1
+2. Alle Seitenzahlen in deiner Antwort als PDF-SEITENZAHLEN angeben
+3. Formel: PDF-Seitenzahl = Gedruckte Seitenzahl + Offset
+
+Beispiel:
+- Du siehst auf PDF-Seite 2 die gedruckte "Seite 1" → Offset = 1
+- Im ToC steht "§ 22 ... Seite 15"
+- → § 22 beginnt auf PDF-Seite 16 (= 15 + 1)
 
 STRUKTURELEMENTE:
-1. OVERVIEW (Übersicht): Alles VOR dem ersten § (Titelseite, Inhaltsverzeichnis, Präambel)
-2. PARAGRAPH (§): Nummerierte Paragraphen (§ 1, § 2, ..., § 40)
-3. ANLAGE: Anlagen am Ende (Anlage 1, Anlage 2, ...)
+- OVERVIEW: Titelseite, Inhaltsverzeichnis, Präambel (vor dem ersten §)
+- PARAGRAPH: Nummerierte Paragraphen (§ 1, § 2, ...)
+- ANLAGE: Anlagen am Ende (Anlage 1, Anlage 2, ...)"""
 
-WICHTIG ZUR SEITENZÄHLUNG:
-- Seitenzahlen müssen 1-indiziert sein (erste Seite = 1)
-- Achte auf die im Dokument gedruckten Seitenzahlen vs. PDF-Seitenzahlen
-- Falls die Nummerierung bei "Seite 1" beginnt, aber das PDF mit Seite 1 startet, nutze die PDF-Seitenzahlen
-- Die letzte Seite eines Abschnitts ist die Seite VOR dem nächsten Abschnitt"""
 
-STRUCTURE_ANALYSIS_USER = """Analysiere dieses Dokument und erstelle eine vollständige Strukturkarte.
+STRUCTURE_USER = """Analysiere die folgenden PDF-Seiten und erstelle eine Strukturkarte.
 
-SCHRITT 1: Finde das Inhaltsverzeichnis
-- Suche nach "Inhalt", "Inhaltsverzeichnis", "Gliederung"
-- Lies JEDE Zeile des Inhaltsverzeichnisses
+Das Dokument hat insgesamt {total_pages} PDF-Seiten.
 
-SCHRITT 2: Extrahiere Dokumentmetadaten
-- Dokumenttyp (pruefungsordnung, modulhandbuch, studienordnung, etc.)
-- Titel, Institution, Fachbereich
-- Studiengang, Version/Datum
-- Abkürzungen (oft in einer Legende oder am Anfang definiert)
+SCHRITT 1: Bestimme den Seitenzahl-Offset
+- Finde die erste Seite mit einer gedruckten Seitenzahl
+- Berechne: Offset = PDF-Seitennummer - Gedruckte Seitenzahl
+- Beispiel: PDF-Seite 3 zeigt "Seite 1" → Offset = 3 - 1 = 2
 
-SCHRITT 3: Erstelle die Strukturkarte
-Für JEDEN Eintrag im Inhaltsverzeichnis:
-- section_type: "overview" | "paragraph" | "anlage"
-- section_number: "§ 1" | "Anlage 1" | null (für overview)
-- section_title: Der Titel des Abschnitts
-- start_page: Erste Seite (aus dem Inhaltsverzeichnis)
-- end_page: Wird berechnet (Seite vor dem nächsten Abschnitt)
+SCHRITT 2: Lies das Inhaltsverzeichnis
+- Finde jeden § und jede Anlage mit ihrer gedruckten Seitenzahl
+- Berechne die PDF-Seitenzahl: PDF-Seite = Gedruckte Seite + Offset
 
-WICHTIG: Die LETZTE Seite des Dokuments ist {total_pages}.
+SCHRITT 3: Erstelle die Struktur
+Für jeden Eintrag: start_page und end_page als PDF-SEITENZAHLEN.
+Die end_page ist die Seite vor dem nächsten Abschnitt.
 
-Antworte AUSSCHLIESSLICH im folgenden JSON-Format:
+Antworte NUR mit diesem JSON:
 
 ```json
 {{
   "has_toc": true,
+  "page_offset": 2,
   "context": {{
     "document_type": "pruefungsordnung",
-    "title": "Prüfungsordnung für den Studiengang Informatik B.Sc.",
-    "institution": "Philipps-Universität Marburg",
-    "faculty": "Fachbereich Mathematik und Informatik",
-    "degree_program": "Informatik B.Sc.",
-    "version_date": "01.10.2023",
-    "version_info": "Nichtamtliche Lesefassung",
-    "total_pages": {total_pages},
-    "abbreviations": [
-      {{"short": "LP", "long": "Leistungspunkte"}},
-      {{"short": "AB", "long": "Allgemeine Bestimmungen"}},
-      {{"short": "SWS", "long": "Semesterwochenstunden"}}
-    ],
-    "key_terms": ["Modul", "Leistungspunkte", "Prüfungsleistung"],
-    "chapters": ["I. Allgemeines", "II. Studienbezogene Bestimmungen"],
-    "referenced_documents": ["Allgemeine Bestimmungen vom 01.01.2020"],
-    "legal_basis": "HHG § 44 Abs. 1"
+    "title": "Vollständiger Titel",
+    "institution": "Name der Universität",
+    "faculty": "Fachbereich",
+    "degree_program": "Studiengang",
+    "version_date": "Datum",
+    "abbreviations": [{{"short": "LP", "long": "Leistungspunkte"}}],
+    "chapters": ["I. Allgemeines", "II. Prüfungen"]
   }},
   "structure": [
     {{
       "section_type": "overview",
       "section_number": null,
-      "section_title": "Übersicht und Inhaltsverzeichnis",
+      "section_title": "Übersicht",
       "start_page": 1,
       "end_page": 2
     }},
@@ -97,326 +88,158 @@ Antworte AUSSCHLIESSLICH im folgenden JSON-Format:
       "section_title": "Geltungsbereich",
       "start_page": 3,
       "end_page": 3
-    }},
-    {{
-      "section_type": "paragraph",
-      "section_number": "§ 2",
-      "section_title": "Ziele des Studiums",
-      "start_page": 3,
-      "end_page": 4
-    }},
-    {{
-      "section_type": "anlage",
-      "section_number": "Anlage 1",
-      "section_title": "Exemplarische Studienverlaufspläne",
-      "start_page": 25,
-      "end_page": 28
     }}
   ]
 }}
 ```
 
-REGELN FÜR structure[]:
-1. ERSTER Eintrag: section_type="overview" für Seiten vor dem ersten §
-2. Sortiere nach start_page aufsteigend
-3. end_page = start_page des nächsten Abschnitts - 1
-4. Letzter Abschnitt: end_page = {total_pages}
-5. Wenn mehrere §§ auf einer Seite beginnen: Beide haben dieselbe start_page
+REGELN:
+- Alle Seitenzahlen sind PDF-SEITENZAHLEN (1 = erstes Bild)
+- end_page des letzten Eintrags = {total_pages}
+- Sortiere nach start_page
 
-WENN KEIN INHALTSVERZEICHNIS:
+Falls KEIN Inhaltsverzeichnis vorhanden:
 ```json
-{{
-  "has_toc": false,
-  "context": null,
-  "structure": null
-}}
-```
-
-Analysiere das Dokument sorgfältig und gib die vollständige JSON-Antwort aus."""
+{{"has_toc": false, "page_offset": null, "context": null, "structure": null}}
+```"""
 
 
 # =============================================================================
 # PHASE 2: Section Extraction
 # =============================================================================
 
-SECTION_EXTRACTION_SYSTEM = """Du bist ein Experte für die präzise Extraktion von Dokumenteninhalten.
+SECTION_SYSTEM = """Du bist ein Experte für präzise Dokumentenextraktion.
 
-KONTEXT ZUM DOKUMENT:
-{document_context}
+DOKUMENT-KONTEXT:
+{context}
 
-DEINE AUFGABE:
-Extrahiere den VOLLSTÄNDIGEN Inhalt des angegebenen Abschnitts und wandle ihn in natürliche Sprache um.
+DEINE AUFGABE: Extrahiere den VOLLSTÄNDIGEN Inhalt des angegebenen Abschnitts.
 
-KRITISCHE REGELN:
+REGELN:
 
-1. PRÄZISION - KEINE HALLUZINATION:
-   - Gib NUR Informationen wieder, die TATSÄCHLICH auf den Seiten stehen
-   - Erfinde NICHTS hinzu
-   - Ändere KEINE Zahlen, Daten, Namen oder Fakten
+1. PRÄZISION:
+   - Nur Informationen wiedergeben, die auf den Seiten stehen
+   - Keine Zahlen, Daten oder Fakten ändern
 
-2. FOKUS AUF DEN RICHTIGEN ABSCHNITT:
-   - Du erhältst Bilder mehrerer Seiten (mit Pufferseiten für Kontext)
-   - WICHTIG: Die tatsächliche Position kann 1-2 Seiten früher oder später sein als angegeben
-   - Suche auf ALLEN Seiten nach dem gesuchten Abschnitt
-   - Extrahiere NUR den Inhalt dieses einen Abschnitts
-   - Ignoriere Inhalte anderer §§ oder Anlagen
-   - Der Abschnitt kann mitten auf einer Seite beginnen oder enden
+2. ABSCHNITT FINDEN:
+   - Suche nach dem § oder der Anlage mit der angegebenen Nummer
+   - Extrahiere nur diesen einen Abschnitt
+   - Stoppe beim nächsten § oder bei der nächsten Anlage
 
-3. TABELLEN → NATÜRLICHE SPRACHE:
-   - Wandle ALLE Tabellen in vollständige, verständliche Sätze um
-   - Integriere Spaltenüberschriften in jeden Satz
-   - Beispiel Notentabelle: "Laut Notentabelle entsprechen 15 Punkte der Note 0,7 (sehr gut)."
-   - Beispiel Modulliste: "Das Modul 'Analysis I' ist ein Pflichtmodul mit 9 Leistungspunkten."
-   - Beispiel Studienverlauf: "Im ersten Semester sind die Module Analysis I (9 LP) und Lineare Algebra I (9 LP) vorgesehen."
+3. TABELLEN → TEXT:
+   - Wandle Tabellen in vollständige Sätze um
+   - "Das Modul Analysis I ist ein Pflichtmodul mit 9 LP."
+   - "Im 1. Semester sind Analysis I (9 LP) und Lineare Algebra I (9 LP) vorgesehen."
 
-4. LISTEN → FLIESSTEXT:
-   - Wandle Aufzählungen in Fließtext um
-   - Behalte die logische Struktur bei
+4. STRUKTUR BEIBEHALTEN:
+   - Absatznummern (1), (2), (3) im Text behalten
+   - Verweise exakt übernehmen: "§ 5 Abs. 2", "Anlage 1"
 
-5. ABSATZNUMMERN:
-   - Behalte Absatznummern wie (1), (2), (3) im Text
-   - Integriere sie natürlich: "Absatz (2) regelt, dass..."
+5. VOLLSTÄNDIGKEIT:
+   - Gesamten Inhalt extrahieren, nichts kürzen
+   - Alle Tabellenzeilen umwandeln"""
 
-6. VERWEISE:
-   - Behalte interne Verweise exakt: "§ 5 Abs. 2", "Anlage 1"
-   - Markiere externe Verweise: "gemäß den Allgemeinen Bestimmungen"
 
-7. VOLLSTÄNDIGKEIT:
-   - Extrahiere den GESAMTEN Inhalt des Abschnitts
-   - Kürze NICHTS, lasse NICHTS weg
-   - Bei langen Tabellen: ALLE Zeilen umwandeln"""
+SECTION_USER = """Extrahiere: {section_id}
 
-SECTION_EXTRACTION_USER = """Extrahiere den Inhalt von: {section_identifier}
-
-DIESER ABSCHNITT:
-- Typ: {section_type}
+ABSCHNITT-INFO:
 - Nummer: {section_number}
 - Titel: {section_title}
-- Seiten: {start_page} bis {end_page}
+- PDF-Seiten: {start_page} bis {end_page}
 
-Du siehst die Seiten {visible_pages} des Dokuments.
+Du siehst PDF-Seiten {visible_pages}.
+{hint}
 
-{continuation_hint}
-
-ANWEISUNGEN:
-1. Finde den Beginn des Abschnitts (suche nach "{section_identifier}")
-2. Extrahiere ALLEN Inhalt bis zum nächsten Abschnitt oder bis Seite {end_page} endet
-3. Wandle Tabellen und Listen in natürliche Sprache um
-4. Behalte alle Fakten, Zahlen und Verweise exakt bei
-
-Antworte AUSSCHLIESSLICH im folgenden JSON-Format:
+AUSGABE als JSON:
 
 ```json
 {{
-  "content": "Der vollständige Inhalt des Abschnitts in natürlicher Sprache. Alle Tabellen sind in Fließtext umgewandelt. Alle Fakten sind präzise wiedergegeben. Absatznummern wie (1), (2) sind enthalten.",
-  "paragraphs": ["(1)", "(2)", "(3)"],
+  "content": "Vollständiger Inhalt als Fließtext. Tabellen in Sätze umgewandelt.",
+  "paragraphs": ["(1)", "(2)"],
   "chapter": "II. Studienbezogene Bestimmungen",
   "has_table": true,
   "has_list": false,
-  "internal_references": ["§ 5 Abs. 2", "Anlage 1", "§ 10"],
-  "external_references": ["Allgemeine Bestimmungen", "HHG"],
+  "internal_references": ["§ 5 Abs. 2", "Anlage 1"],
+  "external_references": ["Allgemeine Bestimmungen"],
   "extraction_confidence": 1.0,
   "extraction_notes": null
 }}
-```
+```"""
 
-FELDREGELN:
-- content: Der vollständige Abschnittsinhalt in natürlicher Sprache
-- paragraphs: Alle Absatznummern (1), (2) etc. die im Abschnitt vorkommen
-- chapter: Das übergeordnete Kapitel (z.B. "II. Studienbezogene Bestimmungen")
-- has_table: true wenn Tabellen vorhanden waren (jetzt in Text umgewandelt)
-- has_list: true wenn Listen vorhanden waren
-- internal_references: Verweise auf andere Teile des Dokuments
-- external_references: Verweise auf externe Dokumente
-- extraction_confidence: 1.0 wenn vollständig, 0.8 wenn teilweise, 0.5 wenn problematisch
-- extraction_notes: Notizen bei Problemen, sonst null
 
-Extrahiere den Abschnitt sorgfältig und gib die JSON-Antwort aus."""
+# Hints for sliding window extraction
+HINT_SINGLE = "Extrahiere den vollständigen Abschnitt."
+HINT_FIRST = "Dies ist der ERSTE Teil. Extrahiere ab dem Abschnittsbeginn."
+HINT_MIDDLE = "Dies ist ein MITTLERER Teil. Seite {overlap} wurde bereits extrahiert. Beginne ab Seite {continue_from}."
+HINT_LAST = "Dies ist der LETZTE Teil. Seite {overlap} wurde bereits extrahiert. Extrahiere ab Seite {continue_from} bis zum Ende."
 
 
 # =============================================================================
-# Continuation Hints for Sliding Window
+# Helper Functions
 # =============================================================================
 
-CONTINUATION_HINT_START = """WICHTIG: Dies ist der ERSTE Teil eines langen Abschnitts.
-- Beginne mit der Extraktion am Anfang des Abschnitts
-- Extrahiere so viel wie möglich von den sichtbaren Seiten
-- Der Abschnitt wird auf weiteren Seiten fortgesetzt"""
-
-CONTINUATION_HINT_MIDDLE = """WICHTIG: Dies ist ein MITTLERER Teil eines langen Abschnitts.
-- Du siehst Seiten {start_visible} bis {end_visible}
-- Die ERSTE Seite (Seite {start_visible}) wurde bereits im vorherigen Teil extrahiert
-- Beginne die Extraktion AB Seite {continue_from}
-- Ignoriere bereits extrahierte Inhalte von Seite {start_visible}
-- Der Abschnitt wird möglicherweise noch weiter fortgesetzt"""
-
-CONTINUATION_HINT_END = """WICHTIG: Dies ist der LETZTE Teil eines langen Abschnitts.
-- Du siehst Seiten {start_visible} bis {end_visible}
-- Die ERSTE Seite (Seite {start_visible}) wurde bereits im vorherigen Teil extrahiert
-- Beginne die Extraktion AB Seite {continue_from}
-- Extrahiere bis zum Ende des Abschnitts"""
-
-CONTINUATION_HINT_SINGLE = """Du siehst alle Seiten dieses Abschnitts. Extrahiere den vollständigen Inhalt."""
-
-
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
-
-def build_document_context_string(context: DocumentContext) -> str:
-    """Build a context string for section extraction prompts."""
-    parts = [
-        f"Dokumenttyp: {context.document_type.value}",
-        f"Titel: {context.title}",
-        f"Institution: {context.institution}",
-    ]
-
-    if context.faculty:
-        parts.append(f"Fachbereich: {context.faculty}")
-
-    if context.degree_program:
-        parts.append(f"Studiengang: {context.degree_program}")
-
-    if context.abbreviations:
-        abbrev_strs = [f"{a.short}={a.long}" for a in context.abbreviations]
-        if abbrev_strs:
-            parts.append(f"Abkürzungen: {', '.join(abbrev_strs[:10])}")
-
-    if context.chapters:
-        chapters = context.chapters[:6]
-        parts.append(f"Gliederung: {', '.join(chapters)}")
-
-    return "\n".join(parts)
-
-
-def get_structure_analysis_prompt(total_pages: int) -> tuple[str, str]:
-    """
-    Get prompts for structure analysis phase.
-
-    Args:
-        total_pages: Total number of pages in the document
-
-    Returns:
-        Tuple of (system_prompt, user_prompt)
-    """
+def get_structure_prompt(total_pages: int) -> tuple[str, str]:
+    """Get prompts for structure analysis."""
     return (
-        STRUCTURE_ANALYSIS_SYSTEM,
-        STRUCTURE_ANALYSIS_USER.format(total_pages=total_pages)
+        STRUCTURE_SYSTEM,
+        STRUCTURE_USER.format(total_pages=total_pages)
     )
 
 
-def get_section_extraction_prompts(
+def get_section_prompt(
     context: DocumentContext,
     entry: StructureEntry,
     visible_pages: list[int],
     is_continuation: bool = False,
-    is_final_part: bool = False,
-    overlap_page: Optional[int] = None,
+    is_last: bool = False,
+    overlap_page: int = None,
 ) -> tuple[str, str]:
-    """
-    Get prompts for section extraction phase.
+    """Get prompts for section extraction."""
 
-    Args:
-        context: Document context
-        entry: Structure entry for the section to extract
-        visible_pages: List of page numbers being sent (1-indexed)
-        is_continuation: True if this is a continuation (sliding window)
-        is_final_part: True if this is the final part of a sliding window
-        overlap_page: The page number that overlaps with previous window
-
-    Returns:
-        Tuple of (system_prompt, user_prompt)
-    """
     # Build context string
-    context_str = build_document_context_string(context)
-    system_prompt = SECTION_EXTRACTION_SYSTEM.format(document_context=context_str)
+    ctx_parts = [
+        f"Typ: {context.document_type.value}",
+        f"Titel: {context.title}",
+        f"Institution: {context.institution}",
+    ]
+    if context.faculty:
+        ctx_parts.append(f"Fachbereich: {context.faculty}")
+    if context.degree_program:
+        ctx_parts.append(f"Studiengang: {context.degree_program}")
+    if context.abbreviations:
+        abbrevs = ", ".join(f"{a.short}={a.long}" for a in context.abbreviations[:5])
+        ctx_parts.append(f"Abkürzungen: {abbrevs}")
 
-    # Determine section identifier
-    section_identifier = entry.section_number or "Übersicht"
+    context_str = "\n".join(ctx_parts)
+    system = SECTION_SYSTEM.format(context=context_str)
+
+    # Section identifier
+    section_id = entry.section_number or "Übersicht"
     if entry.section_title:
-        section_identifier = f"{section_identifier} {entry.section_title}".strip()
+        section_id = f"{section_id} {entry.section_title}"
 
-    # Determine continuation hint
-    if len(visible_pages) == entry.page_count and not is_continuation:
-        # Single window covers entire section
-        continuation_hint = CONTINUATION_HINT_SINGLE
-    elif not is_continuation:
-        # First part of sliding window
-        continuation_hint = CONTINUATION_HINT_START
-    elif is_final_part:
-        # Last part of sliding window
-        continuation_hint = CONTINUATION_HINT_END.format(
-            start_visible=visible_pages[0],
-            end_visible=visible_pages[-1],
-            continue_from=overlap_page + 1 if overlap_page else visible_pages[1],
-        )
-    else:
-        # Middle part of sliding window
-        continuation_hint = CONTINUATION_HINT_MIDDLE.format(
-            start_visible=visible_pages[0],
-            end_visible=visible_pages[-1],
-            continue_from=overlap_page + 1 if overlap_page else visible_pages[1],
-        )
-
-    # Format visible pages string
+    # Visible pages string
     if len(visible_pages) == 1:
-        visible_pages_str = str(visible_pages[0])
+        visible_str = str(visible_pages[0])
     else:
-        visible_pages_str = f"{visible_pages[0]} bis {visible_pages[-1]}"
+        visible_str = f"{visible_pages[0]} bis {visible_pages[-1]}"
 
-    # Build user prompt
-    user_prompt = SECTION_EXTRACTION_USER.format(
-        section_identifier=section_identifier,
-        section_type=entry.section_type.value,
+    # Hint for sliding window
+    if not is_continuation:
+        hint = HINT_SINGLE if len(visible_pages) == entry.page_count else HINT_FIRST
+    elif is_last:
+        hint = HINT_LAST.format(overlap=overlap_page, continue_from=overlap_page + 1)
+    else:
+        hint = HINT_MIDDLE.format(overlap=overlap_page, continue_from=overlap_page + 1)
+
+    user = SECTION_USER.format(
+        section_id=section_id,
         section_number=entry.section_number or "Übersicht",
-        section_title=entry.section_title or "Einführung und Inhaltsverzeichnis",
+        section_title=entry.section_title or "Einführung",
         start_page=entry.start_page,
         end_page=entry.end_page,
-        visible_pages=visible_pages_str,
-        continuation_hint=continuation_hint,
+        visible_pages=visible_str,
+        hint=hint,
     )
 
-    return system_prompt, user_prompt
-
-
-def build_context_string(context: dict) -> str:
-    """
-    Build a context string from a dictionary (legacy compatibility).
-
-    Args:
-        context: Dictionary with document context
-
-    Returns:
-        Formatted context string
-    """
-    parts = [
-        f"Dokumenttyp: {context.get('document_type', 'Unbekannt')}",
-        f"Titel: {context.get('title', 'Unbekannt')}",
-        f"Institution: {context.get('institution', 'Unbekannt')}",
-    ]
-
-    if context.get('faculty'):
-        parts.append(f"Fachbereich: {context['faculty']}")
-
-    if context.get('degree_program'):
-        parts.append(f"Studiengang: {context['degree_program']}")
-
-    if context.get('abbreviations'):
-        abbrevs = context['abbreviations']
-        if isinstance(abbrevs, list):
-            abbrev_strs = [
-                f"{a.get('short', '')}={a.get('long', '')}"
-                for a in abbrevs if isinstance(a, dict)
-            ]
-        elif isinstance(abbrevs, dict):
-            abbrev_strs = [f"{k}={v}" for k, v in abbrevs.items()]
-        else:
-            abbrev_strs = []
-        if abbrev_strs:
-            parts.append(f"Abkürzungen: {', '.join(abbrev_strs[:10])}")
-
-    if context.get('chapters'):
-        chapters = context['chapters'][:6]
-        parts.append(f"Gliederung: {', '.join(chapters)}")
-
-    return "\n".join(parts)
+    return system, user

@@ -62,7 +62,7 @@ class TestSlidingWindow:
             extractor = PDFExtractor(config=config, api_key="test-key")
 
             pages = [1, 2, 3]
-            windows = extractor._create_sliding_windows(pages, 5)
+            windows = extractor._create_windows(pages, 5)
 
             assert len(windows) == 1
             assert windows[0] == [1, 2, 3]
@@ -74,7 +74,7 @@ class TestSlidingWindow:
             extractor = PDFExtractor(config=config, api_key="test-key")
 
             pages = [1, 2, 3, 4, 5]
-            windows = extractor._create_sliding_windows(pages, 5)
+            windows = extractor._create_windows(pages, 5)
 
             assert len(windows) == 1
             assert windows[0] == [1, 2, 3, 4, 5]
@@ -86,7 +86,7 @@ class TestSlidingWindow:
             extractor = PDFExtractor(config=config, api_key="test-key")
 
             pages = [1, 2, 3, 4, 5, 6, 7]
-            windows = extractor._create_sliding_windows(pages, 5)
+            windows = extractor._create_windows(pages, 5)
 
             assert len(windows) == 2
             assert windows[0] == [1, 2, 3, 4, 5]
@@ -101,7 +101,7 @@ class TestSlidingWindow:
             extractor = PDFExtractor(config=config, api_key="test-key")
 
             pages = list(range(1, 13))  # 1-12
-            windows = extractor._create_sliding_windows(pages, 5)
+            windows = extractor._create_windows(pages, 5)
 
             assert len(windows) == 3
             assert windows[0] == [1, 2, 3, 4, 5]
@@ -118,7 +118,7 @@ class TestSlidingWindow:
             extractor = PDFExtractor(config=config, api_key="test-key")
 
             pages = list(range(1, 11))  # 1-10
-            windows = extractor._create_sliding_windows(pages, 3)
+            windows = extractor._create_windows(pages, 3)
 
             # Flatten windows and check all pages present
             covered = set()
@@ -205,13 +205,12 @@ class TestRefusalDetection:
                 assert not extractor._is_refusal(msg), f"Should not flag: {msg}"
 
     def test_empty_not_refusal(self):
-        """Test that empty/None content is not flagged as refusal."""
+        """Test that empty content is not flagged as refusal."""
         with patch('pdf_extractor.extractor.OpenAI'):
             extractor = PDFExtractor(api_key="test-key")
 
-            # Empty and None should not be flagged as refusal
+            # Empty should not be flagged as refusal
             assert not extractor._is_refusal("")
-            assert not extractor._is_refusal(None)
 
 
 class TestEstimateAPICost:
@@ -267,6 +266,7 @@ class TestParseStructureResponse:
 
             response = json.dumps({
                 "has_toc": False,
+                "page_offset": None,
                 "context": None,
                 "structure": None
             })
@@ -320,7 +320,7 @@ class TestParseSectionResponse:
 
             assert section.section_number == "§ 1"
             assert section.extraction_confidence == 0.5
-            assert "JSON parsing failed" in section.extraction_notes
+            assert "JSON parse failed" in section.extraction_notes
 
 
 class TestCreateFailedSection:

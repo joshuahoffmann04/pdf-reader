@@ -141,6 +141,7 @@ def mock_structure_response():
     """Create a mock structure analysis response."""
     return {
         "has_toc": True,
+        "page_offset": 0,
         "context": {
             "document_type": "pruefungsordnung",
             "title": "Prüfungsordnung Mathematik B.Sc.",
