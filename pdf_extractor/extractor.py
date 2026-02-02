@@ -415,8 +415,9 @@ class PDFExtractor:
         """
         Aggregate page scan results into document structure.
 
-        This builds accurate page ranges by finding all pages where
-        each section appears.
+        Uses SEQUENTIAL SECTION INFERENCE: Since sections appear in order
+        (§ 1, § 2, § 3...), we use the first appearance of each section
+        to infer correct page ranges, even if ToC pages cause false positives.
 
         Args:
             scan_results: Results from phase 1
@@ -428,6 +429,8 @@ class PDFExtractor:
         # Build map: section key -> list of pages where it appears
         section_pages: dict[tuple, list[int]] = defaultdict(list)
         section_titles: dict[tuple, str] = {}
+        # Track FIRST appearance of each section (most reliable signal)
+        section_first_appearance: dict[tuple, int] = {}
 
         has_preamble = False
 
@@ -435,6 +438,10 @@ class PDFExtractor:
             for section in result.sections:
                 key = (section.section_type, section.identifier)
                 section_pages[key].append(result.page_number)
+
+                # Track first appearance
+                if key not in section_first_appearance:
+                    section_first_appearance[key] = result.page_number
 
                 # Keep track of titles (prefer non-None)
                 if section.title and key not in section_titles:
@@ -449,53 +456,44 @@ class PDFExtractor:
                 "The document may not contain recognizable § or Anlage sections.",
             )
 
-        # Build SectionLocation objects
-        locations: list[SectionLocation] = []
+        # =====================================================================
+        # SEQUENTIAL SECTION INFERENCE
+        # =====================================================================
+        # The key insight: Sections appear in sequential order in German docs.
+        # § 1 comes before § 2, § 2 before § 3, etc.
+        # We use this to infer correct ranges even when ToC causes false positives.
 
-        # Validation threshold: sections spanning > 40% of pages are suspicious
-        max_reasonable_pages = max(int(total_pages * 0.4), 10)
+        # Step 1: Build preliminary locations sorted by first appearance
+        preliminary: list[SectionLocation] = []
 
         for (section_type, identifier), pages in section_pages.items():
-            # Sort and deduplicate pages
             pages = sorted(set(pages))
+            first_page = section_first_appearance[(section_type, identifier)]
 
-            # VALIDATION: Check for unreasonably large page ranges
-            if section_type == SectionType.PARAGRAPH and len(pages) > max_reasonable_pages:
-                logger.warning(
-                    f"Section {identifier} spans {len(pages)} pages "
-                    f"(max reasonable: {max_reasonable_pages}) - "
-                    "possible ToC misinterpretation, trimming to likely range"
-                )
-                # Try to find a reasonable contiguous range
-                # Typically the ToC appears in first few pages, so filter those out
-                non_toc_pages = [p for p in pages if p > 5]
-                if non_toc_pages:
-                    # Find the largest contiguous block
-                    pages = self._find_contiguous_range(non_toc_pages)
-                    logger.info(f"Section {identifier} trimmed to pages {pages}")
-
-            locations.append(SectionLocation(
+            preliminary.append(SectionLocation(
                 section_type=section_type,
                 identifier=identifier,
                 title=section_titles.get((section_type, identifier)),
                 pages=pages,
+                # Temporarily store first appearance for sorting
             ))
 
-        # Sort by first page, then by identifier
+        # Sort by type priority, then by first appearance
         def sort_key(loc: SectionLocation) -> tuple:
-            # Preamble first, then by start page, then by identifier
             type_order = {
                 SectionType.PREAMBLE: 0,
                 SectionType.PARAGRAPH: 1,
                 SectionType.ANLAGE: 2,
             }
-            return (
-                type_order.get(loc.section_type, 1),
-                loc.start_page,
-                loc.identifier or "",
-            )
+            first_app = section_first_appearance[(loc.section_type, loc.identifier)]
+            # For paragraphs, also sort by number (§ 1 before § 2)
+            num = self._extract_section_number(loc.identifier) if loc.identifier else 0
+            return (type_order.get(loc.section_type, 1), first_app, num)
 
-        locations.sort(key=sort_key)
+        preliminary.sort(key=sort_key)
+
+        # Step 2: Apply sequential inference to fix page ranges
+        locations = self._apply_sequential_inference(preliminary, total_pages)
 
         # Post-validation: Log suspicious patterns
         self._validate_structure(locations, total_pages)
@@ -506,6 +504,170 @@ class PDFExtractor:
             has_preamble=has_preamble,
             scan_results=scan_results,
         )
+
+    def _extract_section_number(self, identifier: str | None) -> int:
+        """Extract numeric part from section identifier (e.g., '§ 5' -> 5)."""
+        if not identifier:
+            return 0
+        import re
+        match = re.search(r'\d+', identifier)
+        return int(match.group()) if match else 0
+
+    def _apply_sequential_inference(
+        self,
+        locations: list[SectionLocation],
+        total_pages: int,
+    ) -> list[SectionLocation]:
+        """
+        Apply sequential inference to fix page ranges.
+
+        Key insight: In German academic documents, sections appear sequentially.
+        § 1 cannot extend past where § 2 starts (with 1 page overlap allowed).
+
+        This fixes ToC misinterpretation where sections appear on many pages
+        because they're listed in the Table of Contents.
+
+        Args:
+            locations: Preliminary section locations (sorted by first appearance)
+            total_pages: Total pages in document
+
+        Returns:
+            Corrected section locations
+        """
+        if not locations:
+            return locations
+
+        # Separate by type for sequential processing
+        preambles = [loc for loc in locations if loc.section_type == SectionType.PREAMBLE]
+        paragraphs = [loc for loc in locations if loc.section_type == SectionType.PARAGRAPH]
+        anlagen = [loc for loc in locations if loc.section_type == SectionType.ANLAGE]
+
+        # Process paragraphs with sequential inference
+        corrected_paragraphs = self._infer_sequential_ranges(paragraphs, total_pages)
+
+        # Process anlagen with sequential inference
+        corrected_anlagen = self._infer_sequential_ranges(anlagen, total_pages)
+
+        # Preamble: should end before first paragraph starts
+        corrected_preambles = []
+        first_para_start = corrected_paragraphs[0].start_page if corrected_paragraphs else total_pages
+        for preamble in preambles:
+            # Preamble pages should be before first paragraph
+            corrected_pages = [p for p in preamble.pages if p < first_para_start]
+            if not corrected_pages:
+                corrected_pages = [1]  # At minimum, page 1
+            corrected_preambles.append(SectionLocation(
+                section_type=preamble.section_type,
+                identifier=preamble.identifier,
+                title=preamble.title,
+                pages=corrected_pages,
+            ))
+
+        # Combine and return
+        return corrected_preambles + corrected_paragraphs + corrected_anlagen
+
+    def _infer_sequential_ranges(
+        self,
+        locations: list[SectionLocation],
+        total_pages: int,
+    ) -> list[SectionLocation]:
+        """
+        Infer page ranges for sequentially ordered sections.
+
+        For each section, its range is from its start until the next section
+        starts (with 1 page overlap allowed for shared pages).
+
+        Args:
+            locations: Sections in sequential order
+            total_pages: Total pages in document
+
+        Returns:
+            Sections with corrected page ranges
+        """
+        if not locations:
+            return locations
+
+        corrected: list[SectionLocation] = []
+
+        for i, loc in enumerate(locations):
+            # Determine the end boundary
+            if i + 1 < len(locations):
+                # Next section exists - this section ends at or just after next starts
+                next_start = locations[i + 1].start_page
+                # Allow 1 page overlap (sections can share a page)
+                max_end = next_start
+            else:
+                # Last section - can extend to end of document
+                max_end = total_pages
+
+            # Filter pages to be within [start, max_end]
+            start_page = loc.start_page
+            valid_pages = [p for p in loc.pages if start_page <= p <= max_end]
+
+            # If no valid pages (rare), use just the start page
+            if not valid_pages:
+                valid_pages = [start_page]
+
+            # Further refinement: find contiguous range from start
+            # This handles cases where ToC on page 2-3 causes false positives
+            final_pages = self._get_contiguous_from_start(valid_pages, start_page)
+
+            logger.debug(
+                f"{loc.identifier}: original {loc.pages} -> inferred {final_pages}"
+            )
+
+            corrected.append(SectionLocation(
+                section_type=loc.section_type,
+                identifier=loc.identifier,
+                title=loc.title,
+                pages=final_pages,
+            ))
+
+        return corrected
+
+    def _get_contiguous_from_start(
+        self,
+        pages: list[int],
+        expected_start: int,
+    ) -> list[int]:
+        """
+        Get contiguous pages starting from expected_start.
+
+        If there's a gap (e.g., pages [2, 3, 6, 7, 8] with start=6),
+        returns [6, 7, 8] - the contiguous range from the actual start.
+
+        Args:
+            pages: Sorted list of page numbers
+            expected_start: Expected start page
+
+        Returns:
+            Contiguous pages from expected_start
+        """
+        if not pages:
+            return pages
+
+        pages = sorted(set(pages))
+
+        # Find where expected_start appears
+        try:
+            start_idx = pages.index(expected_start)
+        except ValueError:
+            # expected_start not in pages, find closest
+            start_idx = 0
+            for i, p in enumerate(pages):
+                if p >= expected_start:
+                    start_idx = i
+                    break
+
+        # Get contiguous range from start_idx
+        result = [pages[start_idx]]
+        for i in range(start_idx + 1, len(pages)):
+            if pages[i] == pages[i - 1] + 1:
+                result.append(pages[i])
+            else:
+                break  # Gap found, stop
+
+        return result
 
     def _find_contiguous_range(self, pages: list[int]) -> list[int]:
         """
