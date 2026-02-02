@@ -395,10 +395,11 @@ class TestParseStructureEntries:
         with patch('pdf_extractor.extractor.OpenAI'):
             extractor = PDFExtractor(api_key="test-key")
 
+            # LLM only provides start_page, no end_page
             data = [
-                {"section_type": "paragraph", "section_number": "§ 2", "start_page": 5, "end_page": 6},
-                {"section_type": "overview", "section_number": None, "start_page": 1, "end_page": 2},
-                {"section_type": "paragraph", "section_number": "§ 1", "start_page": 3, "end_page": 4},
+                {"section_type": "paragraph", "section_number": "§ 2", "start_page": 5},
+                {"section_type": "overview", "section_number": None, "start_page": 1},
+                {"section_type": "paragraph", "section_number": "§ 1", "start_page": 3},
             ]
 
             entries = extractor._parse_structure_entries(data, total_pages=50)
@@ -408,16 +409,34 @@ class TestParseStructureEntries:
             assert entries[1].start_page == 3
             assert entries[2].start_page == 5
 
+    def test_parse_entries_end_page_calculated(self):
+        """Test that end_page is calculated as next start_page - 1."""
+        with patch('pdf_extractor.extractor.OpenAI'):
+            extractor = PDFExtractor(api_key="test-key")
+
+            data = [
+                {"section_type": "overview", "section_number": None, "start_page": 1},
+                {"section_type": "paragraph", "section_number": "§ 1", "start_page": 3},
+                {"section_type": "paragraph", "section_number": "§ 2", "start_page": 5},
+            ]
+
+            entries = extractor._parse_structure_entries(data, total_pages=50)
+
+            # end_page = next start_page - 1
+            assert entries[0].end_page == 2  # next starts at 3, so 3-1=2
+            assert entries[1].end_page == 4  # next starts at 5, so 5-1=4
+            assert entries[2].end_page == 50  # last entry gets total_pages
+
     def test_parse_entries_page_clamping(self):
         """Test that invalid pages are clamped."""
         with patch('pdf_extractor.extractor.OpenAI'):
             extractor = PDFExtractor(api_key="test-key")
 
             data = [
-                {"section_type": "paragraph", "section_number": "§ 1", "start_page": 0, "end_page": 100},
+                {"section_type": "paragraph", "section_number": "§ 1", "start_page": 0},
             ]
 
             entries = extractor._parse_structure_entries(data, total_pages=50)
 
             assert entries[0].start_page == 1
-            assert entries[0].end_page == 50
+            assert entries[0].end_page == 50  # last entry gets total_pages

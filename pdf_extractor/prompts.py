@@ -55,8 +55,8 @@ SCHRITT 2: Lies das Inhaltsverzeichnis
 - Berechne die PDF-Seitenzahl: PDF-Seite = Gedruckte Seite + Offset
 
 SCHRITT 3: Erstelle die Struktur
-Für jeden Eintrag: start_page und end_page als PDF-SEITENZAHLEN.
-Die end_page ist die Seite vor dem nächsten Abschnitt.
+Für jeden Eintrag: NUR die start_page als PDF-SEITENZAHL angeben.
+(Die end_page wird automatisch berechnet)
 
 Antworte NUR mit diesem JSON:
 
@@ -75,28 +75,18 @@ Antworte NUR mit diesem JSON:
     "chapters": ["I. Allgemeines", "II. Prüfungen"]
   }},
   "structure": [
-    {{
-      "section_type": "overview",
-      "section_number": null,
-      "section_title": "Übersicht",
-      "start_page": 1,
-      "end_page": 2
-    }},
-    {{
-      "section_type": "paragraph",
-      "section_number": "§ 1",
-      "section_title": "Geltungsbereich",
-      "start_page": 3,
-      "end_page": 3
-    }}
+    {{"section_type": "overview", "section_number": null, "section_title": "Übersicht", "start_page": 1}},
+    {{"section_type": "paragraph", "section_number": "§ 1", "section_title": "Geltungsbereich", "start_page": 3}},
+    {{"section_type": "paragraph", "section_number": "§ 2", "section_title": "Ziele", "start_page": 4}},
+    {{"section_type": "anlage", "section_number": "Anlage 1", "section_title": "Modulliste", "start_page": 45}}
   ]
 }}
 ```
 
 REGELN:
-- Alle Seitenzahlen sind PDF-SEITENZAHLEN (1 = erstes Bild)
-- end_page des letzten Eintrags = {total_pages}
+- Alle start_page Werte sind PDF-SEITENZAHLEN (1 = erstes Bild)
 - Sortiere nach start_page
+- KEINE end_page angeben (wird automatisch berechnet)
 
 Falls KEIN Inhaltsverzeichnis vorhanden:
 ```json

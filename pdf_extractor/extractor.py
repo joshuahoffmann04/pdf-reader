@@ -262,33 +262,56 @@ class PDFExtractor:
         structure_data: list,
         total_pages: int,
     ) -> list[StructureEntry]:
-        """Parse structure data into StructureEntry list."""
+        """
+        Parse structure data into StructureEntry list.
+
+        The LLM only provides start_page. We calculate end_page automatically:
+        end_page = next section's start_page - 1 (or total_pages for last section)
+        """
         type_map = {
             "overview": SectionType.OVERVIEW,
             "paragraph": SectionType.PARAGRAPH,
             "anlage": SectionType.ANLAGE,
         }
 
-        entries = []
+        # First pass: collect all entries with start_page only
+        raw_entries = []
         for item in structure_data:
             section_type = type_map.get(
                 item.get("section_type", "").lower(),
                 SectionType.PARAGRAPH
             )
-
             start_page = max(1, min(item.get("start_page", 1), total_pages))
-            end_page = max(start_page, min(item.get("end_page", start_page), total_pages))
+
+            raw_entries.append({
+                "section_type": section_type,
+                "section_number": item.get("section_number"),
+                "section_title": item.get("section_title"),
+                "start_page": start_page,
+            })
+
+        # Sort by start_page
+        raw_entries.sort(key=lambda e: (e["start_page"], e["section_number"] or ""))
+
+        # Second pass: calculate end_page for each entry
+        entries = []
+        for i, item in enumerate(raw_entries):
+            # end_page = next section's start_page - 1, or total_pages for last
+            if i < len(raw_entries) - 1:
+                end_page = raw_entries[i + 1]["start_page"] - 1
+                # Ensure end_page >= start_page
+                end_page = max(item["start_page"], end_page)
+            else:
+                end_page = total_pages
 
             entries.append(StructureEntry(
-                section_type=section_type,
-                section_number=item.get("section_number"),
-                section_title=item.get("section_title"),
-                start_page=start_page,
+                section_type=item["section_type"],
+                section_number=item["section_number"],
+                section_title=item["section_title"],
+                start_page=item["start_page"],
                 end_page=end_page,
             ))
 
-        # Sort by start page
-        entries.sort(key=lambda e: (e.start_page, e.section_number or ""))
         return entries
 
     # =========================================================================

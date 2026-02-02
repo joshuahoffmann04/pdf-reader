@@ -158,27 +158,9 @@ def mock_structure_response():
             "referenced_documents": ["Allgemeine Bestimmungen"],
         },
         "structure": [
-            {
-                "section_type": "overview",
-                "section_number": None,
-                "section_title": "Übersicht",
-                "start_page": 1,
-                "end_page": 2,
-            },
-            {
-                "section_type": "paragraph",
-                "section_number": "§ 1",
-                "section_title": "Geltungsbereich",
-                "start_page": 3,
-                "end_page": 3,
-            },
-            {
-                "section_type": "paragraph",
-                "section_number": "§ 2",
-                "section_title": "Ziele des Studiums",
-                "start_page": 3,
-                "end_page": 4,
-            },
+            {"section_type": "overview", "section_number": None, "section_title": "Übersicht", "start_page": 1},
+            {"section_type": "paragraph", "section_number": "§ 1", "section_title": "Geltungsbereich", "start_page": 3},
+            {"section_type": "paragraph", "section_number": "§ 2", "section_title": "Ziele des Studiums", "start_page": 4},
         ],
     }
 
