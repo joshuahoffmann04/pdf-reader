@@ -45,7 +45,9 @@ def setup_logging(verbose: bool = False, debug: bool = False) -> None:
         level = logging.DEBUG
         fmt = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
     elif verbose:
-        level = logging.INFO
+        # In verbose mode, only show warnings and errors from pdf_extractor
+        # The progress bar handles the verbose user feedback
+        level = logging.WARNING
         fmt = "%(levelname)s: %(message)s"
     else:
         level = logging.WARNING
@@ -53,13 +55,19 @@ def setup_logging(verbose: bool = False, debug: bool = False) -> None:
 
     logging.basicConfig(level=level, format=fmt)
 
+    # Suppress info-level logs from pdf_extractor when using progress bar
+    # to avoid interference with progress output
+    if verbose and not debug:
+        logging.getLogger("pdf_extractor").setLevel(logging.WARNING)
+
 
 def print_progress(current: int, total: int, message: str) -> None:
     """Print extraction progress."""
     bar_width = 30
     filled = int(bar_width * current / max(total, 1))
     bar = "=" * filled + "-" * (bar_width - filled)
-    print(f"\r[{bar}] {current}/{total} {message}", end="", flush=True)
+    # Clear the line and print progress (80 chars should cover most terminals)
+    print(f"\r[{bar}] {current}/{total} {message:<40}", end="", flush=True)
     if current == total:
         print()  # Newline at completion
 

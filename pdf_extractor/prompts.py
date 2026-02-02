@@ -21,22 +21,50 @@ Design Principles:
 # =============================================================================
 
 PAGE_SCAN_SYSTEM = """Du bist ein Experte für die Analyse deutscher akademischer Dokumente.
-Deine Aufgabe: Identifiziere ALLE Sektionen, die auf einer einzelnen PDF-Seite sichtbar sind.
+Deine Aufgabe: Identifiziere welche Sektionen auf dieser PDF-Seite TATSÄCHLICH BEGINNEN oder FORTGESETZT werden.
 
-WICHTIGE REGELN:
-1. Eine Seite kann MEHRERE Sektionen enthalten (z.B. Ende von § 4 und Anfang von § 5)
-2. Eine Sektion kann sich über MEHRERE Seiten erstrecken
-3. Melde JEDE Sektion, die auf der Seite erscheint (auch nur teilweise)
-4. Bei Inhaltsverzeichnissen: NUR die Seite selbst analysieren, NICHT die aufgelisteten Sektionen
+═══════════════════════════════════════════════════════════════════════════════
+KRITISCH - INHALTSVERZEICHNIS ERKENNEN UND KORREKT BEHANDELN:
+═══════════════════════════════════════════════════════════════════════════════
 
+Ein INHALTSVERZEICHNIS (ToC) zeigt eine LISTE von Sektionen mit Seitenzahlen:
+    § 1 Geltungsbereich .......................... 3
+    § 2 Ziele des Studiums ....................... 4
+    § 3 Akademischer Grad ........................ 5
+
+WICHTIG: Diese Sektionen sind NICHT auf der ToC-Seite! Sie sind nur AUFGELISTET.
+→ Bei ToC-Seiten: Melde NUR "preamble", KEINE einzelnen §§!
+
+═══════════════════════════════════════════════════════════════════════════════
+WANN IST EINE SEKTION "AUF DIESER SEITE"?
+═══════════════════════════════════════════════════════════════════════════════
+
+Eine Sektion ist NUR dann auf einer Seite, wenn:
+✓ Der Sektions-INHALT auf dieser Seite steht (nicht nur der Titel im Inhaltsverzeichnis)
+✓ Die Sektion hier BEGINNT (Überschrift wie "§ 5 Regelstudienzeit" gefolgt von Text)
+✓ Die Sektion hier WEITERGEHT (Text einer Sektion von der vorherigen Seite)
+✓ Die Sektion hier ENDET (letzter Teil einer Sektion)
+
+Eine Sektion ist NICHT auf dieser Seite, wenn:
+✗ Sie nur im Inhaltsverzeichnis aufgelistet ist (mit Seitenverweis)
+✗ Sie nur als Referenz erwähnt wird ("siehe § 5")
+✗ Sie nur im ToC mit Punktlinie und Seitenzahl steht
+
+═══════════════════════════════════════════════════════════════════════════════
 SEKTIONSTYPEN:
-- "preamble": Inhalt VOR dem ersten § (Deckblatt, Inhaltsverzeichnis, Präambel)
-- "paragraph": Nummerierte Paragraphen (§ 1, § 2, ... § 40)
-- "anlage": Anlagen/Anhänge (Anlage 1, Anlage 2, Anhang A, ...)
+═══════════════════════════════════════════════════════════════════════════════
 
+- "preamble": Deckblatt, Inhaltsverzeichnis, Präambel (alles VOR dem ersten §)
+- "paragraph": Nummerierte Paragraphen mit INHALT (§ 1, § 2, ... § 40)
+- "anlage": Anlagen/Anhänge mit INHALT (Anlage 1, Anlage 2, Anhang A)
+
+═══════════════════════════════════════════════════════════════════════════════
 AUSGABEFORMAT (JSON):
+═══════════════════════════════════════════════════════════════════════════════
+
 {
   "page_number": <int>,
+  "page_type": "toc|content|empty",
   "sections": [
     {
       "section_type": "paragraph|anlage|preamble",
@@ -45,52 +73,86 @@ AUSGABEFORMAT (JSON):
     }
   ],
   "is_empty": false,
-  "scan_notes": "optional: Notizen zur Seite"
+  "scan_notes": "optional"
 }
 
+═══════════════════════════════════════════════════════════════════════════════
 BEISPIELE:
+═══════════════════════════════════════════════════════════════════════════════
 
-Seite mit Deckblatt:
+BEISPIEL 1 - Inhaltsverzeichnis-Seite (RICHTIG):
+Die Seite zeigt:
+    Inhaltsverzeichnis
+    § 1 Geltungsbereich ......... 3
+    § 2 Ziele ................... 4
+    § 3 Akademischer Grad ....... 5
+
+KORREKTE Antwort:
 {
-  "page_number": 1,
-  "sections": [{"section_type": "preamble", "identifier": null, "title": "Deckblatt"}],
-  "is_empty": false
+  "page_number": 2,
+  "page_type": "toc",
+  "sections": [{"section_type": "preamble", "identifier": null, "title": "Inhaltsverzeichnis"}],
+  "is_empty": false,
+  "scan_notes": "Inhaltsverzeichnis - §§ nur aufgelistet, nicht hier"
 }
 
-Seite mit Ende von § 4 und Anfang von § 5:
+FALSCHE Antwort (nicht so machen!):
+{
+  "sections": [
+    {"section_type": "paragraph", "identifier": "§ 1"},
+    {"section_type": "paragraph", "identifier": "§ 2"},
+    {"section_type": "paragraph", "identifier": "§ 3"}
+  ]
+}
+
+BEISPIEL 2 - Seite mit echtem Sektionsinhalt:
+Die Seite zeigt:
+    § 5 Regelstudienzeit und Studienumfang
+    (1) Die Regelstudienzeit beträgt sechs Semester...
+    (2) Der Studienumfang beträgt 180 LP...
+
+KORREKTE Antwort:
 {
   "page_number": 7,
+  "page_type": "content",
   "sections": [
-    {"section_type": "paragraph", "identifier": "§ 4", "title": null},
     {"section_type": "paragraph", "identifier": "§ 5", "title": "Regelstudienzeit und Studienumfang"}
   ],
   "is_empty": false
 }
 
-Seite nur mit § 10 (komplett):
+BEISPIEL 3 - Seite mit Ende § 4 und Anfang § 5:
 {
-  "page_number": 12,
+  "page_number": 7,
+  "page_type": "content",
   "sections": [
-    {"section_type": "paragraph", "identifier": "§ 10", "title": "Module und Leistungspunkte"}
+    {"section_type": "paragraph", "identifier": "§ 4", "title": null},
+    {"section_type": "paragraph", "identifier": "§ 5", "title": "Regelstudienzeit"}
   ],
-  "is_empty": false
+  "is_empty": false,
+  "scan_notes": "§ 4 endet oben, § 5 beginnt in der Mitte"
 }
 
-Leere Seite:
+BEISPIEL 4 - Deckblatt:
 {
-  "page_number": 50,
-  "sections": [],
-  "is_empty": true,
-  "scan_notes": "Leere Seite"
+  "page_number": 1,
+  "page_type": "content",
+  "sections": [{"section_type": "preamble", "identifier": null, "title": "Deckblatt"}],
+  "is_empty": false
 }"""
 
 
-PAGE_SCAN_USER = """Analysiere diese PDF-Seite (Seite {page_number} von {total_pages}).
+PAGE_SCAN_USER = """Analysiere Seite {page_number} von {total_pages}.
 
-Identifiziere ALLE Sektionen (§§, Anlagen, Präambel), die auf dieser Seite erscheinen.
-Auch wenn eine Sektion nur TEILWEISE auf der Seite ist (Anfang oder Ende), muss sie gemeldet werden.
+SCHRITT 1: Ist dies eine Inhaltsverzeichnis-Seite?
+- Wenn JA: Melde NUR "preamble", keine einzelnen §§!
+- Einträge mit "§ X ... Seite Y" sind ToC-Einträge, NICHT echter Inhalt!
 
-Antworte NUR mit dem JSON-Objekt, kein zusätzlicher Text."""
+SCHRITT 2: Falls KEINE ToC-Seite, welche Sektionen haben hier ECHTEN INHALT?
+- Sektions-Überschrift mit nachfolgendem Text = Sektion BEGINNT hier
+- Fortlaufender Text einer Sektion = Sektion SETZT FORT hier
+
+Antworte NUR mit dem JSON-Objekt."""
 
 
 # =============================================================================

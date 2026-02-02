@@ -353,25 +353,48 @@ class PDFExtractor:
         if not isinstance(data, dict):
             raise PageScanError(page_number, "Invalid response format")
 
+        # Check if this is a ToC page - if so, only return preamble
+        page_type = data.get("page_type", "content").lower()
+        is_toc_page = page_type == "toc"
+
         # Parse sections
         sections: list[DetectedSection] = []
-        for s in data.get("sections", []):
-            section_type_str = s.get("section_type", "").lower()
 
-            if section_type_str == "paragraph":
-                section_type = SectionType.PARAGRAPH
-            elif section_type_str == "anlage":
-                section_type = SectionType.ANLAGE
-            elif section_type_str == "preamble":
-                section_type = SectionType.PREAMBLE
-            else:
-                continue  # Skip unknown types
-
+        if is_toc_page:
+            # ToC pages should only report preamble, not individual sections
+            # This is a safety check in case the LLM still lists sections
             sections.append(DetectedSection(
-                section_type=section_type,
-                identifier=s.get("identifier"),
-                title=s.get("title"),
+                section_type=SectionType.PREAMBLE,
+                identifier=None,
+                title="Inhaltsverzeichnis",
             ))
+            logger.debug(f"Page {page_number}: ToC page detected, treating as preamble only")
+        else:
+            for s in data.get("sections", []):
+                section_type_str = s.get("section_type", "").lower()
+
+                if section_type_str == "paragraph":
+                    section_type = SectionType.PARAGRAPH
+                elif section_type_str == "anlage":
+                    section_type = SectionType.ANLAGE
+                elif section_type_str == "preamble":
+                    section_type = SectionType.PREAMBLE
+                else:
+                    continue  # Skip unknown types
+
+                sections.append(DetectedSection(
+                    section_type=section_type,
+                    identifier=s.get("identifier"),
+                    title=s.get("title"),
+                ))
+
+        # Sanity check: if too many sections on one page, something might be wrong
+        paragraph_count = sum(1 for s in sections if s.section_type == SectionType.PARAGRAPH)
+        if paragraph_count > 5:
+            logger.warning(
+                f"Page {page_number}: {paragraph_count} paragraphs detected - "
+                "possible ToC misinterpretation?"
+            )
 
         return PageScanResult(
             page_number=data.get("page_number", page_number),
@@ -429,9 +452,27 @@ class PDFExtractor:
         # Build SectionLocation objects
         locations: list[SectionLocation] = []
 
+        # Validation threshold: sections spanning > 40% of pages are suspicious
+        max_reasonable_pages = max(int(total_pages * 0.4), 10)
+
         for (section_type, identifier), pages in section_pages.items():
             # Sort and deduplicate pages
             pages = sorted(set(pages))
+
+            # VALIDATION: Check for unreasonably large page ranges
+            if section_type == SectionType.PARAGRAPH and len(pages) > max_reasonable_pages:
+                logger.warning(
+                    f"Section {identifier} spans {len(pages)} pages "
+                    f"(max reasonable: {max_reasonable_pages}) - "
+                    "possible ToC misinterpretation, trimming to likely range"
+                )
+                # Try to find a reasonable contiguous range
+                # Typically the ToC appears in first few pages, so filter those out
+                non_toc_pages = [p for p in pages if p > 5]
+                if non_toc_pages:
+                    # Find the largest contiguous block
+                    pages = self._find_contiguous_range(non_toc_pages)
+                    logger.info(f"Section {identifier} trimmed to pages {pages}")
 
             locations.append(SectionLocation(
                 section_type=section_type,
@@ -456,12 +497,81 @@ class PDFExtractor:
 
         locations.sort(key=sort_key)
 
+        # Post-validation: Log suspicious patterns
+        self._validate_structure(locations, total_pages)
+
         return DocumentStructure(
             sections=locations,
             total_pages=total_pages,
             has_preamble=has_preamble,
             scan_results=scan_results,
         )
+
+    def _find_contiguous_range(self, pages: list[int]) -> list[int]:
+        """
+        Find the largest contiguous range of pages.
+
+        Used to recover from ToC misinterpretation where a section
+        appears on many non-contiguous pages.
+
+        Args:
+            pages: Sorted list of page numbers
+
+        Returns:
+            Largest contiguous subset
+        """
+        if not pages:
+            return pages
+
+        # Find all contiguous ranges
+        ranges: list[list[int]] = []
+        current_range = [pages[0]]
+
+        for i in range(1, len(pages)):
+            if pages[i] == pages[i - 1] + 1:
+                # Contiguous
+                current_range.append(pages[i])
+            else:
+                # Gap - start new range
+                ranges.append(current_range)
+                current_range = [pages[i]]
+
+        ranges.append(current_range)
+
+        # Return the largest range
+        return max(ranges, key=len)
+
+    def _validate_structure(
+        self,
+        locations: list[SectionLocation],
+        total_pages: int,
+    ) -> None:
+        """
+        Validate the aggregated structure for suspicious patterns.
+
+        Logs warnings if the structure looks incorrect.
+
+        Args:
+            locations: Section locations
+            total_pages: Total pages in document
+        """
+        # Check for overlapping sections that might indicate problems
+        paragraph_locations = [
+            loc for loc in locations
+            if loc.section_type == SectionType.PARAGRAPH
+        ]
+
+        if not paragraph_locations:
+            logger.warning("No paragraph sections found - document may be unrecognized format")
+            return
+
+        # Check average pages per section (usually 1-3 for German academic docs)
+        avg_pages = sum(loc.page_count for loc in paragraph_locations) / len(paragraph_locations)
+        if avg_pages > 5:
+            logger.warning(
+                f"Average pages per section: {avg_pages:.1f} - "
+                "this is higher than typical (1-3), possible scan issues"
+            )
 
     # =========================================================================
     # PHASE 3: Context Extraction
