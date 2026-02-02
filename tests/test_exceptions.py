@@ -80,7 +80,7 @@ class TestScanErrors:
         """Test PageScanError."""
         error = PageScanError(
             page_number=10,
-            message="Failed to scan",
+            message="Failed to scan page 10",
             api_response="Invalid JSON",
         )
         assert error.page_number == 10
@@ -110,7 +110,6 @@ class TestContentExtractionErrors:
         error = SectionExtractionError(
             section_identifier="§ 10",
             pages=[12, 13, 14],
-            message="Content policy violation",
         )
         assert error.section_identifier == "§ 10"
         assert error.pages == [12, 13, 14]
