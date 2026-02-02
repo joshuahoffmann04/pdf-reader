@@ -628,7 +628,12 @@ class PDFExtractor:
                 extraction_notes=data.get("extraction_notes"),
             )
         except (json.JSONDecodeError, KeyError) as e:
-            logger.warning(f"Failed to parse section response: {e}")
+            # Log the actual response for debugging
+            response_preview = response[:200] if response else "(empty)"
+            logger.warning(
+                f"Failed to parse section response: {e}. "
+                f"Response preview: {response_preview!r}"
+            )
             return ExtractedSection(
                 section_type=entry.section_type,
                 section_number=entry.section_number,
@@ -702,35 +707,49 @@ class PDFExtractor:
 
                 # Check for empty response
                 if not response or not response.strip():
-                    logger.warning(f"Empty API response on attempt {attempt + 1}")
+                    logger.warning(f"Empty API response on attempt {attempt + 1}/{self.config.max_retries}")
                     last_response = response
 
                     if attempt < self.config.max_retries - 1:
                         wait_time = 2 ** (attempt + 1)
-                        logger.info(f"Retrying in {wait_time}s...")
+                        logger.warning(f"Retrying in {wait_time}s...")
                         time.sleep(wait_time)
                         continue
 
                 # Check for refusal
                 if self._is_refusal(response):
-                    logger.warning(f"API refusal on attempt {attempt + 1}")
+                    logger.warning(f"API refusal on attempt {attempt + 1}/{self.config.max_retries}")
                     last_response = response
 
                     if attempt < self.config.max_retries - 1:
                         wait_time = 2 ** (attempt + 1)
-                        logger.info(f"Retrying in {wait_time}s...")
+                        logger.warning(f"Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+
+                # Check for valid JSON structure (basic check)
+                if "{" not in response:
+                    logger.warning(
+                        f"No JSON found in response on attempt {attempt + 1}/{self.config.max_retries}. "
+                        f"Response preview: {response[:100]!r}"
+                    )
+                    last_response = response
+
+                    if attempt < self.config.max_retries - 1:
+                        wait_time = 2 ** (attempt + 1)
+                        logger.warning(f"Retrying in {wait_time}s...")
                         time.sleep(wait_time)
                         continue
 
                 return response
 
             except Exception as e:
-                logger.error(f"API error on attempt {attempt + 1}: {e}")
+                logger.error(f"API error on attempt {attempt + 1}/{self.config.max_retries}: {e}")
                 last_error = e
 
                 if attempt < self.config.max_retries - 1:
                     wait_time = 2 ** (attempt + 1)
-                    logger.info(f"Retrying in {wait_time}s...")
+                    logger.warning(f"Retrying in {wait_time}s...")
                     time.sleep(wait_time)
 
         # All retries failed
