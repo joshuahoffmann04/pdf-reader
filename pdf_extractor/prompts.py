@@ -155,9 +155,11 @@ KRITISCHE REGELN:
    - Ändere KEINE Zahlen, Daten, Namen oder Fakten
 
 2. FOKUS AUF DEN RICHTIGEN ABSCHNITT:
-   - Du erhältst Bilder mehrerer Seiten
-   - Extrahiere NUR den Inhalt des angegebenen Abschnitts
-   - Ignoriere Inhalte anderer §§ oder Anlagen auf denselben Seiten
+   - Du erhältst Bilder mehrerer Seiten (mit Pufferseiten für Kontext)
+   - WICHTIG: Die tatsächliche Position kann 1-2 Seiten früher oder später sein als angegeben
+   - Suche auf ALLEN Seiten nach dem gesuchten Abschnitt
+   - Extrahiere NUR den Inhalt dieses einen Abschnitts
+   - Ignoriere Inhalte anderer §§ oder Anlagen
    - Der Abschnitt kann mitten auf einer Seite beginnen oder enden
 
 3. TABELLEN → NATÜRLICHE SPRACHE:

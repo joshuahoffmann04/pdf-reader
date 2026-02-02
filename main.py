@@ -5,9 +5,9 @@ import logging
 # .env laden
 load_dotenv()
 
-# Logging aktivieren um Retries zu sehen
+# Logging aktivieren um Seitenbereiche und Retries zu sehen
 logging.basicConfig(
-    level=logging.WARNING,
+    level=logging.INFO,
     format='%(levelname)s: %(message)s'
 )
 

@@ -387,8 +387,25 @@ class PDFExtractor:
         Extract content from a single section.
 
         Uses sliding window if section spans more pages than max_images_per_request.
+        Adds buffer pages to handle page number offset issues.
         """
-        pages_needed = entry.pages
+        # Add buffer pages to handle offset between printed and PDF page numbers
+        # This helps when ToC page numbers don't match PDF page numbers exactly
+        # Common offsets: title page, ToC pages before page "1" in document
+        buffer_before = 2  # Add 2 pages before (common offset for title+ToC)
+        buffer_after = 1   # Add 1 page after the expected end
+
+        start_with_buffer = max(1, entry.start_page - buffer_before)
+        end_with_buffer = min(total_pages, entry.end_page + buffer_after)
+
+        pages_needed = list(range(start_with_buffer, end_with_buffer + 1))
+
+        logger.info(
+            f"Extracting {entry.identifier}: "
+            f"ToC pages {entry.start_page}-{entry.end_page}, "
+            f"sending pages {start_with_buffer}-{end_with_buffer} (with buffer)"
+        )
+
         max_images = self.config.max_images_per_request
 
         if len(pages_needed) <= max_images:
