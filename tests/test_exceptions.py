@@ -5,113 +5,225 @@ Tests for PDF Extractor exceptions.
 import pytest
 
 from pdf_extractor import (
+    # Base
     ExtractionError,
-    NoTableOfContentsError,
-    StructureExtractionError,
-    SectionExtractionError,
+    # PDF errors
+    PDFError,
+    PDFNotFoundError,
+    PDFCorruptedError,
     PageRenderError,
+    # Scan errors
+    ScanError,
+    PageScanError,
+    StructureAggregationError,
+    # Content extraction errors
+    ContentExtractionError,
+    ContextExtractionError,
+    SectionExtractionError,
+    # API errors
     APIError,
+    APIConnectionError,
+    APIRateLimitError,
+    APIResponseError,
+    # Utilities
+    is_retryable,
+    format_error_chain,
 )
 
 
 class TestExtractionError:
     """Tests for base ExtractionError."""
 
-    def test_create_basic(self):
-        """Test creating basic exception."""
-        error = ExtractionError("Test error message")
-        assert str(error) == "Test error message"
+    def test_create_simple(self):
+        """Test creating error with message only."""
+        error = ExtractionError("Something went wrong")
+        assert str(error) == "Something went wrong"
+        assert error.message == "Something went wrong"
+        assert error.details is None
 
-    def test_inheritance(self):
-        """Test that all exceptions inherit from ExtractionError."""
-        assert issubclass(NoTableOfContentsError, ExtractionError)
-        assert issubclass(StructureExtractionError, ExtractionError)
-        assert issubclass(SectionExtractionError, ExtractionError)
-        assert issubclass(PageRenderError, ExtractionError)
-        assert issubclass(APIError, ExtractionError)
-
-
-class TestNoTableOfContentsError:
-    """Tests for NoTableOfContentsError."""
-
-    def test_create_default(self):
-        """Test creating with default message."""
-        error = NoTableOfContentsError()
-        assert "Inhaltsverzeichnis" in str(error)
-
-    def test_create_with_path(self):
-        """Test creating with document path."""
-        error = NoTableOfContentsError(document_path="/path/to/doc.pdf")
-        assert error.document_path == "/path/to/doc.pdf"
-
-    def test_create_with_custom_message(self):
-        """Test creating with custom message."""
-        error = NoTableOfContentsError(message="Custom message")
-        assert str(error) == "Custom message"
-
-    def test_can_be_raised_and_caught(self):
-        """Test that exception can be raised and caught."""
-        with pytest.raises(NoTableOfContentsError) as exc_info:
-            raise NoTableOfContentsError(document_path="test.pdf")
-
-        assert exc_info.value.document_path == "test.pdf"
-
-    def test_can_be_caught_as_extraction_error(self):
-        """Test that exception can be caught as ExtractionError."""
-        with pytest.raises(ExtractionError):
-            raise NoTableOfContentsError()
+    def test_create_with_details(self):
+        """Test creating error with details."""
+        error = ExtractionError("Error occurred", details="More info here")
+        assert "Error occurred" in str(error)
+        assert "More info here" in str(error)
+        assert error.details == "More info here"
 
 
-class TestStructureExtractionError:
-    """Tests for StructureExtractionError."""
+class TestPDFErrors:
+    """Tests for PDF-related errors."""
 
-    def test_create_basic(self):
-        """Test creating basic exception."""
-        error = StructureExtractionError("Failed to parse structure")
-        assert str(error) == "Failed to parse structure"
+    def test_pdf_not_found(self):
+        """Test PDFNotFoundError."""
+        error = PDFNotFoundError("/path/to/missing.pdf")
+        assert error.path == "/path/to/missing.pdf"
+        assert "missing.pdf" in str(error)
 
+    def test_pdf_corrupted(self):
+        """Test PDFCorruptedError."""
+        original = ValueError("Invalid PDF structure")
+        error = PDFCorruptedError("/path/to/broken.pdf", original)
+        assert error.path == "/path/to/broken.pdf"
+        assert error.original_error == original
+        assert "corrupted" in str(error).lower()
 
-class TestSectionExtractionError:
-    """Tests for SectionExtractionError."""
-
-    def test_create_with_section(self):
-        """Test creating with section number."""
-        error = SectionExtractionError("Extraction failed", section_number="§ 5")
-        assert error.section_number == "§ 5"
-        assert "§ 5" in str(error)
-
-    def test_create_without_section(self):
-        """Test creating without section number."""
-        error = SectionExtractionError("Extraction failed")
-        assert error.section_number is None
-
-    def test_create_with_pages(self):
-        """Test creating with pages."""
-        error = SectionExtractionError("Extraction failed", section_number="§ 5", pages=[10, 11])
-        assert error.pages == [10, 11]
-
-
-class TestPageRenderError:
-    """Tests for PageRenderError."""
-
-    def test_create_with_page(self):
-        """Test creating with page number."""
-        error = PageRenderError("Render failed", page_number=5)
+    def test_page_render_error(self):
+        """Test PageRenderError."""
+        error = PageRenderError(page_number=5, path="/doc.pdf")
         assert error.page_number == 5
         assert "5" in str(error)
 
 
-class TestAPIError:
-    """Tests for APIError."""
+class TestScanErrors:
+    """Tests for scan-related errors."""
 
-    def test_create_basic(self):
-        """Test creating basic exception."""
-        error = APIError("API call failed")
-        assert str(error) == "API call failed"
+    def test_page_scan_error(self):
+        """Test PageScanError."""
+        error = PageScanError(
+            page_number=10,
+            message="Failed to scan",
+            api_response="Invalid JSON",
+        )
+        assert error.page_number == 10
+        assert error.api_response == "Invalid JSON"
+        assert "10" in str(error)
 
-    def test_create_with_original_error(self):
-        """Test creating with original error."""
-        original = ValueError("Original error")
-        error = APIError("Rate limit exceeded", original_error=original)
-        assert error.original_error is original
-        assert "Original error" in str(error)
+    def test_structure_aggregation_error(self):
+        """Test StructureAggregationError."""
+        error = StructureAggregationError(
+            message="No sections found",
+            details="Document appears empty",
+        )
+        assert "No sections found" in str(error)
+        assert error.details == "Document appears empty"
+
+
+class TestContentExtractionErrors:
+    """Tests for content extraction errors."""
+
+    def test_context_extraction_error(self):
+        """Test ContextExtractionError."""
+        error = ContextExtractionError("Failed to extract metadata")
+        assert "metadata" in str(error)
+
+    def test_section_extraction_error(self):
+        """Test SectionExtractionError."""
+        error = SectionExtractionError(
+            section_identifier="§ 10",
+            pages=[12, 13, 14],
+            message="Content policy violation",
+        )
+        assert error.section_identifier == "§ 10"
+        assert error.pages == [12, 13, 14]
+        assert "§ 10" in str(error)
+
+
+class TestAPIErrors:
+    """Tests for API-related errors."""
+
+    def test_api_error(self):
+        """Test base APIError."""
+        original = RuntimeError("Network timeout")
+        error = APIError("Request failed", original, status_code=500)
+        assert error.status_code == 500
+        assert error.original_error == original
+        assert "500" in str(error)
+
+    def test_api_connection_error(self):
+        """Test APIConnectionError."""
+        error = APIConnectionError("Cannot reach API")
+        assert "Cannot reach" in str(error)
+
+    def test_api_rate_limit_error(self):
+        """Test APIRateLimitError."""
+        error = APIRateLimitError(retry_after=30.0)
+        assert error.retry_after == 30.0
+        assert error.status_code == 429
+        assert "30" in str(error)
+
+    def test_api_response_error(self):
+        """Test APIResponseError."""
+        error = APIResponseError(
+            message="Invalid JSON",
+            response_content='{"broken": ',
+        )
+        assert error.response_content == '{"broken": '
+
+
+class TestIsRetryable:
+    """Tests for is_retryable utility."""
+
+    def test_retryable_errors(self):
+        """Test that retryable errors are identified."""
+        assert is_retryable(APIConnectionError()) is True
+        assert is_retryable(APIRateLimitError()) is True
+        assert is_retryable(APIError("Server error", status_code=502)) is True
+        assert is_retryable(PageScanError(1)) is True
+
+    def test_non_retryable_errors(self):
+        """Test that non-retryable errors are identified."""
+        assert is_retryable(PDFNotFoundError("/path")) is False
+        assert is_retryable(PDFCorruptedError("/path")) is False
+        assert is_retryable(APIResponseError("Policy violation")) is False
+        assert is_retryable(ValueError("Invalid argument")) is False
+
+
+class TestFormatErrorChain:
+    """Tests for format_error_chain utility."""
+
+    def test_single_error(self):
+        """Test formatting a single error."""
+        error = ExtractionError("Simple error")
+        formatted = format_error_chain(error)
+        assert "ExtractionError" in formatted
+        assert "Simple error" in formatted
+
+    def test_error_chain(self):
+        """Test formatting chained errors."""
+        original = ValueError("Root cause")
+        api_error = APIError("API failed", original)
+
+        formatted = format_error_chain(api_error)
+        assert "APIError" in formatted
+        assert "ValueError" in formatted
+        assert "Root cause" in formatted
+
+
+class TestExceptionHierarchy:
+    """Tests for exception inheritance."""
+
+    def test_hierarchy(self):
+        """Test that exceptions follow correct hierarchy."""
+        # All errors inherit from ExtractionError
+        assert issubclass(PDFError, ExtractionError)
+        assert issubclass(ScanError, ExtractionError)
+        assert issubclass(ContentExtractionError, ExtractionError)
+        assert issubclass(APIError, ExtractionError)
+
+        # PDF errors
+        assert issubclass(PDFNotFoundError, PDFError)
+        assert issubclass(PDFCorruptedError, PDFError)
+        assert issubclass(PageRenderError, PDFError)
+
+        # Scan errors
+        assert issubclass(PageScanError, ScanError)
+        assert issubclass(StructureAggregationError, ScanError)
+
+        # Content extraction errors
+        assert issubclass(ContextExtractionError, ContentExtractionError)
+        assert issubclass(SectionExtractionError, ContentExtractionError)
+
+        # API errors
+        assert issubclass(APIConnectionError, APIError)
+        assert issubclass(APIRateLimitError, APIError)
+        assert issubclass(APIResponseError, APIError)
+
+    def test_can_catch_broadly(self):
+        """Test that errors can be caught with base class."""
+        def raise_pdf_error():
+            raise PDFNotFoundError("/path")
+
+        with pytest.raises(ExtractionError):
+            raise_pdf_error()
+
+        with pytest.raises(PDFError):
+            raise_pdf_error()
