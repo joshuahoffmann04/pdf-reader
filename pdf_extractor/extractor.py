@@ -635,7 +635,7 @@ class PDFExtractor:
             return locations
 
         corrected: list[SectionLocation] = []
-        prev_end = min_start - 1  # Track where previous section ended
+        prev_end = min_start  # Track where previous section ended (allows sharing)
 
         for i, loc in enumerate(locations):
             # Find REAL start page (skip ToC pages, respect sequence)
@@ -704,10 +704,10 @@ class PDFExtractor:
         Returns:
             The real start page
         """
-        # Filter out ToC pages and get pages >= min_page
+        # Filter out ToC pages and get pages >= min_page (allows shared boundary pages)
         content_pages = sorted([
             p for p in pages
-            if p not in toc_pages and p > min_page
+            if p not in toc_pages and p >= min_page
         ])
 
         if content_pages:
