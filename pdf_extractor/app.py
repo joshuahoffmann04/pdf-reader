@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 
-from .config import ExtractorConfig
-from .models import ExtractRequest, ExtractResponse
-from .service import ExtractionService
+from config import ExtractorConfig
+from models import ExtractRequest, ExtractResponse
+from service import ExtractionService
 
 
 def create_app(config: ExtractorConfig | None = None) -> FastAPI:
