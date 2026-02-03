@@ -1,0 +1,91 @@
+{
+    "query":  "Was ist die Regelstudienzeit?",
+    "mode":  "vector",
+    "results":  [
+                    {
+                        "chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0017",
+                        "score":  0.6700863838195801,
+                        "text":  "Ã?Â§ 22 beschreibt die PrÃ?Â¼fungsformen und -dauern sowie die Bearbeitungszeiten und UmfÃ?Â¤nge. Schriftliche PrÃ?Â¼fungen kÃ?Â¶nnen in Form von Klausuren, die auch als E-Klausuren durchgefÃ?Â¼hrt werden kÃ?Â¶nnen, oder als Multiple-Choice-Verfahren erfolgen. Weitere Formen sind schriftliche Ausarbeitungen oder die Masterarbeit. MÃ?Â¼ndliche PrÃ?Â¼fungen werden als EinzelprÃ?Â¼fungen oder Disputationen durchgefÃ?Â¼hrt. Weitere PrÃ?Â¼fungsformen umfassen SeminarvortrÃ?Â¤ge und Softwareerstellungen. Die PrÃ?Â¼fungsdauer fÃ?Â¼r Klausuren betrÃ?Â¤gt 60 bis 120 Minuten, wÃ?Â¤hrend mÃ?Â¼ndliche EinzelprÃ?Â¼fungen 20 bis 30 Minuten dauern. Schriftliche Ausarbeitungen umfassen in der Regel 10 bis 20 Seiten mit etwa zwei Wochen Bearbeitungszeit. SeminarvortrÃ?Â¤ge finden im Rahmen einer Modulveranstaltung statt und dauern maximal 90 Minuten. Die Bearbeitungszeit fÃ?Â¼r Softwareerstellungen ist studienbegleitend und umfasst etwa acht Wochen. Der Umfang der Masterarbeit betrÃ?Â¤gt in der Regel 30 bis 90 Seiten, und die Disputation dauert maximal 60 Minuten. FÃ?Â¼r die Importmodule gemÃ?Â¤Ã?Å¸ Anlage 3 oder darin vorgesehene PrÃ?Â¼fungen gelten die entsprechenden Regelungen der Studien- und PrÃ?Â¼fungsordnungen der StudiengÃ?Â¤nge, aus denen die Module importiert werden, in ihrer jeweils aktuell gÃ?Â¼ltigen Fassung. Multimedial gestÃ?Â¼tzte schriftliche PrÃ?Â¼fungen, sogenannte E-Klausuren, finden gemÃ?Â¤Ã?Å¸ den Regelungen in den Allgemeinen Bestimmungen, Anlage 6, statt. PrÃ?Â¼fungen im Multiple-Choice-Verfahren finden gemÃ?Â¤Ã?Å¸ den Regelungen in den Allgemeinen Bestimmungen, Anlage 8, statt. Im Ã?Å?brigen gelten die Regelungen des Ã?Â§ 22 Allgemeine Bestimmungen. In Ã?Â§ 22 wird festgelegt, dass die Form der PrÃ?Â¼fungen geeignet sein muss, den Erwerb der jeweils vorgesehenen Kompetenzen festzustellen.",
+                        "metadata":  {
+                                         "total_chunks":  67,
+                                         "document_id":  "2-aend-19-02-25_msc-computer-science_lese",
+                                         "chunk_index":  17,
+                                         "next_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0018",
+                                         "degree_program":  "Computer Science M.Sc.",
+                                         "institution":  "Philipps-UniversitÃ?Â¤t Marburg",
+                                         "page_numbers":  "16,17",
+                                         "document_type":  "pruefungsordnung",
+                                         "document_title":  "Studien- und PrÃ?Â¼fungsordnung fÃ?Â¼r den Studiengang \u0027Computer Science\u0027 mit dem Abschluss \u0027Master of Science (M.Sc.)\u0027",
+                                         "prev_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0016"
+                                     }
+                    },
+                    {
+                        "chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0049",
+                        "score":  0.6401016712188721,
+                        "text":  "FÃ?Â¼r die Vergabe von Leistungspunkten mÃ?Â¼ssen mindestens 50 Prozent der Punkte aus den wÃ?Â¶chentlich zu bearbeitenden Ã?Å?bungsaufgaben erreicht werden, einschlieÃ?Å¸lich der PrÃ?Â¤sentation von mindestens zwei Aufgaben. Die PrÃ?Â¼fung erfolgt durch eine Klausur oder mÃ?Â¼ndliche PrÃ?Â¼fung. Das Modul \u0027Small Specialization Module Computer Science 4\u0027 hat Ã?Â¤hnliche Anforderungen und Qualifikationsziele wie das Modul 3. Auch hier sind keine Teilnahmevoraussetzungen erforderlich, jedoch werden bestimmte Kompetenzen empfohlen. Die Vergabe von Leistungspunkten erfolgt unter den gleichen Bedingungen wie bei Modul 3.\n\nDie Seite beschreibt verschiedene Module des Studiengangs \u0027Computer Science\u0027 mit dem Abschluss \u0027Master of Science (M.Sc.)\u0027. Das Modul \u0027Small Specialization Module Computer Science 5\u0027 ist ein kleines Vertiefungsmodul in der praktischen Informatik. Die Studierenden erwerben vertiefte Kenntnisse in einem ausgewÃ?Â¤hlten Spezialgebiet der Informatik und kÃ?Â¶nnen aktuelle Forschungsergebnisse berichten. Sie sind in der Lage, wissenschaftliche Arbeitsweisen anzuwenden und Probleme eigenstÃ?Â¤ndig zu lÃ?Â¶sen. Empfohlen werden Kompetenzen aus den Aufbaumodulen. FÃ?Â¼r die Vergabe der Leistungspunkte mÃ?Â¼ssen 50 Prozent der Punkte aus den wÃ?Â¶chentlichen Ã?Å?bungsaufgaben erreicht werden, und es erfolgt eine PrÃ?Â¼fung in Form einer Klausur oder mÃ?Â¼ndlichen PrÃ?Â¼fung. Das Modul \u0027Software as a Medical Device\u0027 ist ein Wahlpflichtmodul, das sich mit der Softwareentwicklung fÃ?Â¼r Medizinprodukte beschÃ?Â¤ftigt. Die Studierenden lernen, Konzepte zu beschreiben und kÃ?Â¶nnen Denk- und Arbeitsweisen der RegulierungsbehÃ?Â¶rden anwenden. Es sind keine speziellen Voraussetzungen fÃ?Â¼r die Teilnahme erforderlich. Die Leistungspunkte werden durch das Erreichen von 50 Prozent der Punkte aus den Ã?Å?bungsaufgaben und einer mÃ?Â¼ndlichen PrÃ?Â¼fung oder Klausur vergeben.",
+                        "metadata":  {
+                                         "document_id":  "2-aend-19-02-25_msc-computer-science_lese",
+                                         "prev_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0048",
+                                         "document_type":  "pruefungsordnung",
+                                         "degree_program":  "Computer Science M.Sc.",
+                                         "total_chunks":  67,
+                                         "document_title":  "Studien- und PrÃ?Â¼fungsordnung fÃ?Â¼r den Studiengang \u0027Computer Science\u0027 mit dem Abschluss \u0027Master of Science (M.Sc.)\u0027",
+                                         "chunk_index":  49,
+                                         "institution":  "Philipps-UniversitÃ?Â¤t Marburg",
+                                         "page_numbers":  "42,43",
+                                         "next_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0050"
+                                     }
+                    },
+                    {
+                        "chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0004",
+                        "score":  0.6174243688583374,
+                        "text":  "Um die englischen Sprachkenntnisse auf dem Niveau C1 des Gemeinsamen EuropÃ?Â¤ischen Referenzrahmens fÃ?Â¼r Sprachen nachzuweisen, kann eines der folgenden international anerkannten Sprachzertifikate vorgelegt werden: Beim International English Language Testing System (IELTS) sind Ergebnisse von 7.0, 7.5 oder 8.0 erforderlich. FÃ?Â¼r den Test of English as a Foreign Language (TOEFL) werden beim iBT 95 bis 120 Punkte und beim PBT sowie ITP Level 1 jeweils 627 bis 677 Punkte benÃ?Â¶tigt. Das Cambridge English Language Assessment akzeptiert das First Certificate in English mit Grade A (FCE), das Certificate of Advanced English mit Grade B oder C (CAE) und das Cambridge English: Business Higher (BEC Higher). Der Pearson PTE Academic erfordert 76 bis 84 Punkte. Der Test of English for International Communication (TOEIC) verlangt beim Listening and Reading Test 945 bis 990 Punkte, beim Speaking Test 180 bis 200 Punkte und beim Writing Test ebenfalls 180 bis 200 Punkte. Das telc C1-Zertifikat und das UNIcert III werden ebenfalls anerkannt. FÃ?Â¼r das Cambridge IGCSE mÃ?Â¼ssen alle vier EinzelprÃ?Â¼fungen des IGCSE 1st Language oder des IGCSE 2nd Language mit Durchschnitt C1 bestanden werden. Alternativ kÃ?Â¶nnen englische Sprachkenntnisse auf dem Niveau B1 und deutsche Sprachkenntnisse entsprechend der SprachprÃ?Â¼fung DSH-2 nachgewiesen werden. Neben den allgemeinen Zugangsvoraussetzungen kann die Teilnahme an einzelnen Modulen von spezifischen Modulvoraussetzungen abhÃ?Â¤ngig gemacht werden, die in der Modulliste (Anlage 2) unter \u0027Voraussetzungen fÃ?Â¼r die Teilnahme\u0027 aufgefÃ?Â¼hrt sind. Die allgemeine Studienberatung erfolgt durch die Zentrale Allgemeine Studienberatung der Philipps-UniversitÃ?Â¤t Marburg. Die Fachstudienberatung wird in der Regel durch die Professorinnen und Professoren oder beauftragte Personen wahrgenommen.",
+                        "metadata":  {
+                                         "prev_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0003",
+                                         "chunk_index":  4,
+                                         "page_numbers":  "5",
+                                         "document_type":  "pruefungsordnung",
+                                         "total_chunks":  67,
+                                         "institution":  "Philipps-UniversitÃ?Â¤t Marburg",
+                                         "next_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0005",
+                                         "document_title":  "Studien- und PrÃ?Â¼fungsordnung fÃ?Â¼r den Studiengang \u0027Computer Science\u0027 mit dem Abschluss \u0027Master of Science (M.Sc.)\u0027",
+                                         "degree_program":  "Computer Science M.Sc.",
+                                         "document_id":  "2-aend-19-02-25_msc-computer-science_lese"
+                                     }
+                    },
+                    {
+                        "chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0066",
+                        "score":  0.6082074642181396,
+                        "text":  "Diese muss mindestens 10 Leistungspunkte umfassen oder eine entsprechende Abschlussarbeit muss bereits erbracht oder verbindlich angemeldet sein. Drittens, der Nachweis von Kenntnissen gemÃ?Â¤Ã?Å¸ Ã?Â§ 4 Abs. 1 Satz 7 der Studien- und PrÃ?Â¼fungsordnung ist notwendig. Die Eignungsfeststellungskommission bewertet, ob Kompetenzen in mindestens 7 von 7 Modulen oder 6 von 7 Modulen erworben wurden, was 35 bzw. 20 Punkte ergibt. FÃ?Â¼r die Zulassung zum Studium ist eine Mindestbewertung von 65 von 100 Punkten erforderlich. Ã?Å?ber die wesentlichen Kriterien wird ein Protokoll erstellt. Ã?Â§ 5 beschreibt den Abschluss des Verfahrens. Zugelassene Bewerber erhalten einen schriftlichen Zulassungsbescheid mit einer Frist zur Einschreibung. Bei NichterfÃ?Â¼llung wird der Bescheid unwirksam. Abgelehnte Bewerber kÃ?Â¶nnen sich erneut bewerben, wenn weitere relevante Leistungen erbracht wurden.",
+                        "metadata":  {
+                                         "prev_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0065",
+                                         "page_numbers":  "60",
+                                         "document_id":  "2-aend-19-02-25_msc-computer-science_lese",
+                                         "total_chunks":  67,
+                                         "degree_program":  "Computer Science M.Sc.",
+                                         "chunk_index":  66,
+                                         "document_title":  "Studien- und PrÃ?Â¼fungsordnung fÃ?Â¼r den Studiengang \u0027Computer Science\u0027 mit dem Abschluss \u0027Master of Science (M.Sc.)\u0027",
+                                         "document_type":  "pruefungsordnung",
+                                         "institution":  "Philipps-UniversitÃ?Â¤t Marburg"
+                                     }
+                    },
+                    {
+                        "chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0021",
+                        "score":  0.5928740501403809,
+                        "text":  "Die Masterarbeit ist ein obligatorischer Bestandteil jedes Masterstudiengangs und kann entweder als eigenstÃ?Â¤ndiges Abschlussmodul oder zusammen mit einem Kolloquium oder einer Disputation als gemeinsames Abschlussmodul durchgefÃ?Â¼hrt werden. Sie ist eine PrÃ?Â¼fungsarbeit, in der die Kandidatin oder der Kandidat die FÃ?Â¤higkeit nachweisen soll, ein abgegrenztes Problem aus dem Fachbereich selbststÃ?Â¤ndig zu bearbeiten. Die Arbeit umfasst 30 Leistungspunkte. In der Regel ist die Masterarbeit als Einzelarbeit anzufertigen. Die Studien- und PrÃ?Â¼fungsordnung legt die Voraussetzungen fÃ?Â¼r die Zulassung zur Masterarbeit fest. Die Kandidatin oder der Kandidat schlÃ?Â¤gt eine Betreuerin oder einen Betreuer vor, die oder der vom PrÃ?Â¼fungsausschuss bestÃ?Â¤tigt werden muss. Das Thema der Masterarbeit wird vom PrÃ?Â¼fungsausschuss genehmigt und muss innerhalb der vorgegebenen Frist bearbeitet werden. Eine VerlÃ?Â¤ngerung der Bearbeitungszeit ist unter bestimmten Bedingungen mÃ?Â¶glich. Die Masterarbeit kann in einem externen Fachbereich durchgefÃ?Â¼hrt werden, wenn die fachwissenschaftliche Betreuung gewÃ?Â¤hrleistet ist. Die Arbeit wird von zwei PrÃ?Â¼ferinnen bzw. PrÃ?Â¼fern bewertet. Bei einer Bewertung unter 5 Punkten wird ein weiteres Gutachten eingeholt. Ã?Â§ 24 behandelt die Themen PrÃ?Â¼fungstermine, PrÃ?Â¼fungsanmeldung und PrÃ?Â¼fungsabmeldung. Der PrÃ?Â¼fungsausschuss gibt die ZeitrÃ?Â¤ume der PrÃ?Â¼fungen und der WiederholungsprÃ?Â¼fungen bekannt. Termine fÃ?Â¼r Klausuren und andere PrÃ?Â¼fungstermine, die fÃ?Â¼r alle Teilnehmerinnen und Teilnehmer eines Moduls gleichermaÃ?Å¸en gÃ?Â¼ltig sind, werden ebenfalls im Vorlesungsverzeichnis bekannt gegeben. Individuell zu vereinbarende PrÃ?Â¼fungstermine, wie zum Beispiel Referate, werden im Vorlesungsverzeichnis mit dem Hinweis \u0027n. V.\u0027 bekannt gegeben. PrÃ?Â¼fungen finden im Rahmen der jeweiligen Modulveranstaltungen oder im unmittelbaren Anschluss daran statt.",
+                        "metadata":  {
+                                         "institution":  "Philipps-UniversitÃ?Â¤t Marburg",
+                                         "page_numbers":  "19,20",
+                                         "prev_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0020",
+                                         "degree_program":  "Computer Science M.Sc.",
+                                         "chunk_index":  21,
+                                         "document_id":  "2-aend-19-02-25_msc-computer-science_lese",
+                                         "document_type":  "pruefungsordnung",
+                                         "next_chunk_id":  "2-aend-19-02-25_msc-computer-science_lese_chunk_0022",
+                                         "document_title":  "Studien- und PrÃ?Â¼fungsordnung fÃ?Â¼r den Studiengang \u0027Computer Science\u0027 mit dem Abschluss \u0027Master of Science (M.Sc.)\u0027",
+                                         "total_chunks":  67
+                                     }
+                    }
+                ],
+    "context_text":  "Ã?Â§ 22 beschreibt die PrÃ?Â¼fungsformen und -dauern sowie die Bearbeitungszeiten und UmfÃ?Â¤nge. Schriftliche PrÃ?Â¼fungen kÃ?Â¶nnen in Form von Klausuren, die auch als E-Klausuren durchgefÃ?Â¼hrt werden kÃ?Â¶nnen, oder als Multiple-Choice-Verfahren erfolgen. Weitere Formen sind schriftliche Ausarbeitungen oder die Masterarbeit. MÃ?Â¼ndliche PrÃ?Â¼fungen werden als EinzelprÃ?Â¼fungen oder Disputationen durchgefÃ?Â¼hrt. Weitere PrÃ?Â¼fungsformen umfassen SeminarvortrÃ?Â¤ge und Softwareerstellungen. Die PrÃ?Â¼fungsdauer fÃ?Â¼r Klausuren betrÃ?Â¤gt 60 bis 120 Minuten, wÃ?Â¤hrend mÃ?Â¼ndliche EinzelprÃ?Â¼fungen 20 bis 30 Minuten dauern. Schriftliche Ausarbeitungen umfassen in der Regel 10 bis 20 Seiten mit etwa zwei Wochen Bearbeitungszeit. SeminarvortrÃ?Â¤ge finden im Rahmen einer Modulveranstaltung statt und dauern maximal 90 Minuten. Die Bearbeitungszeit fÃ?Â¼r Softwareerstellungen ist studienbegleitend und umfasst etwa acht Wochen. Der Umfang der Masterarbeit betrÃ?Â¤gt in der Regel 30 bis 90 Seiten, und die Disputation dauert maximal 60 Minuten. FÃ?Â¼r die Importmodule gemÃ?Â¤Ã?Å¸ Anlage 3 oder darin vorgesehene PrÃ?Â¼fungen gelten die entsprechenden Regelungen der Studien- und PrÃ?Â¼fungsordnungen der StudiengÃ?Â¤nge, aus denen die Module importiert werden, in ihrer jeweils aktuell gÃ?Â¼ltigen Fassung. Multimedial gestÃ?Â¼tzte schriftliche PrÃ?Â¼fungen, sogenannte E-Klausuren, finden gemÃ?Â¤Ã?Å¸ den Regelungen in den Allgemeinen Bestimmungen, Anlage 6, statt. PrÃ?Â¼fungen im Multiple-Choice-Verfahren finden gemÃ?Â¤Ã?Å¸ den Regelungen in den Allgemeinen Bestimmungen, Anlage 8, statt. Im Ã?Å?brigen gelten die Regelungen des Ã?Â§ 22 Allgemeine Bestimmungen. In Ã?Â§ 22 wird festgelegt, dass die Form der PrÃ?Â¼fungen geeignet sein muss, den Erwerb der jeweils vorgesehenen Kompetenzen festzustellen."
+}
