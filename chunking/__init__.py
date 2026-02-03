@@ -17,6 +17,8 @@ Quick Start:
 __version__ = "1.0.0"
 
 from .chunker import DocumentChunker
+from .service import ChunkingService
+from .config import ChunkingServiceConfig
 from .models import (
     Chunk,
     ChunkingConfig,
@@ -30,6 +32,8 @@ from .token_counter import count_tokens
 __all__ = [
     "__version__",
     "DocumentChunker",
+    "ChunkingService",
+    "ChunkingServiceConfig",
     "Chunk",
     "ChunkingConfig",
     "ChunkingResult",

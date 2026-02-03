@@ -219,6 +219,16 @@ class ChunkingResult(BaseModel):
         """Save chunking result to a JSON file."""
         Path(path).write_text(self.to_json(), encoding="utf-8")
 
+
+class ChunkRequest(BaseModel):
+    extraction_path: str = Field(..., min_length=1)
+
+
+class ChunkResponse(BaseModel):
+    document_id: str
+    output_path: str
+    total_chunks: int
+
     @classmethod
     def load(cls, path: str) -> "ChunkingResult":
         """Load chunking result from a JSON file."""

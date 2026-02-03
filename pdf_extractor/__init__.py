@@ -38,6 +38,8 @@ __author__ = "PDF Extractor Team"
 
 # Main extractor class
 from .extractor import PDFExtractor
+from .service import ExtractionService
+from .config import ExtractorConfig
 
 # Data models
 from .models import (
@@ -70,6 +72,8 @@ __all__ = [
     "__version__",
     # Main class
     "PDFExtractor",
+    "ExtractionService",
+    "ExtractorConfig",
     "VisionProcessor",  # backwards compatibility
     # Enums
     "DocumentType",

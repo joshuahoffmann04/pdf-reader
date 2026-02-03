@@ -497,5 +497,15 @@ class ExtractionResult(BaseModel):
         return cls.model_validate(data)
 
 
+class ExtractRequest(BaseModel):
+    pdf_path: str = Field(..., min_length=1)
+
+
+class ExtractResponse(BaseModel):
+    document_id: str
+    output_path: str
+    pages: int
+
+
 # Update forward references for nested models
 ExtractedPage.model_rebuild()
