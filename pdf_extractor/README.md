@@ -317,36 +317,6 @@ class ContentType(str, Enum):
 }
 ```
 
-## Weiterverarbeitung
-
-Das Output ist für nachgelagerte Verarbeitung optimiert:
-
-### Chunking (später separat)
-
-```python
-result = ExtractionResult.load("output.json")
-
-# Inhalte für Chunking vorbereitet
-for page in result.pages:
-    # page.content: Natürliche Sprache
-    # page.sections: Strukturmarker
-    # page.continues_from_previous: Für Zusammenführung
-    pass
-```
-
-### RAG-Integration
-
-```python
-# Vollständiger Inhalt
-full_text = result.get_full_content()
-
-# Alle Abschnitte
-sections = result.get_all_sections()
-
-# Metadaten für Filterung
-doc_type = result.context.document_type
-```
-
 ## Kosten
 
 ### Geschätzte Kosten (GPT-4o)
@@ -382,20 +352,3 @@ Bei API-Verweigerungen (z.B. "I'm sorry, I can't assist..."):
 - "I cannot help"
 - "I'm unable to"
 - etc.
-
-## Best Practices
-
-1. **Vorher Kosten schätzen**: `--estimate-cost` verwenden
-2. **Ergebnis prüfen**: `result.errors` und `result.warnings` checken
-3. **Fehlgeschlagene Seiten**: `extraction_confidence < 1.0` filtern
-4. **Caching**: Ergebnisse speichern, nicht mehrfach extrahieren
-
-## Changelog
-
-### v1.0.0
-
-- Initiale produktionsreife Version
-- Zwei-Phasen-Extraktion (Kontext + Seiten)
-- Retry-Mechanismus für API-Verweigerungen
-- Optimiert für deutsche akademische Dokumente
-- Keine Chunking-Logik (wird separat implementiert)
