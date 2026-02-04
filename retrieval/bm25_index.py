@@ -33,7 +33,7 @@ class BM25Index:
         hits = []
         for idx, score in enumerate(scores):
             chunk = self._chunks[idx]
-            if filters and not _match_filters(chunk.get("metadata", {}), filters):
+            if filters and not _match_filters(chunk, filters):
                 continue
             hits.append(
                 RetrievalHit(
@@ -47,5 +47,13 @@ class BM25Index:
         return hits[:top_k]
 
 
-def _match_filters(metadata: dict[str, Any], filters: dict[str, Any]) -> bool:
-    return all(metadata.get(key) == value for key, value in filters.items())
+def _match_filters(chunk: dict[str, Any], filters: dict[str, Any]) -> bool:
+    metadata = chunk.get("metadata", {})
+    for key, value in filters.items():
+        if key == "document_id":
+            if chunk.get("document_id") != value:
+                return False
+            continue
+        if metadata.get(key) != value:
+            return False
+    return True

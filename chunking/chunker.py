@@ -200,6 +200,7 @@ class DocumentChunker:
         """
         chunks: list[dict] = []
         total_sentences = len(sentences)
+        sentence_tokens = [count_tokens(sentence) for sentence in sentences]
         start_idx = 0
 
         while start_idx < total_sentences:
@@ -208,20 +209,20 @@ class DocumentChunker:
             chunk_tokens = 0
 
             for i in range(start_idx, total_sentences):
-                sentence_tokens = count_tokens(sentences[i])
+                sentence_token_count = sentence_tokens[i]
 
                 # Special case: single sentence exceeds max tokens
-                if not chunk_sentences and sentence_tokens > self.config.max_chunk_tokens:
+                if not chunk_sentences and sentence_token_count > self.config.max_chunk_tokens:
                     chunk_sentences.append(i)
-                    chunk_tokens = sentence_tokens
+                    chunk_tokens = sentence_token_count
                     break
 
                 # Check if adding this sentence would exceed the limit
-                if chunk_tokens + sentence_tokens > self.config.max_chunk_tokens:
+                if chunk_tokens + sentence_token_count > self.config.max_chunk_tokens:
                     break
 
                 chunk_sentences.append(i)
-                chunk_tokens += sentence_tokens
+                chunk_tokens += sentence_token_count
 
             if not chunk_sentences:
                 break
@@ -252,7 +253,7 @@ class DocumentChunker:
             overlap_start = last_idx + 1  # will be walked backward
 
             for j in range(last_idx, chunk_sentences[0] - 1, -1):
-                overlap_accumulated += count_tokens(sentences[j])
+                overlap_accumulated += sentence_tokens[j]
                 if overlap_accumulated >= self.config.overlap_tokens:
                     overlap_start = j
                     break

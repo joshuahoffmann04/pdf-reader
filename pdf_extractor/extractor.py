@@ -1,13 +1,11 @@
 """
 PDF Extractor - Main Processing Engine
 
-Processes PDF documents using OpenAI's Vision API (GPT-4o) for
-high-quality content extraction and transformation.
-
-This is the main processing engine that:
-1. Analyzes document context from sample pages
-2. Extracts content page-by-page with context awareness
-3. Returns structured data ready for downstream processing
+Hybrid pipeline for PDF content extraction:
+1. Text-native extraction (PyMuPDF)
+2. Optional OCR fallback (Tesseract)
+3. Optional Vision fallback (LLM)
+4. Coverage validation to prevent information loss
 
 Usage:
     from pdf_extractor import PDFExtractor
@@ -16,8 +14,9 @@ Usage:
     result = extractor.extract("document.pdf")
     result.save("output.json")
 
-Environment:
-    OPENAI_API_KEY: Your OpenAI API key
+Environment (optional):
+    OPENAI_API_KEY: Enable LLM-based vision extraction
+    TESSERACT_CMD: Optional path to tesseract.exe for OCR
 """
 
 import json
@@ -246,7 +245,7 @@ class PDFExtractor:
         if not self.llm_enabled or self.config.context_mode == "heuristic":
             return self._build_min_context(pdf_path, total_pages)
 
-        if self.config.context_mode in {"llm_text", "auto"}:
+        if self.config.context_mode == "llm_text":
             text_blob = self._collect_text_samples(pdf_path, sample_pages)
             if text_blob.strip():
                 content = [
@@ -260,9 +259,14 @@ class PDFExtractor:
                     content=content,
                 )
                 return self._parse_context_response(response, total_pages)
+            # If no text is available, fall back to vision context.
+            return self._analyze_context_vision(pdf_path, sample_pages, total_pages)
 
-        # Fallback to vision-based context analysis
-        return self._analyze_context_vision(pdf_path, sample_pages, total_pages)
+        if self.config.context_mode == "llm_vision":
+            return self._analyze_context_vision(pdf_path, sample_pages, total_pages)
+
+        # Unknown mode -> minimal context
+        return self._build_min_context(pdf_path, total_pages)
 
     def _collect_text_samples(self, pdf_path: Path, sample_pages: list[int]) -> str:
         parts: list[str] = []
@@ -481,7 +485,7 @@ class PDFExtractor:
         if not content_types:
             content_types.append(ContentType.SECTION)
 
-        confidence = 1.0 if source == "text" else 0.85
+        confidence = 1.0 if source in {"text", "ocr"} else 0.85
 
         if self.config.enforce_text_coverage:
             coverage = validate_text_coverage(
@@ -862,5 +866,3 @@ class PDFExtractor:
         return text
 
 
-# Backwards compatibility alias
-VisionProcessor = PDFExtractor

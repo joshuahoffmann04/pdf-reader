@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from .config import GenerationConfig
-from .context_builder import build_context, _parse_page_numbers
+from .context_builder import build_context, parse_page_numbers
 from .http_client import post_json
 from .models import GenerateRequest, GenerateResponse, Citation
 from .ollama_client import chat
@@ -17,6 +17,8 @@ class GenerationService:
 
     def generate(self, request: GenerateRequest) -> GenerateResponse:
         mode = request.mode or self.config.retrieval_mode
+        if mode not in {"bm25", "vector", "hybrid"}:
+            raise ValueError(f"Unsupported retrieval mode: {mode}")
         max_context_tokens = request.max_context_tokens or self.config.max_context_tokens
         output_tokens = request.output_tokens or self.config.output_tokens
 
@@ -108,7 +110,7 @@ def _normalize_citations(raw: list[dict[str, Any]], selected_hits: list[dict[str
             continue
         hit = mapping[chunk_id]
         metadata = hit.get("metadata", {}) or {}
-        pages = _parse_page_numbers(metadata)
+        pages = parse_page_numbers(metadata)
         snippet = (item.get("snippet") or "").strip()
         if not snippet:
             snippet = (hit.get("text") or "").strip()[:240]
@@ -127,7 +129,7 @@ def _normalize_citations(raw: list[dict[str, Any]], selected_hits: list[dict[str
         citations.append(
             Citation(
                 chunk_id=hit.get("chunk_id", ""),
-                page_numbers=_parse_page_numbers(metadata),
+                page_numbers=parse_page_numbers(metadata),
                 snippet=(hit.get("text") or "").strip()[:240],
                 score=hit.get("score"),
             )

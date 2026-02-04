@@ -14,7 +14,7 @@ class ContextBuildResult:
     used_tokens: int
 
 
-def _parse_page_numbers(metadata: dict[str, Any]) -> list[int]:
+def parse_page_numbers(metadata: dict[str, Any]) -> list[int]:
     raw = metadata.get("page_numbers")
     if raw is None:
         return []
@@ -33,7 +33,7 @@ def _parse_page_numbers(metadata: dict[str, Any]) -> list[int]:
 def _chunk_block(idx: int, hit: dict[str, Any]) -> str:
     chunk_id = hit.get("chunk_id", "")
     metadata = hit.get("metadata", {}) or {}
-    pages = _parse_page_numbers(metadata)
+    pages = parse_page_numbers(metadata)
     page_text = ", ".join(str(p) for p in pages) if pages else "unknown"
     header = f"[Chunk {idx}] id={chunk_id} pages={page_text}\n"
     text = (hit.get("text") or "").strip()

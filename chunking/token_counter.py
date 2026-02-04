@@ -13,7 +13,11 @@ Usage:
     counts = count_tokens_batch(["Satz eins.", "Satz zwei."])
 """
 
-import tiktoken
+try:
+    import tiktoken
+except Exception as exc:  # pragma: no cover - optional dependency import guard
+    tiktoken = None
+    _TIKTOKEN_IMPORT_ERROR = exc
 
 # Singleton encoder - initialized once, reused across calls.
 # cl100k_base is used by GPT-4 / GPT-3.5-turbo and is a reasonable
@@ -21,8 +25,12 @@ import tiktoken
 _encoder: tiktoken.Encoding | None = None
 
 
-def _get_encoder() -> tiktoken.Encoding:
+def _get_encoder() -> "tiktoken.Encoding":
     """Get or initialize the tiktoken encoder (singleton)."""
+    if tiktoken is None:
+        raise RuntimeError(
+            "tiktoken is required for token counting. Install it to use chunking."
+        ) from _TIKTOKEN_IMPORT_ERROR
     global _encoder
     if _encoder is None:
         _encoder = tiktoken.get_encoding("cl100k_base")

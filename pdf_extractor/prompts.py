@@ -159,14 +159,14 @@ KRITISCHE REGELN:
    - Achte auf Absatznummern wie (1), (2), (3) innerhalb von Paragraphen
    - Integriere diese in den Text: "Gemäß Absatz (2) gilt..."
 
-4. TABELLEN → NATÜRLICHE SPRACHE:
+4. TABELLEN -> NATÜRLICHE SPRACHE:
    - Wandle Tabellen in vollständige, verständliche Sätze um
    - Integriere Spaltenüberschriften in jeden Satz
    - Beispiel Notentabelle: "Laut Notentabelle entsprechen 15 Punkte der Note 0,7 (sehr gut), 14 Punkte der Note 1,0 (sehr gut), ..."
    - Beispiel Studienverlauf: "Im ersten Semester werden die Module 'Analysis I' (9 LP) und 'Lineare Algebra I' (9 LP) belegt."
    - Beispiel Modulliste: "Das Modul 'Analysis I' ist ein Pflichtmodul mit 9 Leistungspunkten. Die Prüfungsform ist eine Klausur."
 
-5. LISTEN UND AUFZÄHLUNGEN → FLIESSTEXT:
+5. LISTEN UND AUFZÄHLUNGEN -> FLIESSTEXT:
    - Wandle in Fließtext um, behalte aber die logische Struktur
    - Beispiel: "Die Zugangsvoraussetzungen umfassen erstens eine Hochschulzugangsberechtigung, zweitens..."
 

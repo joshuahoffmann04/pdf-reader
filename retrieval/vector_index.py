@@ -78,16 +78,3 @@ class VectorIndex:
         return flat
 
 
-class DummyEmbedder:
-    def embed(self, text: str) -> list[float]:
-        return self._vectorize(text)
-
-    def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        return [self._vectorize(text) for text in texts]
-
-    @staticmethod
-    def _vectorize(text: str) -> list[float]:
-        values = [float((ord(char) % 10) / 10.0) for char in text[:32]]
-        if len(values) < 32:
-            values.extend([0.0] * (32 - len(values)))
-        return values

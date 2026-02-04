@@ -1,168 +1,109 @@
-# PDF Extractor Service
+# PDF Extractor
 
-Extrahiert strukturierte Inhalte aus PDF-Dokumenten via OpenAI Vision API. Das Modul liefert eine JSON-Ausgabe, die fuer Chunking und Retrieval vorbereitet ist.
+Komponente zur praezisen Extraktion von Inhalten aus PDF-Dokumenten. Sie erzeugt eine strukturierte JSON-Ausgabe pro Seite und ist die erste Stufe der Pipeline (vor Chunking und Retrieval).
+
+## Zweck
+
+- Vollstaendige, seitenweise Extraktion mit nachvollziehbarer Herkunft
+- Prioritaet: text-native Extraktion (verlustarm), mit optionalem OCR und LLM-Fallback
+- Strukturierte Ausgabe mit Metadaten fuer spaetere Verarbeitung
+
+## Architektur und Ablauf
+
+1. **Text-Extraktion (PyMuPDF)**  
+   Selektierbarer Text wird blockweise gelesen und in natuerlicher Reihenfolge zusammengefuehrt.
+2. **Tabellen-Extraktion (optional)**  
+   Bei Bedarf werden Tabellen zusaetzlich als Text eingefuegt (pdfplumber).
+3. **OCR-Fallback (optional)**  
+   Fuer gescannte Seiten wird Tesseract verwendet.
+4. **Vision-Fallback (optional, LLM)**  
+   Falls Text/OCR nicht ausreichend sind, wird die Seite via Vision-LLM extrahiert.
+5. **Validierungs-Gates**  
+   Inhalte werden gegen Raw-Text geprueft, um Informationsverlust zu verhindern.
 
 ## Struktur
 
 ```
 pdf_extractor/
-|-- app.py              # FastAPI OpenAPI Service
+|-- app.py              # FastAPI Service
 |-- config.py           # Service-Konfiguration
 |-- service.py          # Extraktions-Orchestrierung
-|-- storage.py          # Persistenz (data/pdf_extractor/<document_id>/extraction/...)
-|-- extractor.py        # Extractor (Core)
+|-- storage.py          # Persistenz (data/pdf_extractor/<doc>/extraction/...)
+|-- extractor.py        # Pipeline-Logik
 |-- text_extractor.py   # Text-native Extraktion (PyMuPDF)
-|-- validation.py       # LLM-Ausgabe-Validierung
-|-- qa.py               # QA-Utilities (Questions, Coverage, Scanned Pages)
-|-- models.py           # Datenmodelle + Request/Response
-|-- prompts.py          # Prompt-Vorlagen
-|-- pdf_to_images.py    # PDF -> Image Pipeline
-`-- README.md
+|-- table_extractor.py  # Tabellen (pdfplumber)
+|-- validation.py       # Coverage- und LLM-Validierung
+|-- models.py           # Datenmodelle
+|-- prompts.py          # LLM-Prompts
+|-- pdf_to_images.py    # PDF -> Image
 ```
 
-## Quick Start (Python)
+## Schnellstart (Python)
 
 ```python
-from pdf_extractor import PDFExtractor
+from pdf_extractor import PDFExtractor, ProcessingConfig
 
-extractor = PDFExtractor()
+config = ProcessingConfig(
+    extraction_mode="hybrid",
+    use_llm=True,
+    llm_postprocess=False,
+    context_mode="llm_text",
+    table_extraction=True,
+    layout_mode="columns",
+    enforce_text_coverage=True,
+    ocr_enabled=True,
+    ocr_before_vision=True,
+)
+
+extractor = PDFExtractor(config=config)
 result = extractor.extract("pdfs/example.pdf")
 result.save("output.json")
 ```
 
-## Service starten
+## Service (API)
 
-```bash
-python scripts/pdf_extractor_service.py --serve
-```
+Die Komponente stellt eine FastAPI-App bereit: `pdf_extractor.app:create_app` bzw. `pdf_extractor.app:app`.
+Integration erfolgt durch Einbindung in die uebergeordnete Service-Schicht.
 
-### API
-
-- `GET /health` -> `{ "status": "ok" }`
-- `POST /extract` -> startet eine Extraktion
-
-**Request**
-```json
-{ "pdf_path": "pdfs/example.pdf" }
-```
-
-**Response**
-```json
-{
-  "document_id": "example",
-  "output_path": "data/pdf_extractor/example/extraction/example_20240101_120000.json",
-  "pages": 42
-}
-```
-
-## Persistenz
-
-- Standard-Ordner: `data/pdf_extractor`
-- Ablagepfad: `data/pdf_extractor/<document_id>/extraction/<document_id>_<timestamp>.json`
-
-Die Pfade werden von `ExtractionStorage` erzeugt und sind deterministisch pro Dokument und Zustand.
+Endpoints:
+- `GET /health`
+- `POST /extract` mit `{ "pdf_path": "pdfs/..." }`
 
 ## Konfiguration
 
-```python
-from pdf_extractor.config import ExtractorConfig
-from pdf_extractor.models import ProcessingConfig
+Die wichtigsten Optionen in `ProcessingConfig`:
 
-config = ExtractorConfig(
-    data_dir="data/pdf_extractor",
-    processing=ProcessingConfig(model="gpt-4o-mini"),
-)
-```
+- `extraction_mode`: `text | vision | hybrid`
+- `use_llm`: LLM fuer Vision-Extraction aktivieren
+- `context_mode`: `llm_text | llm_vision | heuristic`
+- `table_extraction`: Tabellen zusaetzlich extrahieren
+- `ocr_enabled`: OCR-Fallback aktivieren
+- `ocr_before_vision`: OCR vor Vision versuchen
+- `layout_mode`: `simple | columns`
+- `enforce_text_coverage`: harte Coverage-Pruefung
+- `min_token_recall`, `min_number_recall`: Coverage-Schwellen
 
-### Extraction Mode (empfohlen)
+## Ausgabeformat (ExtractionResult)
 
-```python
-from pdf_extractor.models import ProcessingConfig
+Top-Level:
+- `source_file`
+- `context` (Dokument-Metadaten)
+- `pages` (Liste aller Seiten)
+- `errors`, `warnings`
+- `processing_time_seconds`
 
-processing = ProcessingConfig(
-    extraction_mode="hybrid",    # text|vision|hybrid
-    use_llm=True,                # optional
-    llm_postprocess=False,       # sicherer Default (keine Zusammenfassung)
-    context_mode="llm_text",     # llm_text|llm_vision|heuristic
-    table_extraction=False,      # optional: pdfplumber Tabellen
-    layout_mode="columns",       # bessere Reihenfolge bei Mehrspalten
-    enforce_text_coverage=True,  # hartes Coverage-Gate
-    ocr_enabled=False,           # OCR-Fallback fuer gescannte Seiten
-    ocr_before_vision=True,      # OCR vor Vision (hybrid)
-    ocr_dpi=300,                 # OCR-Render-DPI
-)
-```
+Pro Seite (`ExtractedPage`):
+- `page_number`
+- `content` (finaler Text)
+- `raw_content` (Rohtext zur Nachvollziehbarkeit)
+- `content_source` (`text | ocr | vision | llm_text`)
+- `sections`, `paragraph_numbers`
+- `has_table`, `has_list`
+- `internal_references`, `external_references`
+- `continues_from_previous`, `continues_to_next`
 
-## CLI: Einfache Extraktion
+## Abhaengigkeiten (optional)
 
-```bash
-python scripts/pdf_extractor_service.py --pdf pdfs/example.pdf
-```
-
-Optional mit Output-Datei:
-
-```bash
-python scripts/pdf_extractor_service.py --pdf pdfs/example.pdf --output data/output.json
-```
-
-### OCR-Check (gescannte Seiten erkennen)
-
-```bash
-python scripts/detect_scanned_pages.py pdfs/example.pdf
-```
-
-Hinweis: Text-native Extraktion ist i.d.R. genauer als reine Vision-Extraktion. Bei fehlendem API-Key kann der Extractor automatisch auf Text-only fallen.
-
-### Tesseract Pfad (falls nicht im PATH)
-
-Falls `tesseract` installiert ist, aber nicht gefunden wird, setze den Pfad:
-
-```
-TESSERACT_CMD=C:\\Program Files\\Tesseract-OCR\\tesseract.exe
-```
-
-## Tests
-
-```bash
-pytest tests/test_extractor.py tests/test_extraction_models.py -v
-```
-
-## Page-Level QA (one question per page)
-
-Generate one question per page for manual/automatic verification:
-
-```bash
-python scripts/generate_page_questions.py pdfs/example.pdf --output data/eval/page_questions_example.json
-```
-
-Check extraction output against the questions:
-
-```bash
-python scripts/check_page_questions.py data/eval/page_questions_example.json data/pdf_extractor/example/extraction/example_*.json
-```
-
-Validate token/number coverage (strict):
-
-```bash
-python scripts/validate_extraction_coverage.py pdfs/example.pdf data/pdf_extractor/example/extraction/example_*.json --output data/eval/coverage_report_example.json
-```
-
-## Extractor Pipeline Test
-
-```bash
-pytest tests/test_extractor_pipeline.py -v
-```
-
-## Batch QA Suite
-
-Run extraction + QA (one question per page + coverage) for all PDFs:
-
-```bash
-python scripts/batch_test_suite.py --table --layout columns
-```
-
-Reuse the latest extraction output (skip re-extraction):
-
-```bash
-python scripts/batch_test_suite.py --reuse-latest --table --layout columns
-```
+- `OPENAI_API_KEY` fuer Vision-LLM
+- `TESSERACT_CMD` fuer OCR (Tesseract-Installation)
+- `pdfplumber` fuer Tabellen

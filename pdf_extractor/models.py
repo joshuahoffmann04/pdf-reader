@@ -77,12 +77,6 @@ class ContentType(str, Enum):
     OVERVIEW = "overview"            # Summary/overview content
 
 
-class Language(str, Enum):
-    """Supported languages."""
-    DE = "de"  # German
-    EN = "en"  # English
-
-
 # =============================================================================
 # EXTRACTION MODELS
 # =============================================================================
@@ -203,12 +197,6 @@ class DocumentContext(BaseModel):
     legal_basis: Optional[str] = Field(
         None,
         description="Legal basis for the document (e.g., 'HHG §44')"
-    )
-
-    # Metadata
-    language: Language = Field(
-        Language.DE,
-        description="Primary language of the document"
     )
 
     def get_abbreviation_dict(self) -> dict[str, str]:
@@ -361,36 +349,12 @@ class ProcessingConfig(BaseModel):
         le=2.0
     )
 
-    # Processing Options
-    expand_abbreviations: bool = Field(
-        True,
-        description="Expand abbreviations in output text"
-    )
-    include_page_context: bool = Field(
-        True,
-        description="Include page number context in output"
-    )
-    merge_cross_page_content: bool = Field(
-        True,
-        description="Merge content that spans page boundaries"
-    )
-
     # Retry Configuration
     max_retries: int = Field(
         3,
         description="Maximum retry attempts for failed pages",
         ge=1,
         le=10
-    )
-
-    # Output Configuration
-    output_format: str = Field(
-        "json",
-        description="Output format: 'json' or 'jsonl'"
-    )
-    language: Language = Field(
-        Language.DE,
-        description="Output language"
     )
 
     # Extraction Mode
@@ -425,7 +389,7 @@ class ProcessingConfig(BaseModel):
         description="Preserve line breaks in text-native extraction"
     )
     layout_mode: str = Field(
-        "simple",
+        "columns",
         description="Text layout ordering: simple|columns"
     )
     column_gap_ratio: float = Field(
@@ -435,7 +399,7 @@ class ProcessingConfig(BaseModel):
 
     # Table Extraction
     table_extraction: bool = Field(
-        False,
+        True,
         description="Enable structured table extraction when available"
     )
     table_settings: dict = Field(
@@ -445,7 +409,7 @@ class ProcessingConfig(BaseModel):
 
     # OCR Fallback
     ocr_enabled: bool = Field(
-        False,
+        True,
         description="Enable OCR fallback for scanned pages"
     )
     ocr_before_vision: bool = Field(

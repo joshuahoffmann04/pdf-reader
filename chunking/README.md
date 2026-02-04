@@ -1,51 +1,53 @@
-# Chunking Service
+# Chunking
 
-Satzbasiertes Sliding-Window-Chunking für die RAG-Pipeline. Das Modul nimmt die JSON-Ausgabe des PDF-Extractors und erzeugt überlappende Chunks mit Metadaten, optimiert für LLM-Kontextfenster.
+Sentence-aligned, sliding-window chunking for the RAG pipeline. The component
+consumes the JSON output from `pdf_extractor` and produces overlapping chunks
+with metadata optimized for retrieval.
 
-## Struktur
+## Purpose
+
+- Stable, sentence-aligned chunks for downstream retrieval
+- Configurable token window and overlap
+- Rich metadata for traceability and navigation
+
+## Structure
 
 ```
 chunking/
-├── app.py              # FastAPI OpenAPI Service
-├── config.py           # Service-Konfiguration
-├── service.py          # Chunking-Orchestrierung
-├── storage.py          # Persistenz (data/chunking/<document_id>/chunks/...)
-├── models.py           # Datenmodelle + Request/Response
-├── chunker.py          # Satzbasierter Chunker
-├── sentence_splitter.py
-├── token_counter.py
-└── README.md
+|-- app.py              # FastAPI service
+|-- config.py           # Service configuration
+|-- service.py          # Chunking orchestration
+|-- storage.py          # Persistence (data/chunking/<document_id>/chunks/...)
+|-- models.py           # Data models + request/response
+|-- chunker.py          # Chunking logic
+|-- sentence_splitter.py
+|-- token_counter.py
+|-- README.md
 ```
 
-## Quick Start (Python)
+## Usage (Python)
 
 ```python
 from chunking import DocumentChunker, ChunkingConfig
 from pdf_extractor import ExtractionResult
 
-result = ExtractionResult.load("data/pdf_extractor/example/extraction/example_20240101_120000.json")
+result = ExtractionResult.load(
+    "data/pdf_extractor/example/extraction/example_20240101_120000.json"
+)
 chunker = DocumentChunker(ChunkingConfig(max_chunk_tokens=512))
 chunks = chunker.chunk(result)
 chunks.save("chunks.json")
 ```
 
-## Service starten
+## Service (API)
 
-```bash
-python scripts/chunking_service.py
-```
+The component exposes a FastAPI app: `chunking.app:create_app` (or `chunking.app:app`).
 
-### API
+Endpoints:
+- `GET /health`
+- `POST /chunk` with `{ "extraction_path": "data/pdf_extractor/<document_id>/extraction/<file>.json" }`
 
-- `GET /health` → `{ "status": "ok" }`
-- `POST /chunk` → chunked eine Extraktionsdatei
-
-**Request**
-```json
-{ "extraction_path": "data/pdf_extractor/<document_id>/extraction/<file>.json" }
-```
-
-**Response**
+Response:
 ```json
 {
   "document_id": "<document_id>",
@@ -54,17 +56,27 @@ python scripts/chunking_service.py
 }
 ```
 
-## Persistenz
+## Output Format
 
-- Standard-Ordner: `data/chunking`
-- Ablagepfad: `data/chunking/<document_id>/chunks/<document_id>_<timestamp>.json`
+Top-level:
+- `source_file`
+- `document_id`
+- `config`
+- `chunks` (list of Chunk)
+- `stats`
+- `created_at`
 
-Die Pfade werden von `ChunkingStorage` erzeugt und sind deterministisch pro Dokument und Zustand.
+Chunk:
+- `chunk_id`
+- `text`
+- `token_count`
+- `metadata` (document_id, page_numbers, neighbor ids, etc.)
 
-## Konfiguration
+## Configuration
 
 ```python
 from chunking.config import ChunkingServiceConfig
+from chunking.models import ChunkingConfig
 
 config = ChunkingServiceConfig(
     data_dir="data/chunking",
@@ -72,8 +84,7 @@ config = ChunkingServiceConfig(
 )
 ```
 
-## Tests
+## Token Counting
 
-```bash
-pytest tests/test_chunker.py tests/test_chunking_models.py -v
-```
+Token counting uses `tiktoken` with the `cl100k_base` encoding as a conservative
+approximation. This keeps chunk sizes safely within limits for most local LLMs.

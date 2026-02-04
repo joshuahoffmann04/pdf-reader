@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException
 
+from .config import ChunkingServiceConfig
 from .models import ChunkRequest, ChunkResponse
 from .service import ChunkingService
 
 
-def create_app() -> FastAPI:
-    service = ChunkingService()
+def create_app(config: ChunkingServiceConfig | None = None) -> FastAPI:
+    service = ChunkingService(config=config)
     app = FastAPI(
         title="Chunking Service",
         version="1.0.0",

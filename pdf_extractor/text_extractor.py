@@ -202,7 +202,7 @@ class TextExtractor:
     def _looks_like_list(lines: list[str]) -> bool:
         list_like = 0
         for line in lines:
-            if re.match(r"^[-•·]\s+", line):
+            if re.match("^[-\u2022\u00b7]\\s+", line):
                 list_like += 1
             elif re.match(r"^\(?[0-9]{1,2}[.)]\s+", line):
                 list_like += 1

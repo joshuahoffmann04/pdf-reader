@@ -8,7 +8,7 @@ without requiring external NLP libraries.
 Design:
 - Split at sentence-ending punctuation (.!?) followed by whitespace + uppercase
 - Protect known German abbreviations from triggering false splits
-- Protect common patterns: paragraph references (§ 5 Abs. 2), ordinals (1.)
+- Protect common patterns: paragraph references (Section 5 Abs. 2), ordinals (1.)
 - No external dependencies (no spaCy, no NLTK)
 
 Usage:
@@ -33,7 +33,7 @@ _ABBREVIATIONS = {
     # Titles
     "dr", "prof", "dipl", "ing", "med", "phil", "rer", "nat",
     # Months (abbreviated)
-    "jan", "feb", "mär", "apr", "jun", "jul", "aug", "sep",
+    "jan", "feb", "m\u00e4r", "apr", "jun", "jul", "aug", "sep",
     "sept", "okt", "nov", "dez",
     # Units / misc
     "std", "tel", "fax", "str", "max", "min", "orig",
@@ -42,25 +42,25 @@ _ABBREVIATIONS = {
 # Build a single regex that matches any known abbreviation followed by a dot.
 # Uses word boundary and lookahead for whitespace to avoid false matches.
 _ABBREV_PATTERN = re.compile(
-    r'(?<!\w)(?:' + '|'.join(re.escape(a) for a in _ABBREVIATIONS) + r')\.(?=\s)',
+    r"(?<!\w)(?:" + "|".join(re.escape(a) for a in _ABBREVIATIONS) + r")\.(?=\s)",
     re.IGNORECASE,
 )
 
-# Multi-part abbreviations: z.B., d.h., u.a., o.ä., i.d.R., s.o., u.U.
+# Multi-part abbreviations: z.B., d.h., u.a., o.ae., i.d.R., s.o., u.U.
 _MULTI_ABBREV_PATTERN = re.compile(
-    r'\b[a-zäöüA-ZÄÖÜ]\.(?:[a-zäöüA-ZÄÖÜ]\.)+',
+    r"\b[a-z\u00e4\u00f6\u00fcA-Z\u00c4\u00d6\u00dc]\.(?:[a-z\u00e4\u00f6\u00fcA-Z\u00c4\u00d6\u00dc]\.)+",
     re.UNICODE,
 )
 
-# Paragraph references: "§ 5 Abs. 2", "§5 Abs. 3", "§ 12 Abs. 1 Nr. 3"
+# Paragraph references: "Section 5 Abs. 2", "Section 5 Abs. 3", "Section 12 Abs. 1 Nr. 3"
 _PARAGRAPH_REF_PATTERN = re.compile(
-    r'§\s*\d+\s+(?:Abs|Nr|Satz)\.\s*\d+',
+    r"\u00a7\s*\d+\s+(?:Abs|Nr|Satz)\.\s*\d+",
     re.IGNORECASE,
 )
 
-# Ordinal numbers before spaces: "1. ", "23. " — but only when preceded by
+# Ordinal numbers before spaces: "1. ", "23. " -- but only when preceded by
 # context that suggests an ordinal (after comma, semicolon, start, or space+number)
-_ORDINAL_PATTERN = re.compile(r'(?<=\s)\d{1,3}\.(?=\s)')
+_ORDINAL_PATTERN = re.compile(r"(?<=\s)\d{1,3}\.(?=\s)")
 
 
 def _protect_dots(text: str) -> str:
@@ -112,7 +112,7 @@ def split_sentences(text: str) -> list[str]:
     # Pattern: sentence-ending punctuation (.!?) followed by whitespace
     # and an uppercase letter, digit, opening quote/bracket.
     parts = re.split(
-        r'(?<=[.!?])\s+(?=[A-ZÄÖÜ0-9„"\(§])',
+        r'(?<=[.!?])\s+(?=[A-Z\u00c4\u00d6\u00dc0-9\u201e"\(\u00a7])',
         protected,
     )
 

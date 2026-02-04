@@ -37,7 +37,7 @@ class OllamaEmbedder:
             if "Connection" in type(e).__name__ or "refused" in str(e).lower():
                 raise ConnectionError(
                     f"Cannot connect to Ollama at {self.base_url}. "
-                    f"Is Ollama running? Start it with: ollama serve"
+                    "Is Ollama running and reachable?"
                 ) from e
             raise RuntimeError(f"Embedding generation failed: {e}") from e
 
@@ -72,7 +72,7 @@ class OllamaEmbedder:
             if "Connection" in type(e).__name__ or "refused" in str(e).lower():
                 raise ConnectionError(
                     f"Cannot connect to Ollama at {self.base_url}. "
-                    f"Is Ollama running? Start it with: ollama serve"
+                    "Is Ollama running and reachable?"
                 ) from e
             raise RuntimeError(f"Batch embedding failed: {e}") from e
 
@@ -98,7 +98,7 @@ class OllamaEmbedder:
                 result["error"] = (
                     f"Model '{self.model}' not found. "
                     f"Available: {model_names}. "
-                    f"Pull it with: ollama pull {self.model}"
+                    "Make sure the model is available in Ollama."
                 )
             else:
                 result["healthy"] = True

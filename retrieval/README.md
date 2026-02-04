@@ -1,45 +1,43 @@
-# Retrieval Service
+# Retrieval
 
-Hybrid-Retrieval für RAG: BM25 (klassisch), Vektor-Retrieval (Ollama + ChromaDB) und Hybrid-Ranking (RRF). Das Modul bietet drei dedizierte Endpunkte und erzeugt LLM-taugliche Kontextstrings.
+Hybrid retrieval for the RAG pipeline. This component supports BM25, vector
+search (Ollama embeddings + ChromaDB), and a hybrid RRF fusion. It exposes
+a unified API and produces LLM-ready context strings.
 
-## Struktur
+## Purpose
+
+- Reliable lexical retrieval (BM25)
+- Semantic retrieval via embeddings
+- Hybrid ranking with reciprocal-rank fusion (RRF)
+- Consistent context assembly for generation
+
+## Structure
 
 ```
 retrieval/
-├── app.py           # FastAPI OpenAPI Service
-├── config.py        # Service-Konfiguration
-├── service.py       # Ingest + Retrieval
-├── storage.py       # Chunk-Store (JSONL)
-├── bm25_index.py    # BM25 Index
-├── vector_index.py  # ChromaDB + Embedding
-├── embedder.py      # Ollama Embedder
-├── hybrid.py        # RRF Fusion
-├── models.py        # Datenmodelle + Request/Response
-└── README.md
-```
-
-## Service starten
-
-```bash
-python scripts/bm25_service.py
-```
-
-Die drei dedizierten Services laufen auf dem gleichen App-Code; du kannst für unterschiedliche Ports die jeweiligen Scripts nutzen:
-
-```bash
-python scripts/bm25_service.py
-python scripts/vector_service.py
-python scripts/hybrid_service.py
+|-- app.py           # FastAPI service
+|-- config.py        # Service configuration
+|-- service.py       # Ingest + retrieval orchestration
+|-- storage.py       # Chunk store (JSONL)
+|-- bm25_index.py    # BM25 index
+|-- vector_index.py  # ChromaDB + embeddings
+|-- embedder.py      # Ollama embedder
+|-- hybrid.py        # RRF fusion
+|-- models.py        # Data models + request/response
+|-- README.md
 ```
 
 ## API
 
-- `GET /health` → `{ "status": "ok" }`
-- `POST /ingest` → speichert Chunks + baut Indizes
-- `POST /retrieve/bm25` → BM25
-- `POST /retrieve/vector` → Vektor
-- `POST /retrieve/hybrid` → RRF-Hybrid
-- `GET /documents` → Übersicht über ingestete Dokumente
+The component exposes a FastAPI app: `retrieval.app:create_app` (or `retrieval.app:app`).
+
+Endpoints:
+- `GET /health`
+- `GET /documents`
+- `POST /ingest`
+- `POST /retrieve/bm25`
+- `POST /retrieve/vector`
+- `POST /retrieve/hybrid`
 
 ### Ingest Request
 
@@ -58,7 +56,7 @@ python scripts/hybrid_service.py
 { "query": "Was ist die Regelstudienzeit?", "top_k": 5, "filters": {"document_id": "example"} }
 ```
 
-### Retrieval Response (vereinheitlicht)
+### Retrieval Response
 
 ```json
 {
@@ -71,13 +69,12 @@ python scripts/hybrid_service.py
 }
 ```
 
-## Persistenz
+## Persistence
 
-- Standard-Ordner: `data/retrieval`
-- Chunks: `data/retrieval/chunks.jsonl`
-- ChromaDB Persistenz: `data/retrieval` (Standardpfad von ChromaDB)
+- Chunk store: `data/retrieval/chunks.jsonl`
+- ChromaDB persistence: `data/retrieval/chroma`
 
-## Konfiguration
+## Configuration
 
 ```python
 from retrieval.config import RetrievalConfig
@@ -91,8 +88,7 @@ config = RetrievalConfig(
 )
 ```
 
-## Tests
+## Dependencies (optional)
 
-```bash
-pytest tests/test_retrieval_service.py tests/test_storage_paths.py -v
-```
+- Ollama for embeddings
+- ChromaDB for vector index persistence

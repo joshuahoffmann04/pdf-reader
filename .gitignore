@@ -54,6 +54,7 @@ nosetests.xml
 coverage.xml
 *.cover
 *.py,cover
+test/**/output/
 
 # Type checking
 .mypy_cache/

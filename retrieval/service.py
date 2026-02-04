@@ -60,11 +60,12 @@ class RetrievalService:
 def build_context(hits: list[RetrievalHit], max_tokens: int) -> str:
     if not hits:
         return ""
+    separator_tokens = count_tokens("---")
     parts: list[str] = []
     token_count = 0
     for hit in hits:
         chunk_tokens = count_tokens(hit.text)
-        separator_cost = 3 if parts else 0
+        separator_cost = separator_tokens if parts else 0
         if token_count + chunk_tokens + separator_cost > max_tokens:
             if not parts:
                 parts.append(hit.text)

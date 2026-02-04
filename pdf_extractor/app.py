@@ -10,7 +10,7 @@ def create_app(config: ExtractorConfig | None = None) -> FastAPI:
     app = FastAPI(
         title="PDF Extractor Service",
         version="1.0.0",
-        description="PDF extraction via OpenAI Vision API.",
+        description="Hybrid PDF extraction (text, OCR, optional vision).",
     )
 
     @app.get("/health")
