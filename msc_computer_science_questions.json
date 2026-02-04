@@ -3,802 +3,582 @@
     {
       "id": "q001",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Für welchen Studiengang ist die Prüfungsordnung gültig?",
+      "expected_answer": "Master of Science in Computer Science",
+      "reference_page_numbers": [
+        1
+      ],
+      "reference_quote": "Studien- und Prüfungsordnung für den Studiengang „Computer Science“ mit dem Abschluss „Master of Science (M.Sc.)“ der Philipps-Universität Marburg vom 25. Januar 2023 in der Fassung vom 19. Februar 2025"
     },
     {
       "id": "q002",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wofür ist die Prüfungsordnung da?",
+      "expected_answer": "Sie regelt Ziele, Inhalte, Aufbau und Gliederung des Studiums sowie Anforderung und Verfahren der Prüfungsleistungen",
+      "reference_page_numbers": [
+        3
+      ],
+      "reference_quote": "Diese Studien- und Prüfungsordnung regelt ergänzend zu den Allgemeinen Bestimmungen für Masterstudiengänge an der Philipps-Universität Marburg vom 13. September 2010 (Amtliche Mitteilungen der Philipps-Universität Marburg, Nr. 52/2010) in der jeweils gültigen Fassung – nachfolgend Allgemeine Bestimmungen genannt – Ziele, Inhalte, Aufbau und Gliederung des Studiums sowie Anforderung und Verfahren der Prüfungsleistungen im Studiengang „Computer Science“ mit dem Abschluss „Master of Science (M.Sc.)“."
     },
     {
       "id": "q003",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Was haben die Absolventen nach Abschluss für Kenntnisse und Fähigkeiten erworben?",
+      "expected_answer": "Die Absolventen verfügen unter Berücksichtigung der Anforderungen und Veränderungen in der verstärkt digitalen Berufswelt (Wirtschaft, Industrie, öffentlicher Dienst) über die erforderlichen fachlichen Kenntnisse, Fähigkeiten und Methoden der Informatik, nach wissenschaftlichen Grundsätzen auf fortgeschrittenem Niveau eigenverantwortlich zu arbeiten, moderne wissenschaftliche Kenntnisse zu analysieren und kritisch zu beurteilen. ",
+      "reference_page_numbers": [
+        3
+      ],
+      "reference_quote": "Nach Abschluss des Masterstudiengangs „Computer Science“ verfügen die Absolventinnen und Absolventen unter Berücksichtigung der Anforderungen und Veränderungen in der verstärkt digitalen Berufswelt (Wirtschaft, Industrie, öffentlicher Dienst) über die erforderlichen fachlichen Kenntnisse, Fähigkeiten und Methoden der Informatik, nach wissenschaftlichen Grundsätzen auf fortgeschrittenem Niveau eigenverantwortlich zu arbeiten, moderne wissenschaftliche Kenntnisse zu analysieren und kritisch zu beurteilen. "
     },
     {
       "id": "q004",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Was ist die Masterprüfung bestanden?",
+      "expected_answer": "Die Masterprüfung ist bestanden, wenn alle gemäß § 6 vorgesehenen Module bestanden sind. ",
+      "reference_page_numbers": [
+        3
+      ],
+      "reference_quote": "Die Masterprüfung ist bestanden, wenn alle gemäß § 6 vorgesehenen Module bestanden sind. "
     },
     {
       "id": "q005",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wer ist für dei Studienberatung zuständig?",
+      "expected_answer": "Die allgemeine Studienberatung erfolgt durch die Zentrale Allgemeine Studienberatung (ZAS) der Philipps-Universität Marburg. Die Fachstudienberatung wird in der Regel durch die Professorinnen und Professoren oder von beauftragten Personen wahrgenommen. ",
+      "reference_page_numbers": [
+        5
+      ],
+      "reference_quote": "Die allgemeine Studienberatung erfolgt durch die Zentrale Allgemeine Studienberatung (ZAS) der Philipps-Universität Marburg. Die Fachstudienberatung wird in der Regel durch die Professorinnen und Professoren oder von beauftragten Personen wahrgenommen. "
     },
     {
       "id": "q006",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele Leistungspunkte haben die Compulsory Elective Modules in Computer Science?",
+      "expected_answer": "Sie umfassen 51-54 oder 63-66 Leistungspunkte.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Compulsory Elective Modules in Computer Science 51-54 oder 63-66"
     },
     {
       "id": "q007",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele Leistungspunkte umfasst das Modul Advanced Algorithmics?",
+      "expected_answer": "Das Modul umfasst 9 Leistungspunkte.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Advanced Algorithmics WP T 9"
     },
     {
       "id": "q008",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele Leistungspunkte hat das Modul Advanced Data Structures?",
+      "expected_answer": "Es umfasst 9 Leistungspunkte.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Advanced Data Structures WP T 9"
     },
     {
       "id": "q009",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Handelt es sich bei Advanced Methods of System Development um ein Theorie- oder ein Praxismodul?",
+      "expected_answer": "Es ist ein Praxismodul.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Advanced Methods of System Development WP P 6"
     },
     {
       "id": "q010",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat das Modul Advanced Programming Concepts?",
+      "expected_answer": "Es umfasst 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Advanced Programming Concepts WP T 6"
     },
     {
       "id": "q011",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welchen Typ hat das Modul Advanced Topics in Cryptography?",
+      "expected_answer": "Es ist ein Theoriemodul.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Advanced Topics in Cryptography WP T 6"
     },
     {
       "id": "q012",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat das Modul Algorithm Engineering?",
+      "expected_answer": "Es umfasst 9 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Algorithm Engineering WP P 9"
     },
     {
       "id": "q013",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welchen Umfang hat das Modul Algorithmic Network Analysis?",
+      "expected_answer": "Es hat 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Algorithmic Network Analysis WP T 6"
     },
     {
       "id": "q014",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Handelt es sich bei Algorithms for Bioinformatics um ein Praxis- oder Theoriemodul?",
+      "expected_answer": "Es ist ein Praxismodul.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Algorithms for Bioinformatics WP P 6"
     },
     {
       "id": "q015",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat das Modul Artificial Intelligence?",
+      "expected_answer": "Es umfasst 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Artificial Intelligence WP P 6"
     },
     {
       "id": "q016",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat das Modul Big Data Systems?",
+      "expected_answer": "Es umfasst 9 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Big Data Systems WP P 9"
     },
     {
       "id": "q017",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Handelt es sich bei Compiler Construction um ein Theorie- oder Praxismodul?",
+      "expected_answer": "Es ist ein Theoriemodul.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Compiler Construction WP T 9"
     },
     {
       "id": "q018",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat Computational Complexity Theory?",
+      "expected_answer": "Das Modul umfasst 9 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Computational Complexity Theory WP T 9"
     },
     {
       "id": "q019",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welchen Modultyp hat Computer-assisted Theorem Proving?",
+      "expected_answer": "Es ist ein Theoriemodul.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Computer-assisted Theorem Proving WP T 9"
     },
     {
       "id": "q020",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat Computer Vision I?",
+      "expected_answer": "Es umfasst 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Computer Vision I WP P 6"
     },
     {
       "id": "q021",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welchen Umfang hat Computer Vision II?",
+      "expected_answer": "Es hat 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Computer Vision II WP P 6"
     },
     {
       "id": "q022",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Handelt es sich bei Content-based Image and Video Analysis um ein Praxis- oder Theoriemodul?",
+      "expected_answer": "Es ist ein Praxismodul.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Content-based Image and Video Analysis WP P 6"
     },
     {
       "id": "q023",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat das Modul Dialog Systems?",
+      "expected_answer": "Es umfasst 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Dialog Systems WP P 6"
     },
     {
       "id": "q024",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welchen Typ hat das Modul Distributed Systems?",
+      "expected_answer": "Es ist ein Praxismodul.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Distributed Systems WP P 6"
     },
     {
       "id": "q025",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat Ethical Hacking and Practical Cryptanalysis?",
+      "expected_answer": "Es umfasst 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Ethical Hacking and Practical Cryptanalysis WP P 6"
     },
     {
       "id": "q026",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS umfasst das Modul Formal Methods in Software Engineering?",
+      "expected_answer": "Das Modul umfasst 9 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Formal Methods in Software Engineering WP T 9"
     },
     {
       "id": "q027",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welchen Umfang hat das Modul Geo Databases?",
+      "expected_answer": "Es hat 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Geo Databases WP P 6"
     },
     {
       "id": "q028",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welchen Modultyp hat Image Synthesis?",
+      "expected_answer": "Es ist ein Praxismodul.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Image Synthesis WP P 9"
     },
     {
       "id": "q029",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat das Modul Implementation of Database Systems?",
+      "expected_answer": "Es umfasst 9 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Implementation of Database Systems WP P 9"
     },
     {
       "id": "q030",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie viele ECTS hat das Modul Index and Storage Structures?",
+      "expected_answer": "Es umfasst 6 ECTS.",
+      "reference_page_numbers": [
+        6
+      ],
+      "reference_quote": "Index and Storage Structures WP P 6"
     },
     {
       "id": "q031",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie ist die Regelstudienzeit des Studiengangs?",
+      "expected_answer": "Die Regelstudienzeit des Studiengangs beträgt vier Semester.",
+      "reference_page_numbers": [
+        8
+      ],
+      "reference_quote": "Die allgemeine Regelstudienzeit für den Masterstudiengang „Computer Science“ beträgt 4 Semester."
     },
     {
       "id": "q032",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Ist der Studiengang ein Ein-Fach- oder Mehr-Fach-Studiengang?",
+      "expected_answer": "Der Studiengang ist ein Ein-Fach-Studiengang.",
+      "reference_page_numbers": [
+        9
+      ],
+      "reference_quote": "Der Masterstudiengang „Computer Science“ entspricht der Strukturvariante eines „Ein-Fach-Studiengangs“"
     },
     {
       "id": "q033",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Was ich ein Praxismodul machen?",
+      "expected_answer": "Ja, gemäß § 6 dieser Studienund Prüfungsordnung vorgesehen. ",
+      "reference_page_numbers": [
+        10
+      ],
+      "reference_quote": "Im Rahmen des Masterstudiengangs „Computer Science“ ist ein internes Praxismodul im Studienbereich Practical and Seminar Modules gemäß § 6 dieser Studienund Prüfungsordnung vorgesehen. "
     },
     {
       "id": "q034",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Muss ich mich Anmelden?",
+      "expected_answer": "Ja, wenn das im Modulhandbuch angegeben ist.",
+      "reference_page_numbers": [
+        10
+      ],
+      "reference_quote": "Für Module bzw. Veranstaltungen ist im Einzelfall eine verbindliche Anmeldung erforderlich, soweit dies im Modulhandbuch angegeben ist."
     },
     {
       "id": "q035",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Unter welchen Bedingungen können Zulassungszahlen für Wahlpflichtmodule oder Lehrveranstaltungen festgesetzt werden?",
+      "expected_answer": "Zulassungszahlen können festgesetzt werden, wenn dies für einen geordneten Lehr- und Studienbetrieb und zur Erreichung des Ausbildungsziels zwingend erforderlich ist.",
+      "reference_page_numbers": [
+        11
+      ],
+      "reference_quote": "Für Wahlpflichtmodule und Lehrveranstaltungen können durch Fachbereichsratsbeschluss Zulassungszahlen festgesetzt werden, sofern dies zur Durchführung eines geordneten Lehr- und Studienbetriebs und zur Erreichung des Ausbildungsziels zwingend erforderlich ist. "
     },
     {
       "id": "q036",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Besteht bei Wahlpflichtmodulen mit begrenzter Kapazität ein Anspruch auf Teilnahme?",
+      "expected_answer": "Nein, ein Anspruch auf Teilnahme besteht nicht, sofern ein anderes alternatives Wahlpflichtmodul offensteht.",
+      "reference_page_numbers": [
+        11
+      ],
+      "reference_quote": "Bei einem Wahlpflichtmodul oder einer Lehrveranstaltung mit begrenzter Kapazitätbesteht kein Anspruch auf die Teilnahme, sofern das Studium mindestens eines anderen dazu alternativen Wahlpflichtmoduls oder einer anderen Lehrveranstaltung offensteht."
     },
     {
       "id": "q037",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Wie wird entschieden, wenn mehr Anmeldungen als Plätze für ein Wahlpflichtmodul vorliegen?",
+      "expected_answer": "Die Auswahl wird durch Los getroffen, wobei Härtefälle und Studierende mit besonderem Interesse vorher zu berücksichtigen sind.",
+      "reference_page_numbers": [
+        11
+      ],
+      "reference_quote": "Die Auswahl wird durch Los getroffen. In jedem Fall ist sicherzustellen, dass [...] Härtefälle [...] und Studierende mit besonderem Interesse [...] berücksichtigt werden."
     },
     {
       "id": "q038",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Kriterien begründen ein besonderes Interesse (Prioritätsgruppe 2) an der Teilnahme an einem Wahlpflichtmodul?",
+      "expected_answer": "Ein besonderes Interesse besteht bei innerfachlich verpflichtenden Modulen, bei vorheriger erfolgloser Platzvergabe trotz Studienverlaufsplan oder bei notwendiger Wiederholung nach erfolgloser Teilnahme.",
+      "reference_page_numbers": [
+        11
+      ],
+      "reference_quote": "Ein besonderes Interesse liegt dabei insbesondere bei denjenigen Studierenden vor, • für die das Wahlpflichtmodul [...] verpflichtend ist, • die [...] keinen Platz erhalten haben [...] • die ohne Erfolg [...] teilgenommen haben, wenn die nochmalige Teilnahme [...] zwingend ist."
     },
     {
       "id": "q039",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Prioritätsgruppe wird bevorzugt zugelassen, wenn nicht genügend Plätze für beide Gruppen vorhanden sind?",
+      "expected_answer": "Studierende der Prioritätsgruppe 1 werden bevorzugt zugelassen.",
+      "reference_page_numbers": [
+        11
+      ],
+      "reference_quote": "Genügen im Einzelfall die vorhandenen Plätze nicht [...] sind Studierende der Prioritätsgruppe 1 vorrangig zuzulassen."
     },
     {
       "id": "q040",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Was sind Importmodule gemäß § 14?",
+      "expected_answer": "Importmodule sind Module, deren Angebot und Prüfungsregeln sich nach den Bestimmungen anderer Studienangebote richten.",
+      "reference_page_numbers": [
+        11
+      ],
+      "reference_quote": "Module, die sich in Angebot und Prüfungsregeln nach den Bestimmungen anderer Studienangebote richten („Importmodule“), sind vorgesehen."
     },
     {
       "id": "q041",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Advanced Algorithmics bezüglich der Analyse von Algorithmen?",
+      "expected_answer": "Sie können die Güte von Algorithmen in verschiedenen Analysemodellen beurteilen.",
+      "reference_page_numbers": [
+        29
+      ],
+      "reference_quote": "können die Güte von Algorithmen in verschiedenen Analysemodellen beurteilen,"
     },
     {
       "id": "q042",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Kompetenz erwerben Studierende im Modul Advanced Data Structures im Hinblick auf die Bewertung von Datenstrukturen?",
+      "expected_answer": "Sie können bekannte fortgeschrittene Datenstrukturen entsprechend ihrer Performance-Charakteristika bewerten und einsetzen.",
+      "reference_page_numbers": [
+        29
+      ],
+      "reference_quote": "können bekannte fortgeschrittene Datenstrukturen entsprechend ihrer Performance-Charakteristika bewerten und einsetzen,"
     },
     {
       "id": "q043",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche wissenschaftliche Fähigkeit erwerben Studierende im Modul Advanced Methods of System Development in Bezug auf Fachliteratur?",
+      "expected_answer": "Sie können über Forschungsergebnisse aus aktuellen wissenschaftlichen Beiträgen in Fachzeitschriften und Konferenzen berichten.",
+      "reference_page_numbers": [
+        29
+      ],
+      "reference_quote": "können über Forschungsergebnisse aus aktuellen wissenschaftlichen Beiträgen in nationalen und internationalen Fachzeitschriften sowie von Konferenzen aus dem Bereich der Systementwicklung berichten,"
     },
     {
       "id": "q044",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Kompetenz im Bereich Programmiersprachen erwerben Studierende im Modul Advanced Programming Concepts?",
+      "expected_answer": "Sie können grundlegende Techniken zur formalen Beschreibung von Syntax und Semantik von Programmiersprachen erklären.",
+      "reference_page_numbers": [
+        30
+      ],
+      "reference_quote": "können grundlegende Techniken zur formalen Beschreibung von Syntax und Semantik von Programmiersprachen erklären,"
     },
     {
       "id": "q045",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Advanced Topics in Cryptography bezüglich kryptografischer Verfahren?",
+      "expected_answer": "Sie können Entwurfs- und Analyseprinzipien für kryptografische Verfahren erklären.",
+      "reference_page_numbers": [
+        30
+      ],
+      "reference_quote": "können Entwurfs- und Analyseprinzipien für kryptografische Verfahren erklären,"
     },
     {
       "id": "q046",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Projektkompetenz erwerben Studierende im Modul Algorithm Engineering?",
+      "expected_answer": "Sie sind in der Lage, Projektarbeit im Team zu organisieren, ihre Arbeit adäquat zu dokumentieren und die entwickelten Algorithmen und Implementierungen in Kurzvorträgen zu beschreiben.",
+      "reference_page_numbers": [
+        30
+      ],
+      "reference_quote": "sind in der Lage, Projektarbeit im Team zu organisieren, ihre Arbeit adäquat zu dokumentieren und ihre entwickelten Algorithmen und Implementierungen in Kurzvorträgen zu beschreiben."
     },
     {
       "id": "q047",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Algorithmic Network Analysis bezüglich der Analyseaufgaben?",
+      "expected_answer": "Sie können verschiedene Analyseaufgaben als konkrete Berechnungsprobleme formulieren.",
+      "reference_page_numbers": [
+        30
+      ],
+      "reference_quote": "können verschiedene Analyseaufgaben als konkrete Berechnungsprobleme formulieren,"
     },
     {
       "id": "q048",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Kompetenz erwerben Studierende im Modul Algorithms for Bioinformatics bezüglich Algorithmennutzung?",
+      "expected_answer": "Sie können elementare Algorithmen der Bioinformatik verwenden und anpassen.",
+      "reference_page_numbers": [
+        31
+      ],
+      "reference_quote": "können elementare Algorithmen der Bioinformatik verwenden und anpassen,"
     },
     {
       "id": "q049",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche KI-Kompetenz erwerben Studierende im Modul Artificial Intelligence bezüglich Inferenzsystemen?",
+      "expected_answer": "Sie können wissensbasierte Inferenzsysteme in Prädikatenlogik erstellen.",
+      "reference_page_numbers": [
+        31
+      ],
+      "reference_quote": "können wissensbasierte Inferenzsysteme in Prädikatenlogik (Prolog) erstellen,"
     },
     {
       "id": "q050",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Kompetenz vermittelt das Modul Big Data Systems im Bereich verteilter Systeme?",
+      "expected_answer": "Studierende können Herausforderungen beim Bau verteilter Systeme benennen.",
+      "reference_page_numbers": [
+        31
+      ],
+      "reference_quote": "können Herausforderungen beim Bau verteilter Systeme (Distributed Systems) benennen,"
     },
     {
       "id": "q051",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Compiler Construction bezüglich Compileraufbau?",
+      "expected_answer": "Sie können den Aufbau von Compilern und Compilerphasen beschreiben.",
+      "reference_page_numbers": [
+        32
+      ],
+      "reference_quote": "können den Aufbau von Compilern und Compilerphasen beschreiben,"
     },
     {
       "id": "q052",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Computational Complexity Theory bezüglich Problemklassen?",
+      "expected_answer": "Sie können verschiedene Klassen von Problemen untereinander vergleichen.",
+      "reference_page_numbers": [
+        33
+      ],
+      "reference_quote": "können verschiedene Klassen von Problemen untereinander vergleichen,"
     },
     {
       "id": "q053",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Computer-assisted Theorem Proving bezüglich logischer Systeme?",
+      "expected_answer": "Sie können mit speziellen Logiken umgehen.",
+      "reference_page_numbers": [
+        33
+      ],
+      "reference_quote": "können mit speziellen Logiken umgehen,"
     },
     {
       "id": "q054",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Computer Vision I bezüglich Deep Learning?",
+      "expected_answer": "Sie verstehen Deep Learning und dessen Anwendung auf visuelle Daten.",
+      "reference_page_numbers": [
+        33
+      ],
+      "reference_quote": "verstehen Deep Learning und dessen Anwendung auf visuelle Daten,"
     },
     {
       "id": "q055",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Kompetenz erwerben Studierende im Modul Computer Vision II hinsichtlich fortgeschrittener Methoden?",
+      "expected_answer": "Sie können tiefergehende Methoden von Deep Learning und deren Anwendung auf visuelle Daten erklären.",
+      "reference_page_numbers": [
+        33
+      ],
+      "reference_quote": "können tiefergehende Methoden von Deep Learning und dessen Anwendung auf visuelle Daten erklären,"
     },
     {
       "id": "q056",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Content-based Image and Video Analysis hinsichtlich maschinellen Lernens?",
+      "expected_answer": "Sie können Methoden des maschinellen Lernens erläutern und anwenden.",
+      "reference_page_numbers": [
+        34
+      ],
+      "reference_quote": "können die notwendigen Methoden der inhaltsbasierten Analyse von Bild- und Videodaten erläutern und anwenden;"
     },
     {
       "id": "q057",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Dialog Systems bezüglich Dialogsystemen?",
+      "expected_answer": "Sie können die grundlegende Funktionsweise von Dialogsystemen erklären.",
+      "reference_page_numbers": [
+        34
+      ],
+      "reference_quote": "können die grundlegende Funktionsweise von Dialogsystemen, Sprachassistenten und Konversationssystemen erklären,"
     },
     {
       "id": "q058",
       "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q059",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q060",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q061",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q062",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q063",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q064",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q065",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q066",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q067",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q068",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q069",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q070",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q071",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q072",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q073",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q074",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q075",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q076",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q077",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q078",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q079",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q080",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q081",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q082",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q083",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q084",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q085",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q086",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q087",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q088",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q089",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q090",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q091",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q092",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q093",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q094",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q095",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q096",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q097",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q098",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q099",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
-    },
-    {
-      "id": "q100",
-      "document": "pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf",
-      "question": "",
-      "expected_answer": "",
-      "reference_page_numbers": [],
-      "reference_quote": ""
+      "question": "Welche Fähigkeit erwerben Studierende im Modul Distributed Systems im Hinblick auf verteilte Systeme?",
+      "expected_answer": "Sie können die Funktionsweise verteilter Systeme erklären.",
+      "reference_page_numbers": [
+        34
+      ],
+      "reference_quote": "können die Funktionsweise verteilter Systeme erklären,"
     }
   ]
 }
