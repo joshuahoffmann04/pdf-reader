@@ -20,16 +20,19 @@ _UMLAUT_MAP = str.maketrans(
         "\u00c4": "ae",
         "\u00d6": "oe",
         "\u00dc": "ue",
-        # Common mojibake variants (UTF-8 read as Latin-1)
-        "\u00c3\u00a4": "ae",
-        "\u00c3\u00b6": "oe",
-        "\u00c3\u00bc": "ue",
-        "\u00c3\u009f": "ss",
-        "\u00c3\u0084": "ae",
-        "\u00c3\u0096": "oe",
-        "\u00c3\u009c": "ue",
     }
 )
+
+_MOJIBAKE_MAP = {
+    # Common mojibake variants (UTF-8 read as Latin-1)
+    "\u00c3\u00a4": "ae",
+    "\u00c3\u00b6": "oe",
+    "\u00c3\u00bc": "ue",
+    "\u00c3\u009f": "ss",
+    "\u00c3\u0084": "ae",
+    "\u00c3\u0096": "oe",
+    "\u00c3\u009c": "ue",
+}
 
 _STOPWORDS = {
     # de
@@ -48,7 +51,14 @@ def normalize_text(text: str) -> str:
 
 
 def word_tokens(text: str) -> list[str]:
-    return [(t.lower().translate(_UMLAUT_MAP)) for t in _WORD_RE.findall(text or "")]
+    tokens = []
+    for token in _WORD_RE.findall(text or ""):
+        lowered = token.lower()
+        for bad, good in _MOJIBAKE_MAP.items():
+            if bad in lowered:
+                lowered = lowered.replace(bad, good)
+        tokens.append(lowered.translate(_UMLAUT_MAP))
+    return tokens
 
 
 def number_tokens(text: str) -> list[str]:
