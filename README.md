@@ -1,10 +1,11 @@
 # PDF Reader Pipeline
 
-Dieses Repository enthaelt vier Komponenten:
+Dieses Repository enthaelt fuenf Komponenten:
 - `pdf_extractor/` fuer PDF-Extraktion (Text, Tabellen, OCR, optional LLM)
 - `chunking/` fuer satzbasiertes Chunking
 - `retrieval/` fuer BM25, Vektor und Hybrid Retrieval
 - `generation/` fuer Chat-Generierung mit Ollama (RAG)
+- `frontend/` fuer den MARley Chatbot im Browser
 
 Ziel: eine robuste, nachvollziehbare Pipeline von PDF -> Extraktion -> Chunking -> Retrieval -> Chat.
 

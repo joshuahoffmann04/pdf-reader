@@ -1,6 +1,9 @@
 from pathlib import Path
+import os
 
 from fastapi import FastAPI
+
+import chromadb
 
 from .config import RetrievalConfig
 from .models import IngestRequest, QueryRequest, RetrievalResponse
@@ -11,9 +14,12 @@ from .vector_index import VectorIndex
 def create_app(config: RetrievalConfig | None = None) -> FastAPI:
     cfg = config or RetrievalConfig()
     vector_dir = Path(cfg.data_dir) / "chroma"
+    use_in_memory = os.environ.get("RETRIEVAL_CHROMA_IN_MEMORY") == "1"
+    chroma_client = chromadb.Client() if use_in_memory else None
     vector_index = VectorIndex(
         persist_directory=str(vector_dir),
         collection_name=cfg.collection_name,
+        chroma_client=chroma_client,
     )
     service = RetrievalService(cfg, vector_index)
 

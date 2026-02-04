@@ -5,10 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 import json
+import tempfile
 
 from chunking import ChunkingResult
-from retrieval import RetrievalConfig, RetrievalService
+from retrieval.config import RetrievalConfig
+from retrieval.service import RetrievalService
 from retrieval.models import ChunkInput, IngestRequest
+import chromadb
+
 from retrieval.vector_index import VectorIndex
 
 from .metrics import hit_at_k, mrr, text_contains_hit
@@ -16,7 +20,7 @@ from .report import Thresholds, build_report, write_report
 
 
 def _load_eval(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def _ingest_chunks(
@@ -25,9 +29,11 @@ def _ingest_chunks(
     vector_dir: Path,
 ) -> RetrievalService:
     chunk_result = ChunkingResult.load(str(chunks_path))
+    chroma_client = chromadb.Client()
     vector = VectorIndex(
         persist_directory=str(vector_dir),
         collection_name=config.collection_name,
+        chroma_client=chroma_client,
     )
     service = RetrievalService(config, vector)
 
@@ -133,11 +139,16 @@ def run_evaluation(
     thresholds = thresholds or Thresholds()
     eval_data = _load_eval(eval_path)
 
-    config = RetrievalConfig(data_dir=str(output_dir / "data"))
+    run_dir = Path(tempfile.mkdtemp(prefix="run_", dir=output_dir))
+    data_dir = run_dir / "data"
+    chroma_dir = run_dir / "chroma"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    config = RetrievalConfig(data_dir=str(data_dir))
     service = _ingest_chunks(
         chunks_path=chunks_path,
         config=config,
-        vector_dir=output_dir / "chroma",
+        vector_dir=chroma_dir,
     )
 
     queries = eval_data.get("queries", [])

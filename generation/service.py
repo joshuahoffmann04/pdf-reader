@@ -58,7 +58,9 @@ class GenerationService:
 
         answer = (payload.get("answer") or "").strip()
         missing_info = (payload.get("missing_info") or "").strip()
-        if not answer and not missing_info:
+        if answer:
+            missing_info = ""
+        elif not missing_info:
             missing_info = "Information nicht im Dokument enthalten."
 
         return GenerateResponse(

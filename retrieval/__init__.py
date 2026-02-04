@@ -6,7 +6,6 @@ Provides BM25, vector, and hybrid retrieval with a unified API.
 
 __version__ = "1.0.0"
 
-from .app import create_app
 from .config import RetrievalConfig
 from .service import RetrievalService
 from .models import (
@@ -24,7 +23,6 @@ from .hybrid import rrf_merge
 
 __all__ = [
     "__version__",
-    "create_app",
     "RetrievalConfig",
     "RetrievalService",
     "ChunkInput",

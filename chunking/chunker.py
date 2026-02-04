@@ -75,6 +75,11 @@ class DocumentChunker:
             sentences, merged_text, char_to_page
         )
 
+        # Step 3.5: Split overly long sentences to enforce max token limits
+        sentences, sentence_pages = self._split_long_sentences(
+            sentences, sentence_pages
+        )
+
         # Step 4: Build chunks with sliding window
         raw_chunks = self._build_chunks(sentences, sentence_pages)
 
@@ -211,12 +216,6 @@ class DocumentChunker:
             for i in range(start_idx, total_sentences):
                 sentence_token_count = sentence_tokens[i]
 
-                # Special case: single sentence exceeds max tokens
-                if not chunk_sentences and sentence_token_count > self.config.max_chunk_tokens:
-                    chunk_sentences.append(i)
-                    chunk_tokens = sentence_token_count
-                    break
-
                 # Check if adding this sentence would exceed the limit
                 if chunk_tokens + sentence_token_count > self.config.max_chunk_tokens:
                     break
@@ -275,6 +274,55 @@ class DocumentChunker:
             chunks = filtered
 
         return chunks
+
+    def _split_long_sentences(
+        self,
+        sentences: list[str],
+        sentence_pages: list[list[int]],
+    ) -> tuple[list[str], list[list[int]]]:
+        """Split sentences that exceed the max token budget into smaller parts."""
+        if not sentences:
+            return sentences, sentence_pages
+
+        max_tokens = self.config.max_chunk_tokens
+        new_sentences: list[str] = []
+        new_pages: list[list[int]] = []
+
+        for sentence, pages in zip(sentences, sentence_pages):
+            if count_tokens(sentence) <= max_tokens:
+                new_sentences.append(sentence)
+                new_pages.append(pages)
+                continue
+
+            parts = self._split_sentence_by_tokens(sentence, max_tokens)
+            for part in parts:
+                if part.strip():
+                    new_sentences.append(part)
+                    new_pages.append(pages)
+
+        return new_sentences, new_pages
+
+    def _split_sentence_by_tokens(self, sentence: str, max_tokens: int) -> list[str]:
+        """Split a long sentence into token-limited parts on whitespace."""
+        words = sentence.split()
+        if not words:
+            return [sentence]
+
+        parts: list[str] = []
+        current: list[str] = []
+
+        for word in words:
+            candidate = " ".join(current + [word])
+            if count_tokens(candidate) > max_tokens and current:
+                parts.append(" ".join(current))
+                current = [word]
+            else:
+                current.append(word)
+
+        if current:
+            parts.append(" ".join(current))
+
+        return parts
 
     def _create_chunk_objects(
         self,

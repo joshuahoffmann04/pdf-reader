@@ -23,16 +23,16 @@ from test.pdf_extractor.report import Thresholds  # noqa: E402
 
 
 PDF_PATH = Path("pdfs\\2-aend-19-02-25_msc-computer-science_lese.pdf")
-REFERENCE_PATH = Path("reference\\pdf_extractor\\2-aend-19-02-25_msc-computer-science_lese\\extraction\\2-aend-19-02-25_msc-computer-science_lese_20260204_073052.json")
+REFERENCE_PATH = Path("pdf_extractor_reference.json")
 OUTPUT_DIR = Path("test/pdf_extractor/output")
 
 
 def main() -> None:
     config = ProcessingConfig(
         extraction_mode="hybrid",
-        use_llm=True,
+        use_llm=False,
         llm_postprocess=False,
-        context_mode="llm_text",
+        context_mode="heuristic",
         table_extraction=True,
         layout_mode="columns",
         enforce_text_coverage=True,

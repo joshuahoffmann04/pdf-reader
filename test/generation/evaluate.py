@@ -19,7 +19,7 @@ from .report import Thresholds, build_report, write_report
 
 
 def _load_eval(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def run_evaluation(

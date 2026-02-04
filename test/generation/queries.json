@@ -1,0 +1,26 @@
+﻿{
+  "default_mode": "hybrid",
+  "queries": [
+    {
+      "id": "g1",
+      "query": "Was ist die Regelstudienzeit?",
+      "expected_answer_contains": ["Regelstudienzeit"],
+      "expected_missing_info": false,
+      "min_citations": 1
+    },
+    {
+      "id": "g2",
+      "query": "Welche Anlagen gibt es?",
+      "expected_answer_contains": ["Anlage"],
+      "expected_missing_info": false,
+      "min_citations": 1
+    },
+    {
+      "id": "g3",
+      "query": "Welche Zugangsvoraussetzungen werden genannt?",
+      "expected_answer_contains": ["Zugangsvoraussetzungen"],
+      "expected_missing_info": false,
+      "min_citations": 1
+    }
+  ]
+}

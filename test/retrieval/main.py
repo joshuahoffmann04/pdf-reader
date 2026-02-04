@@ -13,7 +13,7 @@ from test.retrieval.evaluate import run_evaluation  # noqa: E402
 from test.retrieval.report import Thresholds  # noqa: E402
 
 
-CHUNKS_PATH = Path("data/chunking/example/chunks/example_20240101_120000.json")
+CHUNKS_PATH = Path("test\\chunking\\output\\chunks.json")
 EVAL_PATH = Path("test/retrieval/queries.json")
 OUTPUT_DIR = Path("test/retrieval/output")
 MODES = ["bm25", "vector", "hybrid"]

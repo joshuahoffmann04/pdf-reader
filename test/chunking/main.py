@@ -14,7 +14,7 @@ from test.chunking.evaluate import run_evaluation  # noqa: E402
 from test.chunking.report import Thresholds  # noqa: E402
 
 
-EXTRACTION_PATH = Path("reference\\pdf_extractor\\2-aend-19-02-25_msc-computer-science_lese\\extraction\\2-aend-19-02-25_msc-computer-science_lese_20260204_073052.json")
+EXTRACTION_PATH = Path("output.json")
 OUTPUT_DIR = Path("test/chunking/output")
 
 

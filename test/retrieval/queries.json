@@ -1,0 +1,37 @@
+﻿{
+  "default_top_k": 5,
+  "default_filters": {"document_id": "2-aend-19-02-25_msc-computer-science_lese"},
+  "queries": [
+    {
+      "id": "q1",
+      "query": "Anlage 2 Modulliste CS 627",
+      "expected_chunk_ids": [
+        "2-aend-19-02-25_msc-computer-science_lese_chunk_0103",
+        "2-aend-19-02-25_msc-computer-science_lese_chunk_0104"
+      ],
+      "expected_text_contains": ["Anlage 2", "Modulliste", "CS 627"]
+    },
+    {
+      "id": "q2",
+      "query": "besondere Zugangsvoraussetzungen englische Sprachkenntnisse",
+      "expected_chunk_ids": [
+        "2-aend-19-02-25_msc-computer-science_lese_chunk_0015",
+        "2-aend-19-02-25_msc-computer-science_lese_chunk_0016",
+        "2-aend-19-02-25_msc-computer-science_lese_chunk_0014"
+      ],
+      "expected_text_contains": ["Zugangsvoraussetzungen", "Sprachkenntnisse"]
+    },
+    {
+      "id": "q3",
+      "query": "Importmodulliste Anlage 3",
+      "expected_chunk_ids": ["2-aend-19-02-25_msc-computer-science_lese_chunk_0269"],
+      "expected_text_contains": ["Importmodulliste", "Anlage 3"]
+    },
+    {
+      "id": "q4",
+      "query": "Exportmodulliste Anlage 4",
+      "expected_chunk_ids": ["2-aend-19-02-25_msc-computer-science_lese_chunk_0320"],
+      "expected_text_contains": ["Exportmodulliste", "Anlage 4"]
+    }
+  ]
+}
