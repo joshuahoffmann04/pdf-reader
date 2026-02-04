@@ -11,6 +11,7 @@ from .service import RetrievalService
 from .models import (
     ChunkInput,
     IngestRequest,
+    IngestResponse,
     QueryRequest,
     RetrievalHit,
     RetrievalResponse,
@@ -27,6 +28,7 @@ __all__ = [
     "RetrievalService",
     "ChunkInput",
     "IngestRequest",
+    "IngestResponse",
     "QueryRequest",
     "RetrievalHit",
     "RetrievalResponse",

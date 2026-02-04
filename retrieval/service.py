@@ -1,11 +1,9 @@
-from typing import Any
-
 from chunking.token_counter import count_tokens
 
 from .bm25_index import BM25Index
 from .config import RetrievalConfig
 from .hybrid import rrf_merge
-from .models import IngestRequest, RetrievalHit, RetrievalResponse
+from .models import IngestRequest, IngestResponse, RetrievalHit, RetrievalResponse
 from .storage import ChunkStore
 from .vector_index import VectorIndex
 
@@ -23,7 +21,7 @@ class RetrievalService:
         if chunks:
             self.bm25.build(chunks)
 
-    def ingest(self, request: IngestRequest) -> dict[str, Any]:
+    def ingest(self, request: IngestRequest) -> IngestResponse:
         chunks = [
             {
                 "document_id": request.document_id,
@@ -37,7 +35,7 @@ class RetrievalService:
         all_chunks = self.store.load_chunks()
         self.bm25.build(all_chunks)
         self.vector.ingest(chunks)
-        return {"document_id": request.document_id, "chunks_ingested": len(chunks)}
+        return IngestResponse(document_id=request.document_id, chunks_ingested=len(chunks))
 
     def retrieve_bm25(self, query: str, top_k: int, filters: dict | None) -> RetrievalResponse:
         hits = self.bm25.search(query, top_k=top_k, filters=filters)
@@ -72,7 +70,7 @@ def build_context(hits: list[RetrievalHit], max_tokens: int) -> str:
             break
         if parts:
             parts.append("---")
-            token_count += 3
+            token_count += separator_tokens
         parts.append(hit.text)
         token_count += chunk_tokens
     return "\n\n".join(parts)

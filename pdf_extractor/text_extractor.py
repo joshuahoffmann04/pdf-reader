@@ -16,6 +16,7 @@ from typing import Iterable
 import fitz  # PyMuPDF
 
 logger = logging.getLogger(__name__)
+SECTION_SIGN = "\u00a7"
 
 
 @dataclass
@@ -120,9 +121,9 @@ class TextExtractor:
         section_titles: list[str] = []
 
         for idx, line in enumerate(lines):
-            sec_match = re.match(r"^§\s*(\d+[a-zA-Z]?)\b\s*(.*)$", line)
+            sec_match = re.match(rf"^{SECTION_SIGN}\s*(\d+[a-zA-Z]?)\b\s*(.*)$", line)
             if sec_match:
-                number = f"§ {sec_match.group(1)}"
+                number = f"{SECTION_SIGN} {sec_match.group(1)}"
                 title = sec_match.group(2).strip()
                 if not title and idx + 1 < len(lines):
                     nxt = lines[idx + 1]
@@ -149,7 +150,7 @@ class TextExtractor:
         has_table = self._looks_like_table(lines, text)
 
         internal_refs = self._unique_in_order(
-            re.findall(r"§\s*\d+[a-zA-Z]?(?:\s*Abs\.\s*\d+)?", text)
+            re.findall(rf"{SECTION_SIGN}\s*\d+[a-zA-Z]?(?:\s*Abs\.\s*\d+)?", text)
             + re.findall(r"Anlage\s*\d+", text, flags=re.IGNORECASE)
         )
 
@@ -196,7 +197,7 @@ class TextExtractor:
 
     @staticmethod
     def _looks_like_section_start(line: str) -> bool:
-        return line.startswith("§") or line.lower().startswith("anlage")
+        return line.startswith(SECTION_SIGN) or line.lower().startswith("anlage")
 
     @staticmethod
     def _looks_like_list(lines: list[str]) -> bool:
@@ -236,7 +237,7 @@ class TextExtractor:
         if not lines:
             return False
         first = lines[0]
-        if first.startswith("§") or first.lower().startswith("anlage"):
+        if first.startswith(SECTION_SIGN) or first.lower().startswith("anlage"):
             return False
         if section_numbers:
             return False

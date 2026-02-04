@@ -14,11 +14,32 @@ from test.chunking.evaluate import run_evaluation  # noqa: E402
 from test.chunking.report import Thresholds  # noqa: E402
 
 
-EXTRACTION_PATH = Path("output.json")
+DEFAULT_EXTRACTION_PATH = Path("output.json")
 OUTPUT_DIR = Path("test/chunking/output")
 
 
+def _find_latest_extraction() -> Path | None:
+    root = Path("data/pdf_extractor")
+    if not root.exists():
+        return None
+    candidates = list(root.rglob("extraction/*.json"))
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+
 def main() -> None:
+    extraction_path = DEFAULT_EXTRACTION_PATH
+    if not extraction_path.exists():
+        latest = _find_latest_extraction()
+        if latest:
+            extraction_path = latest
+            print(f"Using latest extraction: {extraction_path}")
+        else:
+            raise SystemExit(
+                "No extraction file found. Run pdf_extractor first (e.g. via run_extract_chunk.py)."
+            )
+
     thresholds = Thresholds(
         token_recall_min=0.99,
         number_recall_min=1.0,
@@ -35,7 +56,7 @@ def main() -> None:
     )
 
     report = run_evaluation(
-        extraction_path=EXTRACTION_PATH,
+        extraction_path=extraction_path,
         output_dir=OUTPUT_DIR,
         config=config,
         thresholds=thresholds,

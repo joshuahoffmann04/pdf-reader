@@ -1,4 +1,4 @@
-﻿{
+{
   "default_top_k": 5,
   "default_filters": {"document_id": "2-aend-19-02-25_msc-computer-science_lese"},
   "queries": [

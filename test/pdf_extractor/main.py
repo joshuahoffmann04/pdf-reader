@@ -23,11 +23,32 @@ from test.pdf_extractor.report import Thresholds  # noqa: E402
 
 
 PDF_PATH = Path("pdfs\\2-aend-19-02-25_msc-computer-science_lese.pdf")
-REFERENCE_PATH = Path("pdf_extractor_reference.json")
+DEFAULT_REFERENCE_PATH = Path("pdf_extractor_reference.json")
 OUTPUT_DIR = Path("test/pdf_extractor/output")
 
 
 def main() -> None:
+    if not PDF_PATH.exists():
+        raise SystemExit(f"PDF not found: {PDF_PATH}")
+
+    reference_path = DEFAULT_REFERENCE_PATH
+    if not reference_path.exists():
+        doc_id = PDF_PATH.stem
+        ref_dir = Path("reference") / "pdf_extractor" / doc_id / "extraction"
+        if ref_dir.exists():
+            candidates = sorted(ref_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if candidates:
+                reference_path = candidates[0]
+
+    if not reference_path.exists():
+        raise SystemExit(
+            "Reference extraction not found. Provide a reference JSON via "
+            f"{DEFAULT_REFERENCE_PATH} or under reference/pdf_extractor/<document_id>/extraction/*.json"
+        )
+
+    print(f"Using PDF: {PDF_PATH}")
+    print(f"Using reference: {reference_path}")
+
     config = ProcessingConfig(
         extraction_mode="hybrid",
         use_llm=False,
@@ -49,7 +70,7 @@ def main() -> None:
 
     report = run_evaluation(
         pdf_path=PDF_PATH,
-        reference_path=REFERENCE_PATH,
+        reference_path=reference_path,
         output_dir=OUTPUT_DIR,
         config=config,
         thresholds=thresholds,

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
-from typing import Any
-
+from .citations import normalize_and_select_citations
 from .config import GenerationConfig
-from .context_builder import build_context, parse_page_numbers
+from .context_builder import build_context
 from .http_client import post_json
 from .models import GenerateRequest, GenerateResponse, Citation
+from .postprocess import postprocess_answer
+from .json_utils import safe_parse_json
 from .ollama_client import chat
 from .prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, RESPONSE_SCHEMA
 
@@ -53,11 +53,18 @@ class GenerationService:
             output_tokens=output_tokens,
         )
 
-        payload = _safe_parse_json(content)
-        citations = _normalize_citations(payload.get("citations", []), context.selected_chunks)
-
-        answer = (payload.get("answer") or "").strip()
+        payload = safe_parse_json(content)
+        answer = postprocess_answer((payload.get("answer") or "").strip(), request.query)
         missing_info = (payload.get("missing_info") or "").strip()
+        citations_raw = payload.get("citations", [])
+        citations_norm = normalize_and_select_citations(
+            citations_raw,
+            context.selected_chunks,
+            answer=answer,
+            query=request.query,
+        )
+        citations = [Citation(**c) for c in citations_norm]
+
         if answer:
             missing_info = ""
         elif not missing_info:
@@ -75,66 +82,3 @@ class GenerationService:
                 "output_tokens": output_tokens,
             },
         )
-
-
-def _safe_parse_json(text: str) -> dict[str, Any]:
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        extracted = _extract_json(text)
-        try:
-            return json.loads(extracted)
-        except json.JSONDecodeError:
-            return {}
-
-
-def _extract_json(text: str) -> str:
-    if "{" in text:
-        start = text.find("{")
-        depth = 0
-        for i, char in enumerate(text[start:], start):
-            if char == "{":
-                depth += 1
-            elif char == "}":
-                depth -= 1
-                if depth == 0:
-                    return text[start:i + 1]
-    return text
-
-
-def _normalize_citations(raw: list[dict[str, Any]], selected_hits: list[dict[str, Any]]) -> list[Citation]:
-    mapping = {hit.get("chunk_id"): hit for hit in selected_hits}
-    citations: list[Citation] = []
-
-    for item in raw:
-        chunk_id = item.get("chunk_id")
-        if not chunk_id or chunk_id not in mapping:
-            continue
-        hit = mapping[chunk_id]
-        metadata = hit.get("metadata", {}) or {}
-        pages = parse_page_numbers(metadata)
-        snippet = (item.get("snippet") or "").strip()
-        if not snippet:
-            snippet = (hit.get("text") or "").strip()[:240]
-        citations.append(
-            Citation(
-                chunk_id=chunk_id,
-                page_numbers=pages,
-                snippet=snippet,
-                score=hit.get("score"),
-            )
-        )
-
-    if not citations and selected_hits:
-        hit = selected_hits[0]
-        metadata = hit.get("metadata", {}) or {}
-        citations.append(
-            Citation(
-                chunk_id=hit.get("chunk_id", ""),
-                page_numbers=parse_page_numbers(metadata),
-                snippet=(hit.get("text") or "").strip()[:240],
-                score=hit.get("score"),
-            )
-        )
-
-    return citations

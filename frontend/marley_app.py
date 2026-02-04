@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 import threading
@@ -29,13 +28,17 @@ if load_dotenv:
     load_dotenv(ROOT / ".env")
 
 from chunking import ChunkingResult  # noqa: E402
-from generation.context_builder import build_context, parse_page_numbers  # noqa: E402
+from generation.citations import normalize_and_select_citations  # noqa: E402
+from generation.context_builder import build_context  # noqa: E402
+from generation.json_utils import safe_parse_json  # noqa: E402
 from generation.ollama_client import chat  # noqa: E402
+from generation.postprocess import postprocess_answer  # noqa: E402
 from generation.prompts import RESPONSE_SCHEMA, SYSTEM_PROMPT, USER_PROMPT_TEMPLATE  # noqa: E402
 from retrieval.bm25_index import BM25Index  # noqa: E402
 from retrieval.embedder import OllamaEmbedder  # noqa: E402
 from retrieval.hybrid import rrf_merge  # noqa: E402
 from retrieval.models import RetrievalHit  # noqa: E402
+from retrieval.rerank import rerank_hits  # noqa: E402
 from retrieval.vector_index import VectorIndex  # noqa: E402
 
 import chromadb  # noqa: E402
@@ -142,73 +145,15 @@ def _retrieve_hits(query: str, mode: str, top_k: int) -> list[RetrievalHit]:
     if mode == "vector":
         return STATE.vector.search(query, top_k=top_k, filters=filters)
     if mode == "hybrid":
-        bm25_hits = STATE.bm25.search(query, top_k=top_k, filters=filters)
-        vector_hits = STATE.vector.search(query, top_k=top_k, filters=filters)
-        return rrf_merge(bm25_hits, vector_hits, top_k, STATE.config.rrf_k)
+        # Pull a larger candidate set, merge via RRF, then rerank deterministically.
+        # This improves recall for answer-bearing chunks that might otherwise be rank 10-30.
+        candidate_k = min(max(top_k * 6, 50), 120)
+        bm25_hits = STATE.bm25.search(query, top_k=candidate_k, filters=filters)
+        vector_hits = STATE.vector.search(query, top_k=candidate_k, filters=filters)
+        merge_k = min(candidate_k * 2, len(bm25_hits) + len(vector_hits))
+        merged = rrf_merge(bm25_hits, vector_hits, merge_k, STATE.config.rrf_k)
+        return rerank_hits(query, merged)[:top_k]
     raise ValueError(f"Unsupported mode: {mode}")
-
-
-def _safe_parse_json(text: str) -> dict[str, Any]:
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        extracted = _extract_json(text)
-        try:
-            return json.loads(extracted)
-        except json.JSONDecodeError:
-            return {}
-
-
-def _extract_json(text: str) -> str:
-    if "{" in text:
-        start = text.find("{")
-        depth = 0
-        for i, char in enumerate(text[start:], start):
-            if char == "{":
-                depth += 1
-            elif char == "}":
-                depth -= 1
-                if depth == 0:
-                    return text[start:i + 1]
-    return text
-
-
-def _normalize_citations(raw: list[dict[str, Any]], selected_hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    mapping = {hit.get("chunk_id"): hit for hit in selected_hits}
-    citations: list[dict[str, Any]] = []
-
-    for item in raw:
-        chunk_id = item.get("chunk_id")
-        if not chunk_id or chunk_id not in mapping:
-            continue
-        hit = mapping[chunk_id]
-        metadata = hit.get("metadata", {}) or {}
-        pages = parse_page_numbers(metadata)
-        snippet = (item.get("snippet") or "").strip()
-        if not snippet:
-            snippet = (hit.get("text") or "").strip()[:240]
-        citations.append(
-            {
-                "chunk_id": chunk_id,
-                "page_numbers": pages,
-                "snippet": snippet,
-                "score": hit.get("score"),
-            }
-        )
-
-    if not citations and selected_hits:
-        hit = selected_hits[0]
-        metadata = hit.get("metadata", {}) or {}
-        citations.append(
-            {
-                "chunk_id": hit.get("chunk_id", ""),
-                "page_numbers": parse_page_numbers(metadata),
-                "snippet": (hit.get("text") or "").strip()[:240],
-                "score": hit.get("score"),
-            }
-        )
-
-    return citations
 
 
 @APP.get("/", response_class=HTMLResponse)
@@ -263,11 +208,16 @@ def chat_api(request: ChatRequest) -> dict[str, Any]:
         output_tokens=output_tokens,
     )
 
-    payload = _safe_parse_json(content)
-    citations = _normalize_citations(payload.get("citations", []), context.selected_chunks)
+    payload = safe_parse_json(content)
 
-    answer = (payload.get("answer") or "").strip()
+    answer = postprocess_answer((payload.get("answer") or "").strip(), query)
     missing_info = (payload.get("missing_info") or "").strip()
+    citations = normalize_and_select_citations(
+        payload.get("citations", []),
+        context.selected_chunks,
+        answer=answer,
+        query=query,
+    )
     if answer:
         missing_info = ""
     elif not missing_info:
@@ -495,7 +445,7 @@ _HTML = """
     <header>
       <div>
         <h1>MARley</h1>
-        <div class="tagline">Dein lokaler Studienordnungs‑Chatbot</div>
+        <div class="tagline">Dein lokaler Dokument-Chatbot</div>
       </div>
       <div class="status" id="status">Lade Kontext ...</div>
     </header>
@@ -503,7 +453,7 @@ _HTML = """
       <section class="panel chat-window">
         <div class="messages" id="messages"></div>
         <form id="chat-form">
-          <textarea id="prompt" rows="3" placeholder="Stell eine Frage zur Ordnung ..."></textarea>
+          <textarea id="prompt" rows="3" placeholder="Stell eine Frage zum Dokument ..."></textarea>
           <button id="send-btn" type="submit">Senden</button>
         </form>
       </section>
@@ -515,7 +465,7 @@ _HTML = """
           <option value="bm25">bm25</option>
           <option value="vector">vector</option>
         </select>
-        <label>Top‑K</label>
+        <label>Top-K</label>
         <input id="top_k" type="number" min="1" max="50" value="8" />
         <label>Max Context Tokens</label>
         <input id="max_tokens" type="number" min="256" max="8192" value="2048" />
@@ -525,7 +475,7 @@ _HTML = """
         <div class="section-title">Citations</div>
         <div class="citations" id="citations"></div>
 
-        <div class="section-title">Antwort‑JSON</div>
+        <div class="section-title">Antwort-JSON</div>
         <pre id="raw-json">{}</pre>
       </aside>
     </main>
@@ -570,7 +520,7 @@ _HTML = """
         try {
           const res = await fetch("/api/status");
           const data = await res.json();
-          statusEl.textContent = `Dokument: ${data.document_id} · Chunks: ${data.chunk_count}`;
+          statusEl.textContent = `Dokument: ${data.document_id} - Chunks: ${data.chunk_count}`;
           modeEl.value = data.default_mode || "hybrid";
           topKEl.value = data.top_k || 8;
           maxTokensEl.value = data.max_context_tokens || 2048;

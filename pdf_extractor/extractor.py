@@ -29,7 +29,7 @@ from typing import Optional, Callable
 from openai import OpenAI
 
 from .pdf_to_images import PDFToImages
-from .text_extractor import TextExtractor
+from .text_extractor import TextExtractor, PageTextAnalysis
 from .table_extractor import TableExtractor
 from .validation import validate_llm_output, validate_text_coverage
 from .models import (
@@ -328,10 +328,10 @@ class PDFExtractor:
         # 1) Text-native extraction (preferred)
         if self.config.extraction_mode in {"text", "hybrid"}:
             ocr_attempted = False
-            analysis = self.text_extractor.extract_page(pdf_path, page_number)
-            if analysis.quality_ok or (analysis.has_table and self.config.table_extraction):
+            page_analysis = self.text_extractor.extract_page(pdf_path, page_number)
+            if page_analysis.quality_ok or (page_analysis.has_table and self.config.table_extraction):
                 return self._build_page_from_text(
-                    analysis, pdf_path, page_number, total_pages, context, source="text"
+                    page_analysis, pdf_path, page_number, total_pages, context, source="text"
                 )
 
             if self.config.extraction_mode == "hybrid":
@@ -347,7 +347,7 @@ class PDFExtractor:
 
                 if self.llm_enabled:
                     return self._extract_page_vision(
-                        pdf_path, page_number, total_pages, context, raw_text=analysis.text
+                        pdf_path, page_number, total_pages, context, raw_text=page_analysis.text
                     )
 
             if self.config.ocr_enabled and not ocr_attempted:
@@ -361,7 +361,7 @@ class PDFExtractor:
 
             if self.config.extraction_mode == "text" or not self.llm_enabled:
                 return self._build_page_from_text(
-                    analysis, pdf_path, page_number, total_pages, context, source="text"
+                    page_analysis, pdf_path, page_number, total_pages, context, source="text"
                 )
 
         # 2) Vision-based extraction fallback
@@ -428,7 +428,7 @@ class PDFExtractor:
 
     def _build_page_from_text(
         self,
-        analysis,
+        analysis: PageTextAnalysis,
         pdf_path: Path,
         page_number: int,
         total_pages: int,
@@ -763,12 +763,12 @@ class PDFExtractor:
                 version_info=data.get("version_info"),
                 faculty=data.get("faculty"),
                 total_pages=total_pages,
-                chapters=data.get("chapters", []),
-                main_topics=data.get("main_topics", []),
+                chapters=self._ensure_list(data.get("chapters")),
+                main_topics=self._ensure_list(data.get("main_topics")),
                 degree_program=data.get("degree_program"),
                 abbreviations=abbreviations,
-                key_terms=data.get("key_terms", []),
-                referenced_documents=data.get("referenced_documents", []),
+                key_terms=self._ensure_list(data.get("key_terms")),
+                referenced_documents=self._ensure_list(data.get("referenced_documents")),
                 legal_basis=data.get("legal_basis"),
             )
         except (json.JSONDecodeError, KeyError) as e:
@@ -787,10 +787,12 @@ class PDFExtractor:
             data = json.loads(json_str)
 
             # Parse section markers
-            section_numbers = data.get("section_numbers", [])
-            section_titles = data.get("section_titles", [])
+            section_numbers = self._ensure_list(data.get("section_numbers"))
+            section_titles = self._ensure_list(data.get("section_titles"))
             sections = []
             for i, num in enumerate(section_numbers):
+                if not num:
+                    continue
                 title = section_titles[i] if i < len(section_titles) else None
                 sections.append(SectionMarker(
                     number=num,
@@ -800,13 +802,13 @@ class PDFExtractor:
                 ))
 
             # Parse paragraph numbers
-            paragraph_numbers = data.get("paragraph_numbers", [])
+            paragraph_numbers = self._ensure_list(data.get("paragraph_numbers"))
 
             # Determine content types
             content_types = []
-            if data.get("has_table"):
+            if self._as_bool(data.get("has_table")):
                 content_types.append(ContentType.TABLE)
-            if data.get("has_list"):
+            if self._as_bool(data.get("has_list")):
                 content_types.append(ContentType.LIST)
             if not content_types:
                 content_types.append(ContentType.SECTION)
@@ -817,13 +819,13 @@ class PDFExtractor:
                 sections=sections,
                 paragraph_numbers=paragraph_numbers,
                 content_types=content_types,
-                has_table=data.get("has_table", False),
-                has_list=data.get("has_list", False),
-                has_figure=data.get("has_image", False),
-                internal_references=data.get("internal_references", []),
-                external_references=data.get("external_references", []),
-                continues_from_previous=data.get("continues_from_previous", False),
-                continues_to_next=data.get("continues_to_next", False),
+                has_table=self._as_bool(data.get("has_table")),
+                has_list=self._as_bool(data.get("has_list")),
+                has_figure=self._as_bool(data.get("has_image")),
+                internal_references=self._ensure_list(data.get("internal_references")),
+                external_references=self._ensure_list(data.get("external_references")),
+                continues_from_previous=self._as_bool(data.get("continues_from_previous")),
+                continues_to_next=self._as_bool(data.get("continues_to_next")),
             )
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Failed to parse page {page_number} response: {e}")
@@ -864,5 +866,29 @@ class PDFExtractor:
                         return text[start:i+1]
 
         return text
+
+    @staticmethod
+    def _ensure_list(value: object) -> list:
+        """Ensure a value is returned as a list."""
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        if isinstance(value, tuple):
+            return list(value)
+        return [value]
+
+    @staticmethod
+    def _as_bool(value: object) -> bool:
+        """Parse a value into a strict boolean."""
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return False
+        if isinstance(value, (int, float)):
+            return value != 0
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "y"}
+        return False
 
 

@@ -1,35 +1,10 @@
 # Retrieval
 
-Hybrid retrieval for the RAG pipeline. This component supports BM25, vector
-search (Ollama embeddings + ChromaDB), and a hybrid RRF fusion. It exposes
-a unified API and produces LLM-ready context strings.
+## Schnellstart (Service)
 
-## Purpose
-
-- Reliable lexical retrieval (BM25)
-- Semantic retrieval via embeddings
-- Hybrid ranking with reciprocal-rank fusion (RRF)
-- Consistent context assembly for generation
-
-## Structure
-
+```powershell
+uvicorn retrieval.app:app --host 127.0.0.1 --port 8000
 ```
-retrieval/
-|-- app.py           # FastAPI service
-|-- config.py        # Service configuration
-|-- service.py       # Ingest + retrieval orchestration
-|-- storage.py       # Chunk store (JSONL)
-|-- bm25_index.py    # BM25 index
-|-- vector_index.py  # ChromaDB + embeddings
-|-- embedder.py      # Ollama embedder
-|-- hybrid.py        # RRF fusion
-|-- models.py        # Data models + request/response
-|-- README.md
-```
-
-## API
-
-The component exposes a FastAPI app: `retrieval.app:create_app` (or `retrieval.app:app`).
 
 Endpoints:
 - `GET /health`
@@ -39,56 +14,77 @@ Endpoints:
 - `POST /retrieve/vector`
 - `POST /retrieve/hybrid`
 
-### Ingest Request
+### Ingest
+
+Request:
 
 ```json
 {
   "document_id": "example",
   "chunks": [
-    { "chunk_id": "example_chunk_0001", "text": "...", "metadata": {"page_numbers": [1]} }
+    {"chunk_id": "example_chunk_0001", "text": "...", "metadata": {"page_numbers": [1]}}
   ]
 }
 ```
 
-### Retrieval Request
+Response:
 
 ```json
-{ "query": "Was ist die Regelstudienzeit?", "top_k": 5, "filters": {"document_id": "example"} }
+{ "document_id": "example", "chunks_ingested": 1 }
 ```
 
-### Retrieval Response
+### Retrieve
+
+Request:
+
+```json
+{ "query": "Welche Voraussetzungen gelten?", "top_k": 5, "filters": {"document_id": "example"} }
+```
+
+Response (verkuerzt):
 
 ```json
 {
   "query": "...",
   "mode": "bm25",
   "results": [
-    { "chunk_id": "...", "score": 0.42, "text": "...", "metadata": {"page_numbers": [1]} }
+    {"chunk_id": "...", "score": 0.42, "text": "...", "metadata": {"page_numbers": [1]}}
   ],
   "context_text": "..."
 }
 ```
 
-## Persistence
-
-- Chunk store: `data/retrieval/chunks.jsonl`
-- ChromaDB persistence: `data/retrieval/chroma`
-
-## Configuration
+## Schnellstart (Python)
 
 ```python
-from retrieval.config import RetrievalConfig
+from retrieval import RetrievalConfig
+from retrieval.service import RetrievalService
+from retrieval.vector_index import VectorIndex
 
-config = RetrievalConfig(
-    data_dir="data/retrieval",
-    max_context_tokens=1024,
-    bm25_k1=1.5,
-    bm25_b=0.75,
-    rrf_k=60,
-)
+vector = VectorIndex(persist_directory=":memory:", collection_name="demo")
+service = RetrievalService(RetrievalConfig(data_dir="data/retrieval"), vector)
 ```
 
-## Dependencies (optional)
+Hinweis: In der Praxis wird der Service meist ueber FastAPI genutzt.
 
-- Ollama for embeddings
-- ChromaDB for vector index persistence
+## Was passiert (Kurzfassung)
+
+- **BM25**: robuste lexikalische Suche (z. B. Abschnittsverweise, Kennungen)
+- **Vector**: semantische Suche ueber Embeddings (Ollama)
+- **Hybrid (RRF)**: kombiniert BM25 + Vector per Reciprocal-Rank Fusion
+- **Kontext**: `context_text` wird aus Treffern innerhalb eines Token-Budgets aufgebaut
+
+## Persistenz
+
+Standardpfade (konfigurierbar):
+- Chunk-Store: `data/retrieval/chunks.jsonl`
+- ChromaDB (Vektorindex): `data/retrieval/chroma`
+
+## Konfiguration
+
+`retrieval/config.py`:
+- `data_dir`: Basisverzeichnis
+- `collection_name`: Chroma-Collection
+- `bm25_k1`, `bm25_b`: BM25-Parameter
+- `max_context_tokens`: Token-Budget fuer `context_text`
+- `rrf_k`: Parameter fuer RRF

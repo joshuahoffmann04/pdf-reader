@@ -70,6 +70,8 @@ def run_evaluation(
         min_chunk_tokens=thresholds.min_chunk_tokens,
     )
 
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     extraction = ExtractionResult.load(str(extraction_path))
     chunker = DocumentChunker(config=config)
     chunking_result = chunker.chunk(extraction)

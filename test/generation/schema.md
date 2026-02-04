@@ -1,28 +1,59 @@
-# Generation Evaluation Schema
+# Generation – Evaluations-Schema
 
-The evaluation uses a JSON query set with expected answer and citation signals.
+Diese Test-Pipeline evaluiert die **Generation-Komponente** (RAG‑Antwort + Zitate) anhand eines kleinen Query-Sets.
 
-## Query Set (JSON)
+Wichtig: Die Generation-Komponente ruft standardmaessig den **Retrieval-Service** ueber HTTP auf.
 
-Top-level fields:
-- `queries`: list of query objects
-- `default_mode` (optional, default: "hybrid")
+## Voraussetzungen
 
-Each query object:
-```
+- Ollama laeuft (`OLLAMA_BASE_URL`, `OLLAMA_MODEL`)
+- Retrieval-Service laeuft und ist mit Chunks ingested (`RETRIEVAL_BASE_URL`)
+
+## Input
+
+### Queries (JSON)
+
+Datei: `test/generation/queries.json`
+
+Schema:
+
+```json
 {
-  "id": "q1",
-  "query": "Was ist die Regelstudienzeit?",
-  "mode": "hybrid",
-  "expected_answer_contains": ["Regelstudienzeit", "Semester"],
-  "expected_missing_info": false,
-  "expected_citation_chunk_ids": ["doc_chunk_0033"],
-  "expected_page_numbers": [5, 6],
-  "min_citations": 1
+  "default_mode": "hybrid",
+  "queries": [
+    {
+      "id": "g1",
+      "query": "…",
+      "mode": "hybrid",
+      "expected_answer_contains": ["..."],
+      "expected_missing_info": false,
+      "expected_citation_chunk_ids": ["..."],
+      "expected_page_numbers": [1, 2],
+      "min_citations": 1
+    }
+  ]
 }
 ```
 
-Notes:
-- Provide at least one of: `expected_answer_contains`, `expected_missing_info`,
-  `expected_citation_chunk_ids`, `expected_page_numbers`.
-- All fields are optional; evaluation only checks fields that are present.
+Bedeutung:
+- `expected_answer_contains`: Substrings, die in der Antwort vorkommen sollen
+- `expected_missing_info`: ob `missing_info` leer sein soll (false) oder gesetzt (true)
+- `expected_citation_chunk_ids` / `expected_page_numbers`: optionale Checks fuer Zitate
+- `min_citations`: Mindestanzahl an Zitaten
+
+## Output
+
+Im Output-Ordner (Standard: `test/generation/output/`) werden geschrieben:
+
+- `report.json`
+- `summary.json`
+
+## Report (Kurzuebersicht)
+
+Wichtige Felder in `summary.json`:
+
+- `pass`
+- `answer_hit_rate`
+- `citation_hit_rate`
+- `missing_info_hit_rate`
+

@@ -1,39 +1,43 @@
-# Reference Schema
+# PDF Extractor – Evaluations-Schema
 
-The evaluation expects a JSON file that follows the `ExtractionResult` shape.
-Only a subset is required. The pipeline evaluates whatever is provided.
+Diese Test-Pipeline evaluiert die **pdf_extractor-Komponente** gegen eine manuell kuratierte Referenz-Extraktion.
 
-## Required
-- `pages`: list of objects with:
-  - `page_number` (int, 1-based)
-  - `content` (str)
+Ziel: messen, wie gut die Extraktion den Referenztext pro Seite trifft (Textqualitaet + strukturierte Marker).
 
-## Optional (used for structure metrics)
-- `section_numbers` (list of str)
-- `paragraph_numbers` (list of str)
-- `internal_references` (list of str)
+## Input
 
-## Example (minimal)
-```
-{
-  "pages": [
-    {"page_number": 1, "content": "Title page content ..."},
-    {"page_number": 2, "content": "Table of contents ..."}
-  ]
-}
-```
+### PDF (Pfad)
 
-## Example (with structure)
-```
-{
-  "pages": [
-    {
-      "page_number": 5,
-      "content": "Section content ...",
-      "section_numbers": ["Section 1"],
-      "paragraph_numbers": ["(1)", "(2)"],
-      "internal_references": ["Section 5 Abs. 2"]
-    }
-  ]
-}
-```
+Eine PDF-Datei, z. B.:
+
+- `pdfs/2-aend-19-02-25_msc-computer-science_lese.pdf`
+
+In `test/pdf_extractor/main.py` ist der Pfad als `PDF_PATH` hinterlegt.
+
+### Referenz (JSON, Pfad)
+
+Eine JSON-Datei mit Referenzseiten im Format der Extractor-Ausgabe (mindestens `pages[].page_number` und `pages[].content`), z. B.:
+
+- `reference/pdf_extractor/<document_id>/extraction/<file>.json`
+
+In `test/pdf_extractor/main.py` ist der Pfad als `REFERENCE_PATH` hinterlegt.
+
+## Output
+
+Im Output-Ordner (Standard: `test/pdf_extractor/output/`) werden geschrieben:
+
+- `report.json` – Vollreport inkl. Seitenmetriken und Diffs
+- `summary.json` – Kurzsummary
+
+## Report (Kurzuebersicht)
+
+Wichtige Felder in `summary.json`:
+
+- `pass`
+- `pages`
+- `cer_avg` (Character Error Rate)
+- `wer_avg` (Word Error Rate)
+- `token_recall_avg`
+- `number_recall_avg`
+- zusaetzlich: aggregierte Precision/Recall/F1 fuer `section_numbers`, `paragraph_numbers`, `internal_references`
+

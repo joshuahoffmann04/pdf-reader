@@ -55,7 +55,7 @@ class ContentType(str, Enum):
     Used for downstream processing decisions.
     """
     # Structural types
-    SECTION = "section"              # Regular paragraph (§)
+    SECTION = "section"              # Regular paragraph (section marker)
     SUBSECTION = "subsection"        # Subsection (Absatz)
     ARTICLE = "article"              # Article in statutes
 
@@ -98,13 +98,13 @@ class SectionMarker(BaseModel):
     A section or paragraph marker found in the document.
 
     German legal documents use specific numbering:
-    - § for sections (Paragraphen)
-    - (1), (2) for subsections (Absätze)
+    - Paragraph for sections (Paragraphen)
+    - (1), (2) for subsections (Absaetze)
     - 1., 2. for items within subsections
     """
     number: str = Field(
         ...,
-        description="Section identifier (e.g., '§10', '§10 Abs. 2')"
+        description="Section identifier (e.g., 'Paragraph10', 'Paragraph10 Abs. 2')"
     )
     title: Optional[str] = Field(
         None,
@@ -112,7 +112,7 @@ class SectionMarker(BaseModel):
     )
     level: int = Field(
         1,
-        description="Nesting level (1=§, 2=Absatz, 3=item)",
+        description="Nesting level (1=Paragraph, 2=Absatz, 3=item)",
         ge=1,
         le=5
     )
@@ -141,7 +141,7 @@ class DocumentContext(BaseModel):
     )
     institution: str = Field(
         ...,
-        description="Issuing institution (e.g., 'Philipps-Universität Marburg')"
+        description="Issuing institution (e.g., 'Philipps-Universitaet Marburg')"
     )
 
     # Version information
@@ -172,7 +172,7 @@ class DocumentContext(BaseModel):
     )
     chapters: list[str] = Field(
         default_factory=list,
-        description="Main chapters/sections (e.g., ['I. Allgemeines', 'II. Prüfungen'])"
+        description="Main chapters/sections (e.g., ['I. Allgemeines', 'II. Pruefungen'])"
     )
     main_topics: list[str] = Field(
         default_factory=list,
@@ -196,7 +196,7 @@ class DocumentContext(BaseModel):
     )
     legal_basis: Optional[str] = Field(
         None,
-        description="Legal basis for the document (e.g., 'HHG §44')"
+        description="Legal basis for the document (e.g., 'HHG Paragraph 44')"
     )
 
     def get_abbreviation_dict(self) -> dict[str, str]:
@@ -211,14 +211,14 @@ class DocumentContext(BaseModel):
         json_schema_extra={
             "example": {
                 "document_type": "pruefungsordnung",
-                "title": "Prüfungsordnung für den Studiengang Mathematik B.Sc.",
-                "institution": "Philipps-Universität Marburg",
+                "title": "Pruefungsordnung fuer den Studiengang Mathematik B.Sc.",
+                "institution": "Philipps-Universitaet Marburg",
                 "version_date": "2023-10-15",
                 "degree_program": "Mathematik B.Sc.",
                 "total_pages": 42,
                 "chapters": ["I. Allgemeines", "II. Studienbezogene Bestimmungen"],
                 "abbreviations": [{"short": "LP", "long": "Leistungspunkte"}],
-                "key_terms": ["Modul", "Regelstudienzeit", "Prüfungsleistung"]
+                "key_terms": ["Modul", "Regelstudienzeit", "Pruefungsleistung"]
             }
         }
     )
@@ -276,7 +276,7 @@ class ExtractedPage(BaseModel):
     # Cross-references
     internal_references: list[str] = Field(
         default_factory=list,
-        description="References to other sections (e.g., '§5 Abs. 2')"
+        description="References to other sections (e.g., 'Paragraph5 Abs. 2')"
     )
     external_references: list[str] = Field(
         default_factory=list,

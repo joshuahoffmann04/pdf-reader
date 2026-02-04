@@ -2,7 +2,7 @@
 Chunking Module - Sentence-aligned sliding window chunking for RAG
 
 Splits extracted PDF content into overlapping chunks with rich metadata,
-optimized for retrieval with a local LLM (2048 token context window).
+optimized for retrieval with a configurable context window.
 
 Quick Start:
     from pdf_extractor import ExtractionResult

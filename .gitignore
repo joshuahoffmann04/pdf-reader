@@ -5,6 +5,9 @@ output_*/
 *_chunks.json
 *_chunks.jsonl
 
+# Runtime data (generated artifacts)
+data/
+
 # Python
 __pycache__/
 *.py[cod]

@@ -1,28 +1,61 @@
-# Retrieval Evaluation Schema
+# Retrieval – Evaluations-Schema
 
-The evaluation uses:
-- A chunking output JSON (ChunkingResult)
-- A query set JSON describing expected matches
+Diese Test-Pipeline evaluiert die **Retrieval-Komponente** (BM25, Vektor, Hybrid) auf einem Chunk-Export.
 
-## Query Set (JSON)
+Ziel: sicherstellen, dass relevante Chunks fuer typische Queries in den Top‑K Ergebnissen landen.
 
-Top-level fields:
-- `queries`: list of query objects
-- `default_top_k` (optional, default: 5)
-- `default_filters` (optional)
+## Input
 
-Each query object:
-```
+### Chunks (Pfad)
+
+Die Pipeline erwartet eine JSON-Datei im Format von `chunking.ChunkingResult`, z. B.:
+
+- `test/chunking/output/chunks.json`
+- `data/chunking/<document_id>/chunks/<timestamp>.json`
+
+In `test/retrieval/main.py` ist der Pfad als `CHUNKS_PATH` hinterlegt.
+
+### Queries (JSON)
+
+Datei: `test/retrieval/queries.json`
+
+Schema:
+
+```json
 {
-  "id": "q1",
-  "query": "Was ist die Regelstudienzeit?",
-  "expected_chunk_ids": ["doc_chunk_0003", "doc_chunk_0004"],
-  "expected_text_contains": ["Regelstudienzeit"],
-  "top_k": 5,
-  "filters": {"document_id": "doc"}
+  "default_top_k": 5,
+  "default_filters": { "document_id": "<document_id>" },
+  "queries": [
+    {
+      "id": "q1",
+      "query": "…",
+      "top_k": 5,
+      "filters": { "document_id": "<document_id>" },
+      "expected_chunk_ids": ["..."],
+      "expected_text_contains": ["..."]
+    }
+  ]
 }
 ```
 
-Notes:
-- `expected_chunk_ids` and `expected_text_contains` are optional; include at least one.
-- `filters` are optional; used by BM25/vector/hybrid.
+Bedeutung:
+- `expected_chunk_ids`: mindestens einer dieser Chunk-IDs soll im Ranking auftauchen
+- `expected_text_contains`: optionaler Plausibilitaetscheck (Substring-Hit im Result-Text)
+
+## Output
+
+Im Output-Ordner (Standard: `test/retrieval/output/`) werden pro Modus geschrieben:
+
+- `report_bm25.json`, `summary_bm25.json`
+- `report_vector.json`, `summary_vector.json`
+- `report_hybrid.json`, `summary_hybrid.json`
+
+## Report (Kurzuebersicht)
+
+Wichtige Felder in `summary_<mode>.json`:
+
+- `pass`
+- `hit_rate` (Hit@K)
+- `mrr` (Mean Reciprocal Rank)
+- `text_hit_rate` (Substring-Hit-Rate)
+

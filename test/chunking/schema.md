@@ -1,18 +1,41 @@
-# Chunking Evaluation Schema
+# Chunking – Evaluations-Schema
 
-The evaluation uses:
-- An extraction JSON (input to chunking)
-- A generated chunking result (output from chunking)
+Diese Test-Pipeline evaluiert die **Chunking-Komponente** gegen eine Extraktions-Datei (Output von `pdf_extractor`).
 
-No special reference file is required. The evaluation compares:
-- Source text coverage
-- Chunk size constraints
-- Metadata consistency
-- Sentence boundary heuristics
+Ziel: sicherstellen, dass die Chunks
+- den Originaltext nahezu vollstaendig abdecken,
+- Zahlen verlaesslich enthalten,
+- nicht uebermaessig duplizieren,
+- sauber an Satzgrenzen schneiden,
+- konsistente Metadaten enthalten.
 
-## Required Input
-- Extraction JSON that can be loaded by `ExtractionResult.load(...)`
+## Input
+
+### Extraktion (Pfad)
+
+Die Pipeline erwartet eine JSON-Datei im Format von `pdf_extractor.ExtractionResult`, z. B.:
+
+- `data/pdf_extractor/<document_id>/extraction/<timestamp>.json`
+
+In `test/chunking/main.py` ist der Pfad standardmaessig als `EXTRACTION_PATH` hinterlegt.
 
 ## Output
-- `report.json`: Detailed metrics and per-chunk issues
-- `summary.json`: Compact summary with pass/fail
+
+Im Output-Ordner (Standard: `test/chunking/output/`) werden geschrieben:
+
+- `report.json` – Vollreport inkl. Details
+- `summary.json` – Kurzsummary (Pass/Fail + Kernmetriken)
+- optional `chunks.json` – erzeugte Chunks (`chunking.ChunkingResult`)
+
+## Report (Kurzuebersicht)
+
+Wichtige Felder in `summary.json`:
+
+- `pass`: Gesamtbewertung
+- `token_recall`: Token-Recall (Source -> Chunks)
+- `number_recall`: Zahlen-Recall (Source -> Chunks)
+- `duplication_ratio`: Duplikationsgrad (Chunk-Tokens / Source-Tokens)
+- `sentence_boundary_ratio`: Anteil an Chunk-Grenzen, die an Satzgrenzen liegen
+- `too_small_chunks` / `too_large_chunks`: Chunk-Groessenverletzungen
+- `metadata_errors`: Metadaten-Integritaet (Index/IDs/Seiten)
+

@@ -139,6 +139,8 @@ def run_evaluation(
     thresholds = thresholds or Thresholds()
     eval_data = _load_eval(eval_path)
 
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     run_dir = Path(tempfile.mkdtemp(prefix="run_", dir=output_dir))
     data_dir = run_dir / "data"
     chroma_dir = run_dir / "chroma"

@@ -1,42 +1,7 @@
 # PDF Extractor
 
-Komponente zur praezisen Extraktion von Inhalten aus PDF-Dokumenten. Sie erzeugt eine strukturierte JSON-Ausgabe pro Seite und ist die erste Stufe der Pipeline (vor Chunking und Retrieval).
-
-## Zweck
-
-- Vollstaendige, seitenweise Extraktion mit nachvollziehbarer Herkunft
-- Prioritaet: text-native Extraktion (verlustarm), mit optionalem OCR und LLM-Fallback
-- Strukturierte Ausgabe mit Metadaten fuer spaetere Verarbeitung
-
-## Architektur und Ablauf
-
-1. **Text-Extraktion (PyMuPDF)**  
-   Selektierbarer Text wird blockweise gelesen und in natuerlicher Reihenfolge zusammengefuehrt.
-2. **Tabellen-Extraktion (optional)**  
-   Bei Bedarf werden Tabellen zusaetzlich als Text eingefuegt (pdfplumber).
-3. **OCR-Fallback (optional)**  
-   Fuer gescannte Seiten wird Tesseract verwendet.
-4. **Vision-Fallback (optional, LLM)**  
-   Falls Text/OCR nicht ausreichend sind, wird die Seite via Vision-LLM extrahiert.
-5. **Validierungs-Gates**  
-   Inhalte werden gegen Raw-Text geprueft, um Informationsverlust zu verhindern.
-
-## Struktur
-
-```
-pdf_extractor/
-|-- app.py              # FastAPI Service
-|-- config.py           # Service-Konfiguration
-|-- service.py          # Extraktions-Orchestrierung
-|-- storage.py          # Persistenz (data/pdf_extractor/<doc>/extraction/...)
-|-- extractor.py        # Pipeline-Logik
-|-- text_extractor.py   # Text-native Extraktion (PyMuPDF)
-|-- table_extractor.py  # Tabellen (pdfplumber)
-|-- validation.py       # Coverage- und LLM-Validierung
-|-- models.py           # Datenmodelle
-|-- prompts.py          # LLM-Prompts
-|-- pdf_to_images.py    # PDF -> Image
-```
+Der PDF Extractor erzeugt eine strukturierte, seitenweise Extraktion aus PDFs.
+Er ist die erste Stufe der Pipeline und liefert die Grundlage fuer Chunking, Retrieval und Generation.
 
 ## Schnellstart (Python)
 
@@ -45,9 +10,9 @@ from pdf_extractor import PDFExtractor, ProcessingConfig
 
 config = ProcessingConfig(
     extraction_mode="hybrid",
-    use_llm=True,
+    use_llm=False,
     llm_postprocess=False,
-    context_mode="llm_text",
+    context_mode="heuristic",
     table_extraction=True,
     layout_mode="columns",
     enforce_text_coverage=True,
@@ -60,19 +25,43 @@ result = extractor.extract("pdfs/example.pdf")
 result.save("output.json")
 ```
 
-## Service (API)
+## Schnellstart (API)
 
-Die Komponente stellt eine FastAPI-App bereit: `pdf_extractor.app:create_app` bzw. `pdf_extractor.app:app`.
-Integration erfolgt durch Einbindung in die uebergeordnete Service-Schicht.
+```powershell
+uvicorn pdf_extractor.app:app --host 127.0.0.1 --port 8001
+```
 
 Endpoints:
 - `GET /health`
-- `POST /extract` mit `{ "pdf_path": "pdfs/..." }`
+- `POST /extract`
+
+Request:
+
+```json
+{ "pdf_path": "pdfs/example.pdf" }
+```
+
+Response:
+
+```json
+{
+  "document_id": "example",
+  "output_path": "data/pdf_extractor/example/extraction/example_20240101_120000.json",
+  "pages": 42
+}
+```
+
+## Was passiert (Kurzfassung)
+
+1. **Text-Extraktion (PyMuPDF)**: selektierbarer Text wird blockweise gelesen.
+2. **Tabellen-Extraktion (optional)**: Tabellen werden in Fliesstext ueberfuehrt.
+3. **OCR-Fallback (optional)**: gescannte Seiten werden mit Tesseract erkannt.
+4. **Vision-Fallback (optional)**: wenn Text/OCR nicht reicht, kann ein LLM genutzt werden.
+5. **Validierung**: Inhalte werden gegen Rohtext geprueft, um Informationsverlust zu vermeiden.
 
 ## Konfiguration
 
-Die wichtigsten Optionen in `ProcessingConfig`:
-
+Wichtige Optionen in `ProcessingConfig`:
 - `extraction_mode`: `text | vision | hybrid`
 - `use_llm`: LLM fuer Vision-Extraction aktivieren
 - `context_mode`: `llm_text | llm_vision | heuristic`
@@ -83,7 +72,9 @@ Die wichtigsten Optionen in `ProcessingConfig`:
 - `enforce_text_coverage`: harte Coverage-Pruefung
 - `min_token_recall`, `min_number_recall`: Coverage-Schwellen
 
-## Ausgabeformat (ExtractionResult)
+Service-Konfiguration: `pdf_extractor.config.ExtractorConfig` steuert u.a. den Output-Ordner.
+
+## Output-Format (ExtractionResult)
 
 Top-Level:
 - `source_file`

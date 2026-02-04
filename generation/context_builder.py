@@ -34,8 +34,12 @@ def _chunk_block(idx: int, hit: dict[str, Any]) -> str:
     chunk_id = hit.get("chunk_id", "")
     metadata = hit.get("metadata", {}) or {}
     pages = parse_page_numbers(metadata)
-    page_text = ", ".join(str(p) for p in pages) if pages else "unknown"
-    header = f"[Chunk {idx}] id={chunk_id} pages={page_text}\n"
+    header = (
+        f"[Chunk {idx}]\n"
+        f"chunk_id: {chunk_id}\n"
+        f"page_numbers: {pages}\n"
+        "---\n"
+    )
     text = (hit.get("text") or "").strip()
     return header + text
 

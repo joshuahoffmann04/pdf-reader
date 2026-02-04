@@ -14,6 +14,11 @@ class IngestRequest(BaseModel):
     chunks: list[ChunkInput] = Field(default_factory=list)
 
 
+class IngestResponse(BaseModel):
+    document_id: str
+    chunks_ingested: int
+
+
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1)
     top_k: int = Field(5, ge=1, le=50)

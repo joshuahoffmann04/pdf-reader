@@ -1,53 +1,45 @@
 # Chunking
 
-Sentence-aligned, sliding-window chunking for the RAG pipeline. The component
-consumes the JSON output from `pdf_extractor` and produces overlapping chunks
-with metadata optimized for retrieval.
-
-## Purpose
-
-- Stable, sentence-aligned chunks for downstream retrieval
-- Configurable token window and overlap
-- Rich metadata for traceability and navigation
-
-## Structure
-
-```
-chunking/
-|-- app.py              # FastAPI service
-|-- config.py           # Service configuration
-|-- service.py          # Chunking orchestration
-|-- storage.py          # Persistence (data/chunking/<document_id>/chunks/...)
-|-- models.py           # Data models + request/response
-|-- chunker.py          # Chunking logic
-|-- sentence_splitter.py
-|-- token_counter.py
-|-- README.md
-```
-
-## Usage (Python)
+## Schnellstart (Python)
 
 ```python
-from chunking import DocumentChunker, ChunkingConfig
 from pdf_extractor import ExtractionResult
+from chunking import DocumentChunker, ChunkingConfig
 
-result = ExtractionResult.load(
-    "data/pdf_extractor/example/extraction/example_20240101_120000.json"
+extraction = ExtractionResult.load(
+    "data/pdf_extractor/<document_id>/extraction/<file>.json"
 )
-chunker = DocumentChunker(ChunkingConfig(max_chunk_tokens=512))
-chunks = chunker.chunk(result)
-chunks.save("chunks.json")
+
+chunker = DocumentChunker(
+    ChunkingConfig(
+        max_chunk_tokens=512,
+        overlap_tokens=100,
+        min_chunk_tokens=50,
+    )
+)
+
+chunking_result = chunker.chunk(extraction)
+chunking_result.save("chunks.json")
 ```
 
-## Service (API)
+## Schnellstart (API)
 
-The component exposes a FastAPI app: `chunking.app:create_app` (or `chunking.app:app`).
+```powershell
+uvicorn chunking.app:app --host 127.0.0.1 --port 8002
+```
 
 Endpoints:
 - `GET /health`
-- `POST /chunk` with `{ "extraction_path": "data/pdf_extractor/<document_id>/extraction/<file>.json" }`
+- `POST /chunk`
+
+Request:
+
+```json
+{ "extraction_path": "data/pdf_extractor/<document_id>/extraction/<file>.json" }
+```
 
 Response:
+
 ```json
 {
   "document_id": "<document_id>",
@@ -56,29 +48,41 @@ Response:
 }
 ```
 
-## Output Format
+## Was passiert (Kurzfassung)
 
-Top-level:
+Die Komponente erstellt satzbasierte, ueberlappende Chunks mit Metadaten.
+Ziel ist ein stabiler, gut durchsuchbarer Kontext fuer Retrieval und Generation.
+
+## Output-Format
+
+Top-Level (`ChunkingResult`):
 - `source_file`
 - `document_id`
 - `config`
-- `chunks` (list of Chunk)
+- `chunks` (Liste von Chunks)
 - `stats`
 - `created_at`
 
-Chunk:
+Pro Chunk:
 - `chunk_id`
 - `text`
 - `token_count`
-- `metadata` (document_id, page_numbers, neighbor ids, etc.)
+- `metadata` (u.a. `document_id`, `page_numbers`, `chunk_index`, `prev_chunk_id`, `next_chunk_id`)
 
-## Configuration
+## Konfiguration
+
+Wichtige Parameter in `ChunkingConfig`:
+- `max_chunk_tokens`: Ziel-Fenster (Tokens)
+- `overlap_tokens`: Token-Ueberlappung zwischen Chunks
+- `min_chunk_tokens`: Mindestgroesse
+
+Service-Konfiguration (`ChunkingServiceConfig`) steuert u.a. den Output-Ordner:
 
 ```python
 from chunking.config import ChunkingServiceConfig
 from chunking.models import ChunkingConfig
 
-config = ChunkingServiceConfig(
+cfg = ChunkingServiceConfig(
     data_dir="data/chunking",
     chunking=ChunkingConfig(max_chunk_tokens=512, overlap_tokens=100),
 )
@@ -86,5 +90,5 @@ config = ChunkingServiceConfig(
 
 ## Token Counting
 
-Token counting uses `tiktoken` with the `cl100k_base` encoding as a conservative
-approximation. This keeps chunk sizes safely within limits for most local LLMs.
+Das Token-Counting verwendet `tiktoken` mit `cl100k_base` als konservative Approximation.
+Das stellt sicher, dass Chunk-Groessen auch bei unterschiedlichen Modellen stabil bleiben.

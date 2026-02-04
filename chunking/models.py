@@ -32,7 +32,7 @@ class ChunkingConfig(BaseModel):
     Configuration for the chunking pipeline.
 
     Controls chunk size limits, overlap behavior, and token counting.
-    Defaults are optimized for a local LLM with 2048 token context window.
+    Defaults are tuned for a balanced context window and can be adapted as needed.
     """
     max_chunk_tokens: int = Field(
         512,

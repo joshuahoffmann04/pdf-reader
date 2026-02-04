@@ -17,12 +17,15 @@ class ValidationResult:
     reason: str = ""
 
 
+SECTION_SIGN = "\u00a7"
+
+
 def _tokenize_numbers(text: str) -> list[str]:
     return re.findall(r"\d+(?:[.,]\d+)?", text)
 
 
 def _tokenize_sections(text: str) -> list[str]:
-    return re.findall(r"§\s*\d+[a-zA-Z]?", text)
+    return re.findall(rf"{SECTION_SIGN}\s*\d+[a-zA-Z]?", text)
 
 
 def validate_llm_output(
@@ -116,12 +119,12 @@ def _char_recall(raw_text: str, llm_text: str) -> float:
 
 
 def _token_recall(raw_text: str, extracted_text: str) -> float:
-    tokens = set(re.findall(r"[A-Za-zÄÖÜäöüß]+|\d+(?:[.,]\d+)?", raw_text))
-    extracted = set(re.findall(r"[A-Za-zÄÖÜäöüß]+|\d+(?:[.,]\d+)?", extracted_text))
+    pattern = r"[A-Za-z\u00c4\u00d6\u00dc\u00e4\u00f6\u00fc\u00df]+|\d+(?:[.,]\d+)?"
+    tokens = set(re.findall(pattern, raw_text))
+    extracted = set(re.findall(pattern, extracted_text))
     if not tokens:
         return 1.0
     return len(tokens & extracted) / max(len(tokens), 1)
-
 
 def _number_recall(raw_text: str, extracted_text: str) -> float:
     numbers = set(re.findall(r"\d+(?:[.,]\d+)?", raw_text))

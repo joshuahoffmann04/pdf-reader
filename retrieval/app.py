@@ -1,12 +1,18 @@
 from pathlib import Path
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 import chromadb
 
 from .config import RetrievalConfig
-from .models import IngestRequest, QueryRequest, RetrievalResponse
+from .models import (
+    DocumentSummary,
+    IngestRequest,
+    IngestResponse,
+    QueryRequest,
+    RetrievalResponse,
+)
 from .service import RetrievalService
 from .vector_index import VectorIndex
 
@@ -33,25 +39,37 @@ def create_app(config: RetrievalConfig | None = None) -> FastAPI:
     def health() -> dict:
         return {"status": "ok"}
 
-    @app.get("/documents")
-    def documents() -> list:
-        return [doc.model_dump() for doc in service.store.list_documents()]
+    @app.get("/documents", response_model=list[DocumentSummary])
+    def documents() -> list[DocumentSummary]:
+        return service.store.list_documents()
 
-    @app.post("/ingest")
-    def ingest(request: IngestRequest) -> dict:
-        return service.ingest(request)
+    @app.post("/ingest", response_model=IngestResponse)
+    def ingest(request: IngestRequest) -> IngestResponse:
+        try:
+            return service.ingest(request)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @app.post("/retrieve/bm25", response_model=RetrievalResponse)
     def retrieve_bm25(request: QueryRequest) -> RetrievalResponse:
-        return service.retrieve_bm25(request.query, request.top_k, request.filters)
+        try:
+            return service.retrieve_bm25(request.query, request.top_k, request.filters)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @app.post("/retrieve/vector", response_model=RetrievalResponse)
     def retrieve_vector(request: QueryRequest) -> RetrievalResponse:
-        return service.retrieve_vector(request.query, request.top_k, request.filters)
+        try:
+            return service.retrieve_vector(request.query, request.top_k, request.filters)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @app.post("/retrieve/hybrid", response_model=RetrievalResponse)
     def retrieve_hybrid(request: QueryRequest) -> RetrievalResponse:
-        return service.retrieve_hybrid(request.query, request.top_k, request.filters)
+        try:
+            return service.retrieve_hybrid(request.query, request.top_k, request.filters)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return app
 
