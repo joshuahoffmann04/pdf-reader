@@ -105,6 +105,20 @@ Antworte AUSSCHLIESSLICH im folgenden JSON-Format:
 
 Analysiere das Dokument sorgfältig und gib die vollständige JSON-Antwort aus."""
 
+# Text-native context analysis (no images)
+CONTEXT_ANALYSIS_TEXT_USER = """Analysiere den folgenden TEXT-AUSZUG des Dokuments SORGFÄLTIG und extrahiere die Metadaten.
+
+WICHTIG:
+- Der Text stammt aus mehreren Seiten (u.a. Titel/TOC/Schlussseiten).
+- Extrahiere NUR Informationen, die EXPLIZIT im Text stehen.
+
+TEXT-AUSZUG:
+\"\"\"
+{document_text}
+\"\"\"
+
+Antworte AUSSCHLIESSLICH im folgenden JSON-Format (wie im Hauptprompt definiert)."""
+
 
 # =============================================================================
 # PHASE 2: Page-by-Page Extraction
@@ -243,6 +257,21 @@ REGELN FÜR DIE FELDER:
 
 Verarbeite die Seite sorgfältig und gib die JSON-Antwort aus."""
 
+# Text-native page extraction
+PAGE_EXTRACTION_TEXT_USER = """Extrahiere und transformiere den Inhalt dieser Seite (Seite {page_number} von {total_pages}).
+
+WICHTIG:
+- Der folgende TEXT ist der exakte Seiteninhalt (Text-native Extraktion).
+- VERLIERE KEINE INFORMATIONEN: alle Zahlen, Daten, §-Verweise, Anlagen, Listenpunkte müssen erhalten bleiben.
+- Du darfst NUR umformatieren (Listen/Tabellen -> Fließtext), aber NICHT zusammenfassen.
+
+TEXT:
+\"\"\"
+{page_text}
+\"\"\"
+
+Antworte AUSSCHLIESSLICH im folgenden JSON-Format (wie im Hauptprompt definiert)."""
+
 
 # =============================================================================
 # HELPER FUNCTIONS
@@ -296,4 +325,18 @@ def get_page_extraction_user_prompt(page_number: int, total_pages: int) -> str:
     return PAGE_EXTRACTION_USER.format(
         page_number=page_number,
         total_pages=total_pages
+    )
+
+
+def get_context_analysis_text_prompt(document_text: str) -> str:
+    """Generate a user prompt for context analysis with text input."""
+    return CONTEXT_ANALYSIS_TEXT_USER.format(document_text=document_text)
+
+
+def get_page_extraction_text_prompt(page_number: int, total_pages: int, page_text: str) -> str:
+    """Generate a user prompt for text-native page extraction."""
+    return PAGE_EXTRACTION_TEXT_USER.format(
+        page_number=page_number,
+        total_pages=total_pages,
+        page_text=page_text,
     )

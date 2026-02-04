@@ -25,7 +25,7 @@ Usage:
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 # =============================================================================
@@ -92,10 +92,11 @@ class Abbreviation(BaseModel):
     short: str = Field(..., description="The abbreviation (e.g., 'LP', 'ECTS')")
     long: str = Field(..., description="The full form (e.g., 'Leistungspunkte')")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {"short": "LP", "long": "Leistungspunkte"}
         }
+    )
 
 
 class SectionMarker(BaseModel):
@@ -218,8 +219,8 @@ class DocumentContext(BaseModel):
         """Export as dictionary for downstream processing."""
         return self.model_dump()
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "document_type": "pruefungsordnung",
                 "title": "Prüfungsordnung für den Studiengang Mathematik B.Sc.",
@@ -232,6 +233,7 @@ class DocumentContext(BaseModel):
                 "key_terms": ["Modul", "Regelstudienzeit", "Prüfungsleistung"]
             }
         }
+    )
 
 
 class ExtractedPage(BaseModel):
@@ -314,6 +316,14 @@ class ExtractedPage(BaseModel):
         None,
         description="Notes about extraction issues or ambiguities"
     )
+    raw_content: Optional[str] = Field(
+        None,
+        description="Optional raw page content (pre-normalization) for auditing"
+    )
+    content_source: Optional[str] = Field(
+        None,
+        description="Extraction source: text|vision|ocr|llm_text"
+    )
 
     def to_dict(self) -> dict[str, Any]:
         """Export as dictionary for downstream processing."""
@@ -381,6 +391,114 @@ class ProcessingConfig(BaseModel):
     language: Language = Field(
         Language.DE,
         description="Output language"
+    )
+
+    # Extraction Mode
+    extraction_mode: str = Field(
+        "hybrid",
+        description="Extraction mode: text|vision|hybrid"
+    )
+    use_llm: bool = Field(
+        True,
+        description="Enable LLM usage (vision/text post-processing)"
+    )
+    llm_postprocess: bool = Field(
+        False,
+        description="Post-process text-native extraction with LLM"
+    )
+    context_mode: str = Field(
+        "llm_text",
+        description="Context extraction: llm_text|llm_vision|heuristic"
+    )
+
+    # Text Extraction Quality Gates
+    text_min_chars: int = Field(
+        200,
+        description="Minimum characters to accept text-native extraction"
+    )
+    text_min_alpha_ratio: float = Field(
+        0.20,
+        description="Minimum alphabetic ratio to accept text-native extraction"
+    )
+    preserve_line_breaks: bool = Field(
+        True,
+        description="Preserve line breaks in text-native extraction"
+    )
+    layout_mode: str = Field(
+        "simple",
+        description="Text layout ordering: simple|columns"
+    )
+    column_gap_ratio: float = Field(
+        0.25,
+        description="Gap ratio for detecting multi-column layouts"
+    )
+
+    # Table Extraction
+    table_extraction: bool = Field(
+        False,
+        description="Enable structured table extraction when available"
+    )
+    table_settings: dict = Field(
+        default_factory=dict,
+        description="Optional table extraction settings (pdfplumber)"
+    )
+
+    # OCR Fallback
+    ocr_enabled: bool = Field(
+        False,
+        description="Enable OCR fallback for scanned pages"
+    )
+    ocr_before_vision: bool = Field(
+        True,
+        description="Prefer OCR before vision fallback when both are enabled"
+    )
+    ocr_language: str = Field(
+        "deu+eng",
+        description="OCR language(s) for Tesseract"
+    )
+    ocr_dpi: int = Field(
+        300,
+        description="DPI used for OCR rendering"
+    )
+    ocr_psm: int = Field(
+        3,
+        description="Tesseract page segmentation mode"
+    )
+    ocr_oem: int = Field(
+        3,
+        description="Tesseract OCR engine mode"
+    )
+
+    # LLM Output Validation
+    validate_llm_output: bool = Field(
+        True,
+        description="Validate LLM output coverage against raw text"
+    )
+    min_numeric_recall: float = Field(
+        0.98,
+        description="Minimum numeric token recall"
+    )
+    min_section_recall: float = Field(
+        0.90,
+        description="Minimum section token recall"
+    )
+    min_char_recall: float = Field(
+        0.90,
+        description="Minimum alphanumeric character recall"
+    )
+
+    # Strict Coverage Enforcement
+    enforce_text_coverage: bool = Field(
+        True,
+        description="Ensure extracted content covers raw text tokens; fallback to raw if not"
+    )
+    min_token_recall: float = Field(
+        0.99,
+        description="Minimum token recall vs. raw text"
+    )
+    min_number_recall: float = Field(
+        1.0,
+        description="Minimum numeric token recall vs. raw text"
     )
 
 
